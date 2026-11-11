@@ -205,7 +205,7 @@ function showSuspend(){
   $('suspendCard').innerHTML = `<h2>🪪 Bằng lái của ${S.xungho} đã hết điểm</h2>
     <p>Xe phải dừng ngay tại chỗ. Theo <b>khoản 3 Điều 58 Luật Trật tự, an toàn giao thông đường bộ 2024</b>: bằng lái bị trừ hết điểm thì <b>không được lái xe theo bằng lái đó</b>. Sau ít nhất <b>6 tháng</b> mới được dự kiểm tra kiến thức pháp luật; đạt yêu cầu thì được phục hồi đủ 12 điểm.</p>
     <p>Trong game, 6 tháng trôi qua trong nháy mắt 😄. Làm bài kiểm tra ${QUIZ_N} câu, đúng từ ${QUIZ_PASS} câu là được hồi 12 điểm và lái tiếp.</p>
-    <p class="fine">Ngoài đời, bài kiểm tra cho bằng hạng A1 theo Thông tư 65/2024/TT-BCA gồm 25 câu, phải đúng từ 21 câu. Bộ Công an đang soạn thông tư mới thay thế, nên số câu có thể thay đổi.</p>
+    <p class="fine">Ngoài đời, bài kiểm tra cho bằng hạng A1 theo Thông tư 65/2024/TT-BCA gồm 25 câu (có câu điểm liệt, làm sai là không đạt), phải đúng từ 21 câu. Thông tư 105/2026/TT-BCA đã sửa đổi Thông tư 65, nên đề kiểm tra có thể thay đổi theo lộ trình của thông tư này.</p>
     <div class="row"><button class="btn primary" id="quizGo">Làm bài kiểm tra</button><button class="btn" id="quizReset">Chơi lại từ đầu</button></div>`;
   openOverlay('suspend');
   $('quizGo').onclick = startQuiz;

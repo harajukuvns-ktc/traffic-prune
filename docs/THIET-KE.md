@@ -91,15 +91,21 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.2 | 11/11/2026 | Góc nhìn dẫn đường, trợ lái giữ làn, 11 ô đỗ P, vạch đứt/liền, lỗi đè vạch liền |
 | 0.3 | 11/11/2026 | Hạ góc nhìn, chỉ đường dạng vạch chấm, vạch dừng → vạch người đi bộ → đèn, vỉa hè bo cong |
 | 0.4 | 11/11/2026 | Space chỉ phanh, vạch dừng trắng, hết điểm GPLX dừng xe + bài kiểm tra, âm thanh |
-| 0.4.1 | 11/11/2026 | Tách thành nhiều file theo mảng, thêm tài liệu thiết kế và kiểm tra tự động vào kho code |
+| 0.4.1 | 11/11/2026 | Tách thành nhiều file theo mảng, thêm tài liệu thiết kế và kiểm tra tự động; sửa căn cứ pháp lý theo kết quả kiểm tra độc lập |
 
 ## 8. Kiểm tra pháp lý
 
-Lần gần nhất: đang chạy (11/11/2026). Kết quả sẽ được ghi vào đây.
+Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` và các câu pháp lý trong `js/game.js`.
+
+- **Mức phạt và điểm trừ: đều đúng** với NĐ 168/2024/NĐ-CP. NĐ 238/2026/NĐ-CP (ban hành 26/6/2026, hiệu lực 15/8/2026) chỉ sửa điểm e khoản 1 và điểm b khoản 6 Điều 7, không đụng các lỗi trong game.
+- Đã sửa: ghi rõ điểm cho lỗi sai phần đường (điểm d khoản 3), vòng xuyến (điểm d khoản 6, trừ điểm theo điểm a khoản 13), gây tai nạn (điểm a hoặc b khoản 10, trừ điểm theo điểm d khoản 13); mô tả biển đường một chiều (I.407, vuông/chữ nhật nền xanh); nhường đường khi không có báo hiệu vòng xuyến; câu điểm liệt trong bài kiểm tra phục hồi điểm; Thông tư 105/2026/TT-BCA đã sửa đổi Thông tư 65.
+- Chưa xác minh được: hình biển vòng xuyến R.303; mốc áp dụng đề kiểm tra mới theo Thông tư 105/2026 (các nguồn chưa thống nhất, cần đọc toàn văn).
+- Lưu ý thiết kế: đè vạch liền rồi chạy hẳn sang phần đường ngược chiều có thể bị xử theo điểm d khoản 3 (sai phần đường) thay vì điểm a khoản 1. Game hiện chỉ phạt lỗi đè vạch trong trường hợp này.
+- Nguồn chính: luatvietnam.vn (NĐ 238/2026, Thông tư 105/2026), thuvienphapluat.vn (bảng lỗi trừ điểm), ketoananpha.vn (toàn văn NĐ 168/2024, Luật TTATGTĐB 2024), pbgdpl.cantho.gov.vn, lsvn.vn.
 
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
 
-- Kết quả kiểm tra pháp lý → sửa `js/luat.js` nếu cần.
+- Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.
 - Âm thanh bản 0.4 chưa được nghe trên máy thật.
 - Văn hóa giao thông: hai thanh điểm riêng (luật / văn hóa), các hành vi tốt được thưởng.
 - Thu xe, đổi xe cũ khi không đủ tiền đền; mua xe; nhiều loại xe và vai (xe đạp, đi bộ, ô tô).
