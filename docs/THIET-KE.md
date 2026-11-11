@@ -109,10 +109,8 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 
 - **NHẮC NGƯỜI DÙNG (họ dặn ngày 11/11/2026):** bật GitHub Pages (Settings → Pages → Deploy from a branch → main → / (root)) rồi chạy thử game trên điện thoại tại https://harajukuvns-ktc.github.io/traffic-prune/. Nhắc ở cuối mỗi lần giao bản mới cho tới khi người dùng báo đã làm.
 - Giọng nói NPC: Claude đã gửi 4 phương án (bíp kiểu game, giọng máy trình duyệt, thu âm giọng thật, giọng AI tạo sẵn), chờ người dùng chọn.
-- Tiếng máy xe bản 0.5 chưa được nghe trên máy thật.
-
+- Âm thanh (bản 0.4) và tiếng máy xe (bản 0.5) chưa được nghe trên máy thật.
 - Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.
-- Âm thanh bản 0.4 chưa được nghe trên máy thật.
 - Văn hóa giao thông: hai thanh điểm riêng (luật / văn hóa), các hành vi tốt được thưởng.
 - Thu xe, đổi xe cũ khi không đủ tiền đền; mua xe; nhiều loại xe và vai (xe đạp, đi bộ, ô tô).
 - Thêm lỗi: không đội mũ bảo hiểm, dùng điện thoại khi lái, dừng đỗ sai chỗ, đi vào làn cấm.

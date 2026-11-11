@@ -102,7 +102,6 @@ Mỗi lần chơi, bạn nên thử cố tình vi phạm từng lỗi một lầ
 3. Tấp vào ô P có khó không? Ô có đủ rộng không?
 4. Câu thoại nào làm bạn bật cười hoặc nhớ luật? Câu nào nghe gượng?
 5. Có lúc nào bị phạt mà bạn thấy oan không? Ghi lại chỗ và tình huống.
-
 6. Âm thanh có vừa tai không? Tiếng nào nghe khó chịu hay thiếu? Máy bạn có giọng đọc tiếng Việt không?
 
 Gửi lại những ghi chép này cho Claude để chỉnh ở phiên bản sau.
