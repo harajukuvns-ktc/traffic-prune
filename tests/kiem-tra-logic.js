@@ -206,5 +206,20 @@ S.pts = 12; S.suspended = false;
   const g = [0, 40, 110].map(v => em(v, true, 'ga'));
   ok(g.every(m => m.gear === 0) && g[1].rpm > g[0].rpm && g[2].rpm > g[1].rpm, 'xe tay ga: không có số, vòng tua tăng đều'); }
 
+// 12) Giọng NPC: chữ hiện dần, mỗi tiếng một tiếng bíp, cao độ theo dấu thanh, mỗi kiểu nhân vật một giọng
+{ reset(); const text = 'Đèn đỏ là để dừng, anh ơi, không phải để thử.';
+  const c0 = TP.SND.syllableCount();
+  TP.say({name: 'Bác xe ôm', x: player.x, y: player.y}, text);
+  step(dt);
+  const mid = S.bubble.shown;
+  run(4);
+  const words = text.split(/\s+/).length;
+  ok(mid > 0 && mid < text.length && S.bubble && S.bubble.shown === text.length, `chữ hiện dần rồi hiện đủ (sau 1 khung hình: ${mid.toFixed(1)} ký tự)`);
+  ok(TP.SND.syllableCount() - c0 === words, `mỗi tiếng một tiếng bíp (${TP.SND.syllableCount() - c0}/${words})`);
+  const tm = ['má','mà','mả','mã','mạ','ma'].map(w => TP.SND.toneMark(w)).join(',');
+  ok(tm === 'sac,huyen,hoi,nga,nang,ngang', 'nhận đúng 6 dấu thanh: ' + tm);
+  ok(TP.voiceOf('Bác tài xe buýt').cao < TP.voiceOf('Bác xe ôm').cao && TP.voiceOf('Bác xe ôm').cao < TP.voiceOf('Cô bán xôi').cao,
+     'giọng xe buýt trầm nhất, bác xe ôm trầm hơn cô bán xôi'); }
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);

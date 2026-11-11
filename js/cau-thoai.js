@@ -70,3 +70,18 @@ const LINES = {
 const NPC_NAMES = ['Bác xe ôm','Cô bán xôi','Anh shipper','Chị đi chợ','Chú bảo vệ','Bà bán vé số','Anh thợ điện',
   'Chị nhân viên văn phòng','Ông đi tập thể dục','Cô giáo về muộn','Anh sinh viên','Chú bán kem'];
 const PED_NAMES = ['Cô bán hàng rong','Bà cụ đi chợ','Anh đi bộ','Chị dắt chó đi dạo'];
+
+// "Giọng" bíp bíp của từng kiểu nhân vật khi nói. Dò từ trên xuống, gặp dòng nào khớp tên thì dùng dòng đó.
+//   cao: độ cao giọng (Hz, càng lớn càng cao) · am: kiểu âm ('sine' tròn, 'triangle' mềm, 'square' rè)
+//   nhanh: tốc độ hiện chữ (ký tự mỗi giây)
+const GIONG = [
+  {khop: /xe buýt/i,          cao: 150, am: 'square',   nhanh: 26},
+  {khop: /loa phường/i,       cao: 210, am: 'square',   nhanh: 30},
+  {khop: /^(ông|bác)/i,       cao: 165, am: 'triangle', nhanh: 24},
+  {khop: /^bà/i,              cao: 285, am: 'triangle', nhanh: 22},
+  {khop: /^chú/i,             cao: 185, am: 'triangle', nhanh: 28},
+  {khop: /^anh/i,             cao: 215, am: 'triangle', nhanh: 32},
+  {khop: /^(cô|chị)/i,        cao: 330, am: 'sine',     nhanh: 34},
+  {khop: /^khách/i,           cao: 300, am: 'sine',     nhanh: 32},
+  {khop: /.*/,                cao: 240, am: 'triangle', nhanh: 30}
+];

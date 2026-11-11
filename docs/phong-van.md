@@ -1,6 +1,6 @@
 # Webgame giao thông đường phố Việt Nam: ghi chép phỏng vấn
 Ngày: 2026-11-11 · Mục tiêu: làm rõ ý tưởng webgame để người chơi hiểu và nắm được luật giao thông đường bộ Việt Nam
-Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.5 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chọn phương án giọng NPC, chơi thử bản 0.5 và ghi nhận xét theo mục "Gợi ý chơi thử".
+Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.6 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.6 và ghi nhận xét theo mục "Gợi ý chơi thử".
 
 ## Tóm tắt các quyết định
 - Đối tượng ban đầu: 2 nhóm (người thi A1/B1 và người lớn đi xe lâu năm). Đã thu hẹp ở Câu 2.
@@ -94,6 +94,9 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
   - "Bước chạy thử trên điện thoại, bạn hãy nhắc mình sau nhé (nhớ note lại)" -> ghi vào mục 9 của docs/THIET-KE.md, nhắc ở cuối mỗi lần giao bản mới.
   - "Âm thanh của xe máy người dùng nghe như tiếng xe máy khi đi số thấp nhất, lúc tăng ga ko tăng số nên nghe âm thanh cứ như tiếng gầm gừ khó nghe" -> làm lại tiếng máy: 4 số, vòng tua tụt khi lên số, âm mềm hơn; thêm lựa chọn xe tay ga.
   - "Cũng cần phải xử lý giọng nói của NPC, bạn gợi ý nhé" -> Claude gửi 4 phương án, chờ người dùng chọn.
+
+- Góp ý lúc 20:59 ngày 11/11/2026 và cách xử lý ở bản 0.6:
+  - "Nhất trí với phương án làm A trước" -> giọng NPC kiểu game: chữ hiện dần, mỗi tiếng một tiếng bíp uốn theo dấu thanh, giọng riêng theo kiểu nhân vật, có thanh chỉnh âm lượng; giọng chỉ đường được ưu tiên.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?

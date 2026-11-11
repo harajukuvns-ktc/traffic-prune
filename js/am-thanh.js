@@ -74,6 +74,32 @@ const SND = (function(){
     notes.forEach((f, i) => { tone(f*k, 0.35, 'triangle', 0.18, i*0.09); tone(f*k*2, 0.25, 'sine', 0.05, i*0.09); });
   }
   // D. NPC bấm còi khi bị bạn chặn
+  // Giọng NPC kiểu game: mỗi tiếng (âm tiết) là một tiếng bíp ngắn, cao độ uốn theo dấu thanh
+  //   ngang: đều · sắc: lên · huyền: xuống thấp · hỏi: xuống rồi lên · ngã: lên gãy · nặng: thấp, cụt
+  let syllables = 0;
+  function toneMark(word){
+    const d = word.normalize('NFD');
+    if (d.includes('\u0301')) return 'sac';
+    if (d.includes('\u0300')) return 'huyen';
+    if (d.includes('\u0309')) return 'hoi';
+    if (d.includes('\u0303')) return 'nga';
+    if (d.includes('\u0323')) return 'nang';
+    return 'ngang';
+  }
+  function npcSyllable(g, word){
+    syllables++;
+    if (!can() || S.sound.npc <= 0) return;
+    // giọng chỉ đường đang đọc thì NPC chỉ hiện chữ, không bíp (ưu tiên giọng chỉ đường)
+    if (window.speechSynthesis && window.speechSynthesis.speaking) return;
+    const f = g.cao * (0.94 + Math.random() * 0.12), v = 0.11 * S.sound.npc, w = g.am;
+    const mk = toneMark(word);
+    if (mk === 'sac') tone(f * 0.95, 0.075, w, v, 0, f * 1.3);
+    else if (mk === 'huyen') tone(f * 0.92, 0.08, w, v * 0.9, 0, f * 0.75);
+    else if (mk === 'hoi'){ tone(f * 0.9, 0.04, w, v, 0, f * 0.78); tone(f * 0.8, 0.045, w, v, 0.04, f * 1.02); }
+    else if (mk === 'nga'){ tone(f, 0.035, w, v, 0, f * 1.12); tone(f * 1.15, 0.045, w, v, 0.045, f * 1.38); }
+    else if (mk === 'nang') tone(f * 0.8, 0.045, w, v, 0, f * 0.68);
+    else tone(f, 0.07, w, v);
+  }
   function horn(vol, pitch){
     const p = pitch || 1;
     tone(415*p, 0.17, 'square', 0.06*vol); tone(520*p, 0.17, 'square', 0.05*vol);
@@ -203,6 +229,6 @@ const SND = (function(){
     navSpeech();
   }
   if (window.speechSynthesis) try { window.speechSynthesis.onvoiceschanged = () => { voiceChecked = false; findVoice(); }; } catch(e){}
-  return {engineModel, init, update, whistle, shutter, thud, reward, applyVolume, voiceStatus, announceTrip, speak,
+  return {npcSyllable, toneMark, syllableCount: () => syllables, engineModel, init, update, whistle, shutter, thud, reward, applyVolume, voiceStatus, announceTrip, speak,
     stopVoice(){ try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){} }};
 })();

@@ -25,7 +25,7 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 - **Quyền riêng tư.** Chỉ lưu thông tin người chơi tự khai báo và cách họ chơi; bản thử nghiệm chỉ lưu trên máy người chơi.
 - **Ưu tiên điện thoại, chơi được trên máy tính**, chạy ngay trên trình duyệt, không cần cài.
 
-## 3. Đã có trong bản 0.5
+## 3. Đã có trong bản 0.6
 
 | Mảng | Nội dung |
 |---|---|
@@ -39,6 +39,7 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 | Văn hóa (mới có một phần) | Nhắc khi dừng giữa đường, khi leo vỉa hè gặp người đi bộ, khi bám đuôi; NPC bấm còi khi bị chặn |
 | Kinh tế | Tiền công theo quãng đường; thưởng đi sạch tăng theo chuỗi; 5 chuyến sạch liên tiếp hồi 1 điểm GPLX |
 | Âm thanh | Tiếng máy (xe số 4 số hoặc xe tay ga, chọn trong bảng 🔊), đèn vàng/xanh, còi CSGT, máy ảnh phạt nguội, còi NPC, nhạc thưởng, giọng chỉ đường (Web Audio, không file) |
+| Giọng NPC | Kiểu game: chữ hiện dần, mỗi tiếng (âm tiết) một tiếng bíp, cao độ uốn theo dấu thanh tiếng Việt; mỗi kiểu nhân vật một giọng (bảng `GIONG` trong `js/cau-thoai.js`); im khi giọng chỉ đường đang đọc |
 
 ## 4. Cấu trúc code
 
@@ -95,6 +96,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.4.1 | 11/11/2026 | Tách thành nhiều file theo mảng, thêm tài liệu thiết kế và kiểm tra tự động; sửa căn cứ pháp lý theo kết quả kiểm tra độc lập |
 | 0.5 | 11/11/2026 | Tiếng máy xe làm lại: xe số có 4 số (vòng tua tụt khi lên số), thêm lựa chọn xe tay ga; ô tốc độ hiện số đang chạy |
 
+| 0.6 | 11/11/2026 | Giọng NPC kiểu game (phương án A): chữ hiện dần, bíp theo dấu thanh, giọng riêng theo nhân vật; thanh chỉnh âm lượng giọng NPC |
 ## 8. Kiểm tra pháp lý
 
 Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` và các câu pháp lý trong `js/game.js`.
@@ -108,8 +110,8 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
 
 - **NHẮC NGƯỜI DÙNG (họ dặn ngày 11/11/2026):** bật GitHub Pages (Settings → Pages → Deploy from a branch → main → / (root)) rồi chạy thử game trên điện thoại tại https://harajukuvns-ktc.github.io/traffic-prune/. Nhắc ở cuối mỗi lần giao bản mới cho tới khi người dùng báo đã làm.
-- Giọng nói NPC: Claude đã gửi 4 phương án (bíp kiểu game, giọng máy trình duyệt, thu âm giọng thật, giọng AI tạo sẵn), chờ người dùng chọn.
-- Âm thanh (bản 0.4) và tiếng máy xe (bản 0.5) chưa được nghe trên máy thật.
+- Giọng NPC: đã làm phương án A (bíp kiểu game). Khi lời thoại ổn định, có thể thêm C (thu âm giọng thật) hoặc D (giọng AI tạo sẵn) cho vài câu "đinh".
+- Âm thanh (bản 0.4), tiếng máy xe (bản 0.5) và giọng NPC (bản 0.6) chưa được nghe trên máy thật.
 - Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.
 - Văn hóa giao thông: hai thanh điểm riêng (luật / văn hóa), các hành vi tốt được thưởng.
 - Thu xe, đổi xe cũ khi không đủ tiền đền; mua xe; nhiều loại xe và vai (xe đạp, đi bộ, ô tô).

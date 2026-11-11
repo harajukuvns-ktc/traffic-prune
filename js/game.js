@@ -15,7 +15,7 @@ const S = {
   trip: null, route: null, routeT: 0, bubble: null, floats: [], flash: 0, lawT: 0, warnT: 0, warnText: '',
   wrongT: 0, okT: 0, solidT: 0, sideEp: false, ringWrongT: 0, ringEp: false, wwEp: false,
   jamTick: 0, sidewalkSaidT: -99, crashCool: -1, inBay: false, stopT: 0, stopSaidT: -99, suspended: false,
-  sound: {on: true, fx: 0.7, voice: 0.9, bike: 'so'}, gear: 1
+  sound: {on: true, fx: 0.7, voice: 0.9, npc: 0.8, bike: 'so'}, gear: 1
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -67,7 +67,7 @@ function load(){
     if (d){ S.xungho = d.xungho || 'anh'; S.money = d.money ?? 5000000; S.pts = d.pts ?? 12;
       S.streak = d.streak || 0; S.trips = d.trips || 0; S.stats = d.stats || {};
       S.view = d.view === 'map' ? 'map' : 'nav'; S.assist = d.assist !== false;
-      if (d.sound) S.sound = {on: d.sound.on !== false, fx: clamp(+d.sound.fx || 0, 0, 1), voice: clamp(+d.sound.voice || 0, 0, 1), bike: d.sound.bike === 'ga' ? 'ga' : 'so'};
+      if (d.sound) S.sound = {on: d.sound.on !== false, fx: clamp(+d.sound.fx || 0, 0, 1), voice: clamp(+d.sound.voice || 0, 0, 1), npc: d.sound.npc == null ? 0.8 : clamp(+d.sound.npc || 0, 0, 1), bike: d.sound.bike === 'ga' ? 'ga' : 'so'};
       S.suspended = S.pts <= 0; }
   } catch(e){}
 }
@@ -151,10 +151,13 @@ function playerLightAhead(maxD){
    ========================================================= */
 const $ = id => document.getElementById(id);
 const lawEl = $('law'), bubEl = $('bubble'), warnEl = $('warn'), flashEl = $('flash');
+function voiceOf(name){ return GIONG.find(g => g.khop.test(name)) || GIONG[GIONG.length - 1]; }
 function say(speaker, text, name){
-  S.bubble = {speaker, text, name: name || (speaker && speaker.name) || 'Loa phường', t: 6.5};
-  $('bubName').textContent = '💬 ' + S.bubble.name;
-  $('bubText').textContent = text;
+  const nm = name || (speaker && speaker.name) || 'Loa phường', g = voiceOf(nm);
+  // chữ hiện dần theo tốc độ nói của nhân vật; nói xong thì giữ thêm 3,5 giây cho kịp đọc
+  S.bubble = {speaker, text, name: nm, voice: g, shown: 0, t: Math.max(6.5, text.length / g.nhanh + 3.5)};
+  $('bubName').textContent = '💬 ' + nm;
+  $('bubText').textContent = '';
   bubEl.style.display = 'block';
 }
 function floatText(x, y, text, color){ S.floats.push({x, y, text, color, t: 1.8}); }
@@ -677,7 +680,23 @@ function step(dt){
   updJam(dt);
   S.routeT -= dt;
   if (S.routeT <= 0){ S.routeT = 0.1; S.route = computeRoute(); }
-  if (S.bubble){ S.bubble.t -= dt; if (S.bubble.t <= 0){ S.bubble = null; bubEl.style.display = 'none'; } }
+  if (S.bubble){
+    const b = S.bubble;
+    if (b.shown < b.text.length){
+      const from = Math.floor(b.shown);
+      b.shown = Math.min(b.text.length, b.shown + dt * b.voice.nhanh);
+      const to = Math.floor(b.shown);
+      // mỗi khi bắt đầu một tiếng mới (sau dấu cách) thì bíp một tiếng
+      for (let i = from; i < to; i++){
+        if (/\S/.test(b.text[i]) && (i === 0 || /\s/.test(b.text[i-1]))){
+          const word = b.text.slice(i).split(/\s/)[0].replace(/[.,!?…:;"“”()]/g, '');
+          if (word) SND.npcSyllable(b.voice, word);
+        }
+      }
+      $('bubText').textContent = b.text.slice(0, to);
+    }
+    b.t -= dt; if (b.t <= 0){ S.bubble = null; bubEl.style.display = 'none'; }
+  }
   for (const f of S.floats){ f.t -= dt; f.rise = (f.rise || 0) + 14 * dt; }
   S.floats = S.floats.filter(f => f.t > 0);
   if (S.flash > 0) S.flash -= dt;
@@ -1124,14 +1143,16 @@ function setupInput(){
   const unlock = () => SND.init();
   window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
   const syncSound = () => { $('soundBtn').textContent = S.sound.on ? '🔊' : '🔇'; $('sndOn').checked = S.sound.on;
-    $('sndFx').value = S.sound.fx; $('sndVoice').value = S.sound.voice; $('sndBike').value = S.sound.bike || 'so'; $('sndStatus').textContent = SND.voiceStatus(); };
+    $('sndFx').value = S.sound.fx; $('sndVoice').value = S.sound.voice; $('sndNpc').value = S.sound.npc; $('sndBike').value = S.sound.bike || 'so'; $('sndStatus').textContent = SND.voiceStatus(); };
   syncSound();
   $('soundBtn').addEventListener('click', () => { SND.init(); syncSound(); $('soundPanel').classList.toggle('open'); });
   $('sndOn').addEventListener('change', () => { S.sound.on = $('sndOn').checked; if (!S.sound.on) SND.stopVoice(); SND.applyVolume(); syncSound(); save(); });
   $('sndFx').addEventListener('input', () => { S.sound.fx = +$('sndFx').value; SND.applyVolume(); save(); });
   $('sndVoice').addEventListener('input', () => { S.sound.voice = +$('sndVoice').value; save(); });
+  $('sndNpc').addEventListener('input', () => { S.sound.npc = +$('sndNpc').value; save(); });
   $('sndBike').addEventListener('change', () => { S.sound.bike = $('sndBike').value; save(); });
-  $('sndTest').addEventListener('click', () => { SND.init(); SND.reward(2); SND.speak('Còn 100 mét nữa, rẽ phải vào Đường Cầu Vồng', true); });
+  $('sndTest').addEventListener('click', () => { SND.init(); SND.reward(2); say({name:'Bác xe ôm', follow:true}, fill('Chào {x}! Đi đường nhớ nhường nhịn nha, nhanh một phút chậm cả đời đó.'));
+    setTimeout(() => SND.speak('Còn 100 mét nữa, rẽ phải vào Đường Cầu Vồng', true), 4200); });
   $('bookBtn').addEventListener('click', () => { renderBook(); openOverlay('book'); });
   $('bookClose').addEventListener('click', () => closeOverlay('book'));
   $('resetBtn').addEventListener('click', () => { resetAll(); renderBook(); });
@@ -1158,4 +1179,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText};
+window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText};
