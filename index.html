@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Traffic Prune · bản chơi thử 0.4.1</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%B5%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage"><canvas id="game"></canvas></div>
+<div id="flash">📸 Camera phạt nguội đã ghi hình</div>
+
+<div id="top">
+  <div id="nav"><div id="navIcon"></div><div id="navTxt"><div id="navMain"></div><div id="navSub"></div></div></div>
+  <div id="chips">
+    <div class="chip" id="money"></div>
+    <div class="chip" id="pts"></div>
+    <div class="chip" id="streak"></div>
+    <div class="chip" id="speed"></div>
+  </div>
+  <div id="warn"></div>
+  <div id="bubble"><b id="bubName"></b><span id="bubText"></span></div>
+  <div id="law"></div>
+</div>
+<div id="right">
+  <div id="topbtns">
+    <button class="btn" id="viewBtn"></button>
+    <button class="btn" id="bookBtn">📘<span class="lbl"> Sổ tay</span></button>
+    <button class="btn" id="soundBtn">🔊</button>
+    <button class="btn" id="helpBtn">❔</button>
+  </div>
+  <div id="soundPanel" class="chip">
+    <label class="srow"><input type="checkbox" id="sndOn"> Bật âm thanh</label>
+    <label class="srow">Tiếng động <input type="range" id="sndFx" min="0" max="1" step="0.05"></label>
+    <label class="srow">Giọng chỉ đường <input type="range" id="sndVoice" min="0" max="1" step="0.05"></label>
+    <div class="fine" id="sndStatus"></div>
+    <button class="btn" id="sndTest">▶ Nghe thử</button>
+  </div>
+  <canvas id="mini"></canvas>
+</div>
+
+<div id="controls">
+  <div class="pad">
+    <button class="cbtn" data-k="left">◀</button>
+    <button class="cbtn" data-k="right">▶</button>
+  </div>
+  <div class="pad">
+    <button class="cbtn small" data-k="brake">PHANH</button>
+    <button class="cbtn small" data-k="up">GA</button>
+  </div>
+</div>
+
+<div class="overlay" id="start">
+  <div class="card">
+    <h1>Traffic Prune</h1>
+    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.4.1)</p>
+    <ul>
+      <li>Bạn là shipper xe máy. Màn hình giống <b>ứng dụng dẫn đường</b>: bản đồ xoay theo hướng xe, <b>vạch chấm xanh có mũi tên nhỏ</b> chỉ lối, bảng xanh lá phía trên báo chỗ rẽ sắp tới.</li>
+      <li>Tới nơi thì <b>tấp vào ô đỗ xe chữ P</b> và dừng lại để giao hàng. Muốn nghỉ thì cũng đỗ vào ô P, đừng dừng giữa đường.</li>
+      <li><b>Vạch vàng đứt</b>: được cắt qua để rẽ, vượt hoặc vào ô P bên kia đường. <b>Vạch vàng liền</b> (gần ngã tư, vòng xuyến): không được đè lên.</li>
+      <li>Đi sạch luật thì được thưởng thêm. Phạt tiền và trừ điểm theo <b>mức phạt thật</b> của Nghị định 168/2024/NĐ-CP. Làm ai kẹt xe hay va chạm thì bạn phải <b>đền tiền</b> cho người đó.</li>
+      <li>Lái xe: ↑ hoặc W để ga, Space để phanh (↓ hoặc S: phanh, giữ tiếp thì lùi), ← → hoặc A D để rẽ trái, rẽ phải. Trên điện thoại bấm các nút ở dưới màn hình.</li>
+    </ul>
+    <div class="row">
+      <label for="xungho">Người trong phố gọi bạn là:</label>
+      <select id="xungho">
+        <option value="anh">anh</option>
+        <option value="chị">chị</option>
+        <option value="bác">bác</option>
+        <option value="bạn">bạn</option>
+        <option value="ông">ông</option>
+      </select>
+    </div>
+    <div class="row">
+      <input type="checkbox" id="assist" checked>
+      <label for="assist">Trợ lái giữ làn: thả phím rẽ ra là xe tự chạy thẳng theo làn (nên bật khi mới chơi)</label>
+    </div>
+    <p class="fine">Quyền riêng tư: game chỉ lưu trên chính máy của bạn cách gọi bạn chọn, các lựa chọn ở trên và thống kê cách bạn chơi (số lần mắc mỗi lỗi, tiền, điểm). Không gửi đi đâu cả. Muốn xóa thì vào 📘 Sổ tay.</p>
+    <div class="row"><button class="btn primary" id="go">Lên xe!</button></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="suspend">
+  <div class="card" id="suspendCard"></div>
+</div>
+
+<div class="overlay hidden" id="book">
+  <div class="card">
+    <h2>📘 Sổ tay luật của bạn</h2>
+    <div id="bookList"></div>
+    <p class="fine">Mức phạt lấy theo Nghị định 168/2024/NĐ-CP (Điều 7, áp dụng cho xe mô tô, xe gắn máy), có hiệu lực từ 01/01/2025. Nghị định 238/2026/NĐ-CP sửa đổi một số điều của Nghị định 168, có hiệu lực từ 15/8/2026. Trước khi phát hành rộng, cần đối chiếu lại các mức này với văn bản gốc. Luật ngoài đời: giấy phép lái xe có 12 điểm và được phục hồi đủ 12 điểm nếu 12 tháng không bị trừ điểm. Bị trừ hết điểm thì không được lái xe; sau ít nhất 6 tháng mới được kiểm tra kiến thức pháp luật để phục hồi điểm (khoản 3 Điều 58 Luật Trật tự, an toàn giao thông đường bộ 2024). Trong game: cứ 5 chuyến sạch liên tiếp thì hồi 1 điểm.</p>
+    <div class="row">
+      <button class="btn primary" id="bookClose">Chạy tiếp</button>
+      <button class="btn" id="resetBtn">Xóa dữ liệu và chơi lại từ đầu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Thứ tự nạp quan trọng: dữ liệu trước, game.js sau cùng -->
+<script src="js/luat.js"></script>
+<script src="js/cau-thoai.js"></script>
+<script src="js/ban-do.js"></script>
+<script src="js/am-thanh.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
