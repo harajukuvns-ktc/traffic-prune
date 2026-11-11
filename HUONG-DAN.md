@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.4)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.5)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -48,7 +48,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.4)
+## Cách chơi (bản 0.5)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút **🗺️ Bản đồ** ở góc phải đổi về kiểu nhìn từ trên xuống của bản 0.1, bấm lần nữa để quay lại.
 - **Lái xe:** ↑ hoặc W để ga, **Space để phanh** (chỉ phanh, dừng hẳn thì đứng yên), ↓ hoặc S cũng phanh nhưng giữ tiếp sau khi dừng thì xe lùi chậm, ← → hoặc A D để rẽ trái, rẽ phải. Vì bản đồ xoay theo xe nên ← luôn là rẽ sang trái của bạn. Trên điện thoại dùng 4 nút ở dưới màn hình (nút PHANH chỉ phanh, không lùi).
@@ -61,9 +61,14 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Phạt:** vượt đèn đỏ, đi ngược chiều Phố Chợ, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
 - **Đền:** ai bị bạn làm kẹt xe hoặc đụng phải thì được đền tiền từ ví của bạn. Người bị ảnh hưởng hiện mặt 😤.
 - **Hết điểm GPLX:** bị trừ hết 12 điểm thì xe dừng ngay, không lái tiếp được, đúng như luật. Muốn lái lại thì làm bài kiểm tra 5 câu về luật, đúng từ 4 câu là được phục hồi đủ 12 điểm. Nếu không muốn thi, bạn có thể chọn chơi lại từ đầu.
-- **Âm thanh (nút 🔊):** tiếng máy xe cao dần khi tăng ga; tiếng "tít tít" khi bạn lao tới đèn vàng; tiếng "ting" khi đèn chuyển xanh lúc bạn đang chờ; tiếng còi CSGT, và tiếng máy ảnh khi vượt đèn đỏ; NPC bị bạn chặn đường sẽ bấm còi, càng chờ lâu càng bấm nhiều; tiếng nhạc thưởng khi giao hàng, chuỗi chuyến sạch càng dài thì nốt càng cao. Bảng 🔊 có nút bật tắt, hai thanh chỉnh âm lượng (tiếng động, giọng chỉ đường) và nút **▶ Nghe thử**.
+- **Âm thanh (nút 🔊):** tiếng máy xe theo loại xe bạn chọn trong bảng 🔊: **xe số** (có 4 số, máy kéo lên rồi tụt nhẹ mỗi lần lên số; ô tốc độ hiện bạn đang ở số mấy) hoặc **xe tay ga** (tiếng đều, êm); tiếng "tít tít" khi bạn lao tới đèn vàng; tiếng "ting" khi đèn chuyển xanh lúc bạn đang chờ; tiếng còi CSGT, và tiếng máy ảnh khi vượt đèn đỏ; NPC bị bạn chặn đường sẽ bấm còi, càng chờ lâu càng bấm nhiều; tiếng nhạc thưởng khi giao hàng, chuỗi chuyến sạch càng dài thì nốt càng cao. Bảng 🔊 có nút bật tắt, hai thanh chỉnh âm lượng (tiếng động, giọng chỉ đường) và nút **▶ Nghe thử**.
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 0.5 đổi gì so với bản 0.4
+
+1. Làm lại tiếng máy xe: xe số có lên số, tiếng êm hơn, bớt gầm gừ.
+2. Thêm lựa chọn loại xe (xe số hoặc xe tay ga) trong bảng 🔊.
 
 ## Bản 0.4 đổi gì so với bản 0.3
 

@@ -194,5 +194,17 @@ S.paused = false; keys.up = true; const x0 = player.x; run(1); keys.up = false;
 ok(Math.abs(player.x - x0) < 0.01, 'khi bằng lái hết điểm, bấm ga xe vẫn đứng yên');
 S.pts = 12; S.suspended = false;
 
+// 11) Tiếng máy: xe số lên số khi tăng tốc, vòng tua tụt xuống mỗi lần lên số; xe tay ga không có số
+{ const em = TP.SND.engineModel; let prev = em(0, true, 'so'), shifts = 0, drops = 0, maxR = 0, line = [];
+  for (let v = 0; v <= 115; v += 1){ const m = em(v, true, 'so');
+    if (m.gear > prev.gear){ shifts++; if (m.rpm < prev.rpm) drops++; }
+    maxR = Math.max(maxR, m.rpm); if (v % 10 === 0) line.push(`${v}:${m.gear}/${m.rpm.toFixed(2)}`); prev = m; }
+  console.log('   tốc độ:số/vòng tua →', line.join(' '));
+  ok(shifts === 3 && drops === 3 && maxR <= 1, `xe số lên 3 lần số, mỗi lần vòng tua tụt xuống (lên số ${shifts}, tụt ${drops})`);
+  let back = 0; for (let v = 115; v >= 0; v -= 1){ const m = em(v, false, 'so'); if (v === 0) back = m.gear; }
+  ok(back === 1, 'giảm tốc về 0 thì về số 1');
+  const g = [0, 40, 110].map(v => em(v, true, 'ga'));
+  ok(g.every(m => m.gear === 0) && g[1].rpm > g[0].rpm && g[2].rpm > g[1].rpm, 'xe tay ga: không có số, vòng tua tăng đều'); }
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);

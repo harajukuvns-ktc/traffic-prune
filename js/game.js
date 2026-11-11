@@ -15,7 +15,7 @@ const S = {
   trip: null, route: null, routeT: 0, bubble: null, floats: [], flash: 0, lawT: 0, warnT: 0, warnText: '',
   wrongT: 0, okT: 0, solidT: 0, sideEp: false, ringWrongT: 0, ringEp: false, wwEp: false,
   jamTick: 0, sidewalkSaidT: -99, crashCool: -1, inBay: false, stopT: 0, stopSaidT: -99, suspended: false,
-  sound: {on: true, fx: 0.7, voice: 0.9}
+  sound: {on: true, fx: 0.7, voice: 0.9, bike: 'so'}, gear: 1
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -67,7 +67,7 @@ function load(){
     if (d){ S.xungho = d.xungho || 'anh'; S.money = d.money ?? 5000000; S.pts = d.pts ?? 12;
       S.streak = d.streak || 0; S.trips = d.trips || 0; S.stats = d.stats || {};
       S.view = d.view === 'map' ? 'map' : 'nav'; S.assist = d.assist !== false;
-      if (d.sound) S.sound = {on: d.sound.on !== false, fx: clamp(+d.sound.fx || 0, 0, 1), voice: clamp(+d.sound.voice || 0, 0, 1)};
+      if (d.sound) S.sound = {on: d.sound.on !== false, fx: clamp(+d.sound.fx || 0, 0, 1), voice: clamp(+d.sound.voice || 0, 0, 1), bike: d.sound.bike === 'ga' ? 'ga' : 'so'};
       S.suspended = S.pts <= 0; }
   } catch(e){}
 }
@@ -1080,7 +1080,7 @@ function updHUD(){
   const mc = 'chip' + (S.money < 0 ? ' neg' : ''); if (hudCache.mc !== mc){ hudCache.mc = mc; $('money').className = mc; }
   setHTML('pts', `🪪<span class="lbl"> Điểm GPLX</span> <b>${S.pts}/12</b>`);
   setHTML('streak', `⭐<span class="lbl"> Chuỗi sạch</span> <b>${S.streak}</b>`);
-  setHTML('speed', `🏍️ <b>${Math.round(Math.abs(player.v) / 3)}</b> km/h`);
+  setHTML('speed', `🏍️ <b>${Math.round(Math.abs(player.v) / 3)}</b> km/h${S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1)}`);
   // cảnh báo: sai phần đường (ưu tiên), rồi tới đèn phía trước
   let w = '';
   if (S.warnT > 0) w = S.warnText;
@@ -1124,12 +1124,13 @@ function setupInput(){
   const unlock = () => SND.init();
   window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
   const syncSound = () => { $('soundBtn').textContent = S.sound.on ? '🔊' : '🔇'; $('sndOn').checked = S.sound.on;
-    $('sndFx').value = S.sound.fx; $('sndVoice').value = S.sound.voice; $('sndStatus').textContent = SND.voiceStatus(); };
+    $('sndFx').value = S.sound.fx; $('sndVoice').value = S.sound.voice; $('sndBike').value = S.sound.bike || 'so'; $('sndStatus').textContent = SND.voiceStatus(); };
   syncSound();
   $('soundBtn').addEventListener('click', () => { SND.init(); syncSound(); $('soundPanel').classList.toggle('open'); });
   $('sndOn').addEventListener('change', () => { S.sound.on = $('sndOn').checked; if (!S.sound.on) SND.stopVoice(); SND.applyVolume(); syncSound(); save(); });
   $('sndFx').addEventListener('input', () => { S.sound.fx = +$('sndFx').value; SND.applyVolume(); save(); });
   $('sndVoice').addEventListener('input', () => { S.sound.voice = +$('sndVoice').value; save(); });
+  $('sndBike').addEventListener('change', () => { S.sound.bike = $('sndBike').value; save(); });
   $('sndTest').addEventListener('click', () => { SND.init(); SND.reward(2); SND.speak('Còn 100 mét nữa, rẽ phải vào Đường Cầu Vồng', true); });
   $('bookBtn').addEventListener('click', () => { renderBook(); openOverlay('book'); });
   $('bookClose').addEventListener('click', () => closeOverlay('book'));

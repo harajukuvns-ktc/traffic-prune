@@ -25,7 +25,7 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 - **Quyền riêng tư.** Chỉ lưu thông tin người chơi tự khai báo và cách họ chơi; bản thử nghiệm chỉ lưu trên máy người chơi.
 - **Ưu tiên điện thoại, chơi được trên máy tính**, chạy ngay trên trình duyệt, không cần cài.
 
-## 3. Đã có trong bản 0.4
+## 3. Đã có trong bản 0.5
 
 | Mảng | Nội dung |
 |---|---|
@@ -38,7 +38,7 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 | Hậu quả | Phạt tiền + trừ điểm GPLX; đền 50.000đ mỗi xe bị làm kẹt (xe buýt 100.000đ), 1.500.000đ khi va chạm có lỗi; NPC nói câu nhắc; hết điểm thì dừng xe, làm bài kiểm tra 5 câu (đúng ≥ 4) để phục hồi |
 | Văn hóa (mới có một phần) | Nhắc khi dừng giữa đường, khi leo vỉa hè gặp người đi bộ, khi bám đuôi; NPC bấm còi khi bị chặn |
 | Kinh tế | Tiền công theo quãng đường; thưởng đi sạch tăng theo chuỗi; 5 chuyến sạch liên tiếp hồi 1 điểm GPLX |
-| Âm thanh | Tiếng máy, đèn vàng/xanh, còi CSGT, máy ảnh phạt nguội, còi NPC, nhạc thưởng, giọng chỉ đường (Web Audio, không file) |
+| Âm thanh | Tiếng máy (xe số 4 số hoặc xe tay ga, chọn trong bảng 🔊), đèn vàng/xanh, còi CSGT, máy ảnh phạt nguội, còi NPC, nhạc thưởng, giọng chỉ đường (Web Audio, không file) |
 
 ## 4. Cấu trúc code
 
@@ -93,6 +93,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.3 | 11/11/2026 | Hạ góc nhìn, chỉ đường dạng vạch chấm, vạch dừng → vạch người đi bộ → đèn, vỉa hè bo cong |
 | 0.4 | 11/11/2026 | Space chỉ phanh, vạch dừng trắng, hết điểm GPLX dừng xe + bài kiểm tra, âm thanh |
 | 0.4.1 | 11/11/2026 | Tách thành nhiều file theo mảng, thêm tài liệu thiết kế và kiểm tra tự động; sửa căn cứ pháp lý theo kết quả kiểm tra độc lập |
+| 0.5 | 11/11/2026 | Tiếng máy xe làm lại: xe số có 4 số (vòng tua tụt khi lên số), thêm lựa chọn xe tay ga; ô tốc độ hiện số đang chạy |
 
 ## 8. Kiểm tra pháp lý
 
@@ -105,6 +106,10 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 - Nguồn chính: luatvietnam.vn (NĐ 238/2026, Thông tư 105/2026), thuvienphapluat.vn (bảng lỗi trừ điểm), ketoananpha.vn (toàn văn NĐ 168/2024, Luật TTATGTĐB 2024), pbgdpl.cantho.gov.vn, lsvn.vn.
 
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
+
+- **NHẮC NGƯỜI DÙNG (họ dặn ngày 11/11/2026):** bật GitHub Pages (Settings → Pages → Deploy from a branch → main → / (root)) rồi chạy thử game trên điện thoại tại https://harajukuvns-ktc.github.io/traffic-prune/. Nhắc ở cuối mỗi lần giao bản mới cho tới khi người dùng báo đã làm.
+- Giọng nói NPC: Claude đã gửi 4 phương án (bíp kiểu game, giọng máy trình duyệt, thu âm giọng thật, giọng AI tạo sẵn), chờ người dùng chọn.
+- Tiếng máy xe bản 0.5 chưa được nghe trên máy thật.
 
 - Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.
 - Âm thanh bản 0.4 chưa được nghe trên máy thật.

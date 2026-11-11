@@ -19,17 +19,23 @@ const SND = (function(){
       fxBus = ac.createGain(); fxBus.connect(master);
       noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
       const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1;
-      // tiếng máy xe của bạn
-      const o1 = ac.createOscillator(), o2 = ac.createOscillator(), lp = ac.createBiquadFilter(), g = ac.createGain();
+      // tiếng máy xe của bạn: nốt nền (tam giác) + bồi âm (sin) + chút rè (răng cưa, lọc mạnh)
+      // + tiếng "bành bạch" của máy một xy-lanh (điều biên nhẹ) + tiếng rít dây curoa của xe tay ga
+      const o1 = ac.createOscillator(), o2 = ac.createOscillator(), o3 = ac.createOscillator(), wh = ac.createOscillator();
+      const g2 = ac.createGain(), g3 = ac.createGain(), gw = ac.createGain();
+      const lp = ac.createBiquadFilter(), g = ac.createGain(), shift = ac.createGain();
       const lfo = ac.createOscillator(), lg = ac.createGain(), am = ac.createGain();
-      o1.type = 'sawtooth'; o2.type = 'square'; o2.detune.value = 9;
-      lp.type = 'lowpass'; lp.frequency.value = 520; lp.Q.value = 2;
-      am.gain.value = 1; lfo.frequency.value = 20; lg.gain.value = 0.35;
+      o1.type = 'triangle'; o2.type = 'sine'; o3.type = 'sawtooth'; wh.type = 'sine';
+      g2.gain.value = 0.35; g3.gain.value = 0.12; gw.gain.value = 0;
+      lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 0.7;
+      am.gain.value = 1; lfo.type = 'sine'; lfo.frequency.value = 20; lg.gain.value = 0.18;
       lfo.connect(lg); lg.connect(am.gain);
-      o1.connect(lp); o2.connect(lp); lp.connect(am); am.connect(g); g.connect(fxBus);
-      g.gain.value = 0;
-      o1.start(); o2.start(); lfo.start();
-      eng = {o1, o2, lp, g, lfo};
+      o1.connect(lp); o2.connect(g2); g2.connect(lp); o3.connect(g3); g3.connect(lp);
+      lp.connect(am); am.connect(shift); wh.connect(gw); gw.connect(shift);
+      shift.connect(g); g.connect(fxBus);
+      g.gain.value = 0; shift.gain.value = 1;
+      o1.start(); o2.start(); o3.start(); wh.start(); lfo.start();
+      eng = {o1, o2, o3, wh, gw, lp, g, shift, lfo};
       applyVolume();
     } catch(e){ ac = null; }
   }
@@ -129,16 +135,51 @@ const SND = (function(){
     nav.key = ''; nav.t = S.now - 1.5;
     setTimeout(() => speak('Đơn mới: giao tới ' + S.trip.dest.name, true), 1600);
   }
+  // A. Mô hình vòng tua máy. Trả về {rpm: 0..1, gear}. Tách riêng để kiểm tra tự động được.
+  //   Xe số: 4 số, vòng tua tăng trong từng số rồi tụt xuống khi lên số.
+  //   Xe tay ga: hộp số vô cấp, vòng tua giữ gần như đều, cao hơn khi đang ga.
+  const GEARS = [[0, 24], [24, 50], [50, 80], [80, 999]];
+  let gear = 1;
+  function engineModel(sp, throttle, bike){
+    if (bike === 'ga'){
+      if (sp < 2 && !throttle) return {rpm: 0.16, gear: 0};
+      const r = throttle ? 0.5 + 0.38 * Math.min(1, sp / 110) : 0.22 + 0.28 * Math.min(1, sp / 110);
+      return {rpm: r, gear: 0};
+    }
+    // lên số khi vượt ngưỡng trên, xuống số khi tụt dưới ngưỡng dưới trừ 5 (tránh nhảy số liên tục)
+    while (gear < 4 && sp > GEARS[gear-1][1]) gear++;
+    while (gear > 1 && sp < GEARS[gear-1][0] - 5) gear--;
+    if (sp < 1.5) return {rpm: throttle ? 0.3 : 0.16, gear: 1};
+    const [lo, hi] = GEARS[gear-1], top = gear === 4 ? 120 : hi;
+    const f = clamp((sp - lo) / (top - lo), 0, 1);
+    const base = gear === 1 ? 0.24 : 0.36;
+    return {rpm: clamp(base + (0.92 - base) * f - (throttle ? 0 : 0.06), 0.16, 1), gear};
+  }
+  let lastGear = 1;
   function update(dt){
     if (!ac) return;
     const on = S.sound.on && !S.paused;
-    const sp = Math.abs(player.v), t = ac.currentTime;
-    // A. tiếng máy: cao dần khi tăng ga
-    eng.o1.frequency.setTargetAtTime(42 + sp * 0.75 + (keys.up ? 6 : 0), t, 0.08);
-    eng.o2.frequency.setTargetAtTime(42 + sp * 0.75 + (keys.up ? 6 : 0), t, 0.08);
-    eng.lfo.frequency.setTargetAtTime(16 + sp * 0.18, t, 0.1);
-    eng.lp.frequency.setTargetAtTime(380 + sp * 4 + (keys.up ? 220 : 0), t, 0.1);
-    eng.g.gain.setTargetAtTime(on && !S.suspended ? 0.035 + sp * 0.00045 + (keys.up ? 0.012 : 0) : 0, t, 0.08);
+    const sp = Math.abs(player.v), t = ac.currentTime, bike = S.sound.bike || 'so';
+    const m = engineModel(sp, keys.up, bike);
+    S.gear = m.gear;
+    // tần số nốt nền 34–92 Hz theo vòng tua; xe tay ga cao và mượt hơn
+    const f = bike === 'ga' ? 44 + m.rpm * 70 : 34 + m.rpm * 58;
+    const tc = bike === 'ga' ? 0.12 : 0.05;
+    eng.o1.frequency.setTargetAtTime(f, t, tc);
+    eng.o2.frequency.setTargetAtTime(f * 2, t, tc);
+    eng.o3.frequency.setTargetAtTime(f, t, tc);
+    eng.wh.frequency.setTargetAtTime(f * 7.5, t, 0.15);
+    eng.gw.gain.setTargetAtTime(bike === 'ga' ? 0.05 + m.rpm * 0.06 : 0, t, 0.2);
+    eng.lfo.frequency.setTargetAtTime(f / 2, t, tc);
+    eng.lp.frequency.setTargetAtTime(260 + m.rpm * 700 + (keys.up ? 160 : 0), t, 0.08);
+    // lên số: hụt ga một nhịp ngắn rồi máy kéo lại ở vòng tua thấp hơn
+    if (bike !== 'ga' && m.gear > lastGear && on){
+      eng.shift.gain.cancelScheduledValues(t);
+      eng.shift.gain.setValueAtTime(1, t); eng.shift.gain.linearRampToValueAtTime(0.35, t + 0.05);
+      eng.shift.gain.linearRampToValueAtTime(1, t + 0.22);
+    }
+    lastGear = m.gear;
+    eng.g.gain.setTargetAtTime(on && !S.suspended ? 0.03 + m.rpm * 0.035 + (keys.up ? 0.01 : 0) : 0, t, 0.08);
     if (!on) return;
     voiceCool -= dt; yellowCool -= dt; hornBudget = Math.min(3, hornBudget + dt * 2.5);
     // B. đèn vàng phía trước khi đang lao tới: "tít tít"; đèn chuyển xanh lúc đang chờ: "ting"
@@ -162,6 +203,6 @@ const SND = (function(){
     navSpeech();
   }
   if (window.speechSynthesis) try { window.speechSynthesis.onvoiceschanged = () => { voiceChecked = false; findVoice(); }; } catch(e){}
-  return {init, update, whistle, shutter, thud, reward, applyVolume, voiceStatus, announceTrip, speak,
+  return {engineModel, init, update, whistle, shutter, thud, reward, applyVolume, voiceStatus, announceTrip, speak,
     stopVoice(){ try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){} }};
 })();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Traffic Prune · bản chơi thử 0.4.1</title>
+<title>Traffic Prune · bản chơi thử 0.5</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%B5%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -32,6 +32,7 @@
   </div>
   <div id="soundPanel" class="chip">
     <label class="srow"><input type="checkbox" id="sndOn"> Bật âm thanh</label>
+    <label class="srow">Loại xe <select id="sndBike"><option value="so">Xe số</option><option value="ga">Xe tay ga</option></select></label>
     <label class="srow">Tiếng động <input type="range" id="sndFx" min="0" max="1" step="0.05"></label>
     <label class="srow">Giọng chỉ đường <input type="range" id="sndVoice" min="0" max="1" step="0.05"></label>
     <div class="fine" id="sndStatus"></div>
@@ -54,7 +55,7 @@
 <div class="overlay" id="start">
   <div class="card">
     <h1>Traffic Prune</h1>
-    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.4.1)</p>
+    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.5)</p>
     <ul>
       <li>Bạn là shipper xe máy. Màn hình giống <b>ứng dụng dẫn đường</b>: bản đồ xoay theo hướng xe, <b>vạch chấm xanh có mũi tên nhỏ</b> chỉ lối, bảng xanh lá phía trên báo chỗ rẽ sắp tới.</li>
       <li>Tới nơi thì <b>tấp vào ô đỗ xe chữ P</b> và dừng lại để giao hàng. Muốn nghỉ thì cũng đỗ vào ô P, đừng dừng giữa đường.</li>

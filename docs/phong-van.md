@@ -1,6 +1,6 @@
 # Webgame giao thông đường phố Việt Nam: ghi chép phỏng vấn
 Ngày: 2026-11-11 · Mục tiêu: làm rõ ý tưởng webgame để người chơi hiểu và nắm được luật giao thông đường bộ Việt Nam
-Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1, 0.2, 0.3 rồi 0.4 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.4 (có âm thanh) và ghi nhận xét theo mục "Gợi ý chơi thử".
+Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.5 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chọn phương án giọng NPC, chơi thử bản 0.5 và ghi nhận xét theo mục "Gợi ý chơi thử".
 
 ## Tóm tắt các quyết định
 - Đối tượng ban đầu: 2 nhóm (người thi A1/B1 và người lớn đi xe lâu năm). Đã thu hẹp ở Câu 2.
@@ -89,6 +89,11 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1, 0.
   - "Nút Space không có tác dụng phanh mà lại đi lùi" -> Space và nút PHANH chỉ phanh; phím ↓ / S vẫn phanh rồi lùi.
   - "Vạch dừng đèn đỏ hãy để mặc định là trắng" -> vạch dừng luôn trắng.
   - "Khi bị trừ hết điểm GPLX thì ngay lập tức dừng người chơi" -> xe dừng ngay, hiện quy định khoản 3 Điều 58 Luật TTATGTĐB 2024; muốn lái tiếp phải làm bài kiểm tra 5 câu, đúng từ 4 câu thì hồi 12 điểm; hoặc chơi lại từ đầu.
+
+- Góp ý lúc 20:36 ngày 11/11/2026 và cách xử lý ở bản 0.5:
+  - "Bước chạy thử trên điện thoại, bạn hãy nhắc mình sau nhé (nhớ note lại)" -> ghi vào mục 9 của docs/THIET-KE.md, nhắc ở cuối mỗi lần giao bản mới.
+  - "Âm thanh của xe máy người dùng nghe như tiếng xe máy khi đi số thấp nhất, lúc tăng ga ko tăng số nên nghe âm thanh cứ như tiếng gầm gừ khó nghe" -> làm lại tiếng máy: 4 số, vòng tua tụt khi lên số, âm mềm hơn; thêm lựa chọn xe tay ga.
+  - "Cũng cần phải xử lý giọng nói của NPC, bạn gợi ý nhé" -> Claude gửi 4 phương án, chờ người dùng chọn.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?
