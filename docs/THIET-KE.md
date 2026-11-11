@@ -51,6 +51,7 @@ js/ban-do.js        BẢN ĐỒ: đường, đèn, vạch, ô đỗ, điểm gia
 js/am-thanh.js      ÂM THANH: đối tượng SND
 js/game.js          trạng thái, NPC, người chơi, bắt lỗi, chỉ đường, vẽ, giao diện, khởi động
 tests/              kiểm tra tự động (chạy bằng Node)
+CLAUDE.md           hướng dẫn ngắn cho các phiên làm việc với Claude
 docs/               tài liệu thiết kế, ghi chép phỏng vấn
 ```
 
