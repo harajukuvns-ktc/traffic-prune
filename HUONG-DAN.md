@@ -2,7 +2,9 @@
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
-Cách lấy game mới nhất: vào trang kho code trên GitHub, bấm nút xanh **Code → Download ZIP**, rồi giải nén ra một thư mục.
+**Cách nhanh nhất: chơi ngay trên mạng**, không cần tải gì, chạy được cả trên điện thoại: https://harajukuvns-ktc.github.io/traffic-prune/ . Trang này luôn là bản mới nhất.
+
+Cách lấy game mới nhất về máy: vào trang kho code trên GitHub, bấm nút xanh **Code → Download ZIP**, rồi giải nén ra một thư mục.
 
 ## Cách 1: mở thẳng (nhanh nhất)
 

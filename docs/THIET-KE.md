@@ -41,6 +41,10 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 | Âm thanh | Tiếng máy (xe số 4 số hoặc xe tay ga, chọn trong bảng 🔊), đèn vàng/xanh, còi CSGT, máy ảnh phạt nguội, còi NPC, nhạc thưởng, giọng chỉ đường (Web Audio, không file) |
 | Giọng NPC | Kiểu game: chữ hiện dần, mỗi tiếng (âm tiết) một tiếng bíp, cao độ uốn theo dấu thanh tiếng Việt; mỗi kiểu nhân vật một giọng (bảng `GIONG` trong `js/cau-thoai.js`); im khi giọng chỉ đường đang đọc |
 
+## Bản chơi trên mạng
+
+GitHub Pages (bật ngày 12/11/2026): **https://harajukuvns-ktc.github.io/traffic-prune/**. Mỗi lần đẩy code lên nhánh `main`, trang tự cập nhật sau khoảng 1–2 phút.
+
 ## 4. Cấu trúc code
 
 ```
@@ -109,7 +113,7 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
 
-- **NHẮC NGƯỜI DÙNG (họ dặn ngày 11/11/2026):** bật GitHub Pages (Settings → Pages → Deploy from a branch → main → / (root)) rồi chạy thử game trên điện thoại tại https://harajukuvns-ktc.github.io/traffic-prune/. Nhắc ở cuối mỗi lần giao bản mới cho tới khi người dùng báo đã làm.
+- Người dùng chơi thử trên điện thoại thật qua link GitHub Pages và gửi nhận xét.
 - Giọng NPC: đã làm phương án A (bíp kiểu game). Khi lời thoại ổn định, có thể thêm C (thu âm giọng thật) hoặc D (giọng AI tạo sẵn) cho vài câu "đinh".
 - Âm thanh (bản 0.4), tiếng máy xe (bản 0.5) và giọng NPC (bản 0.6) chưa được nghe trên máy thật.
 - Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.
@@ -118,5 +122,5 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 - Thêm lỗi: không đội mũ bảo hiểm, dùng điện thoại khi lái, dừng đỗ sai chỗ, đi vào làn cấm.
 - Âm thanh nhóm C (tiếng phố, chợ) và G (nhạc nền).
 - Nhiều người chơi thật, phòng, giảm NPC khi người chơi tăng.
-- Đưa game lên mạng (GitHub Pages), đo chỉ số thành công.
+- Đo chỉ số thành công khi có người chơi thật.
 - Các câu hỏi mở khác: xem mục "Việc còn bỏ ngỏ" trong `phong-van.md`.
