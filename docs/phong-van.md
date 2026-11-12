@@ -109,6 +109,9 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Góp ý lúc 09:14 ngày 12/11/2026: "Ok, chỉ nhắc nhở theo đúng luật." -> đỗ trong ô P mà đầu xe ngược chiều đi: NPC nhắc, hiện căn cứ (khoản 6 Điều 18 Luật TTATGTĐB 2024), không phạt tiền, không trừ điểm, chuyến không tính sạch; có trong 📘 Sổ tay.
 - Góp ý lúc 09:38 ngày 12/11/2026: "Thêm góc nhìn thứ nhất cho game!" -> Claude gửi kế hoạch (2 cách làm, các vấn đề, câu hỏi cần chốt).
 - Góp ý lúc 10:16 ngày 12/11/2026: "1. A 2. Một lựa chọn thêm. 3. Có." -> bản 0.8: thêm góc nhìn "sau tay lái" (cách A) vào nút đổi góc nhìn (dẫn đường → sau tay lái → bản đồ), có ghi đông và đồng hồ tốc độ; kiểu dẫn đường vẫn là mặc định.
+- Góp ý lúc 10:57 ngày 12/11/2026: "Hãy ghi lại lộ trình này. Bước tiếp theo, hãy lên lộ trình nâng cấp mở rộng bản đồ, nâng độ khó cho game như nhiều bảng chỉ dẫn ở nơi giao nhau và bạn cũng có thể đề xuất thêm nội dung."
+  - Đã chốt: lộ trình đồ họa 3D (ba nấc, ba điều kiện để nâng lên nấc 2) -> ghi vào mục 10.1 của docs/THIET-KE.md.
+  - Đề xuất, chưa chốt: lộ trình mở rộng bản đồ và nâng độ khó theo ba giai đoạn -> ghi vào mục 10.2 của docs/THIET-KE.md, chờ người dùng chốt thứ tự và phạm vi.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?

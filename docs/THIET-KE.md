@@ -131,7 +131,7 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 
 - (Đã chốt 12/11/2026 lúc 09:14: "Ok, chỉ nhắc nhở theo đúng luật.") Đỗ xe ngược chiều: NĐ 168/2024 Điều 7 không có mức phạt riêng cho xe máy, nên game chỉ nhắc nhở (mục `parkdir` trong `js/luat.js`). Nếu sau này muốn phạt, chỉ có thể dùng điểm d khoản 2 Điều 7 (đỗ ở lòng đường gây cản trở) hoặc điểm e khoản 2 (đỗ nơi cấm, ví dụ bên trái đường một chiều).
 - Người dùng chơi thử bản 0.8 trên iPhone thật: âm thanh đã có chưa, chữ thập dễ bấm không, góc nhìn sau tay lái có mượt và dễ lái không.
-- Góc nhìn thứ nhất 3D thật (cách B: nhà có tường, đèn và biển đứng thẳng) nếu cách A chưa đủ; khi đó cân nhắc gương chiếu hậu và mũi tên báo ô P bên cạnh.
+- Góc nhìn thứ nhất 3D thật (cách B) và các việc mở rộng khác: xem lộ trình ở mục 10. Khi làm cách B, cân nhắc thêm gương chiếu hậu và mũi tên báo ô P bên cạnh.
 - Giọng NPC: đã làm phương án A (bíp kiểu game). Khi lời thoại ổn định, có thể thêm C (thu âm giọng thật) hoặc D (giọng AI tạo sẵn) cho vài câu "đinh".
 - Âm thanh (bản 0.4), tiếng máy xe (bản 0.5) và giọng NPC (bản 0.6) chưa được nghe trên máy thật.
 - Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.
@@ -142,3 +142,68 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 - Nhiều người chơi thật, phòng, giảm NPC khi người chơi tăng.
 - Đo chỉ số thành công khi có người chơi thật.
 - Các câu hỏi mở khác: xem mục "Việc còn bỏ ngỏ" trong `phong-van.md`.
+
+*Các việc về đồ họa 3D, mở rộng bản đồ và nâng độ khó đã được xếp vào lộ trình ở mục 10.*
+
+## 10. Lộ trình nâng cấp
+
+### 10.1 Đồ họa 3D (đã chốt 12/11/2026)
+
+Ba nấc đồ họa:
+
+| Nấc | Nội dung | Công sức |
+|---|---|---|
+| 1 (hiện tại) | Bản đồ phẳng nghiêng đi, có kiểu nhìn "sau tay lái" | Đã có |
+| 2 | 3D hình khối đơn giản: nhà là khối hộp có tường, biển báo và đèn đứng thẳng, xe là khối đơn giản (tức "cách B" của góc nhìn thứ nhất) | Vài phiên làm việc |
+| 3 | 3D đầy đủ: mô hình xe, người, cây, bóng đổ, ánh sáng | Rất lớn, cần mô hình mua sẵn hoặc người làm mô hình |
+
+**Chỉ nâng lên nấc 2 khi đủ ba điều kiện:**
+
+1. Nội dung luật đã đủ (xong giai đoạn 1 và phần lớn giai đoạn 2 của mục 10.2).
+2. Người dùng đã chơi thử trên điện thoại thật và thấy điều khiển dễ.
+3. Đã chốt có đổi sang bản đồ thành phố thật hay không. Nếu có thì làm 3D cùng lúc với việc đổi bản đồ, tránh làm lại hai lần.
+
+Dấu hiệu thêm: nếu người dùng chơi kiểu nhìn "sau tay lái" (cách A, bản 0.8) mà thấy chưa đủ cảm giác thì đó là lúc nên nâng.
+
+Nấc 3 chỉ tính đến khi dự án có thêm người hoặc đã có người chơi thật.
+
+**Khi nâng cấp:**
+
+- Phần "bộ não" (`js/luat.js`, `js/ban-do.js`, phần bắt lỗi và chỉ đường trong `js/game.js`) giữ nguyên; chỉ phần vẽ ra màn hình viết lại. Bài kiểm tra tự động vẫn chạy được vì chỉ kiểm tra bộ não.
+- Thư viện vẽ 3D để ngay trong thư mục game, giữ được việc nháy đúp `index.html` là chạy.
+- Luôn giữ lại kiểu nhìn bản đồ nhẹ cho máy yếu.
+
+### 10.2 Mở rộng bản đồ và nâng độ khó (ĐỀ XUẤT, chờ người dùng chốt)
+
+Người dùng yêu cầu lúc 10:57 ngày 12/11/2026: lộ trình mở rộng bản đồ, nâng độ khó (ví dụ nhiều bảng chỉ dẫn ở nơi giao nhau), Claude đề xuất thêm nội dung.
+
+**Giai đoạn 1 (bản 0.9–1.0): làm sâu trên bản đồ hiện có, chưa mở rộng**
+
+- Biển chỉ dẫn hướng đi (biển xanh) đặt trước mỗi giao lộ; mũi tên kẻ trên mặt đường cho làn rẽ.
+- Xi-nhan: thêm phím và nút; lỗi không xi-nhan khi rẽ hoặc chuyển làn.
+- Biển hạn chế tốc độ và lỗi chạy quá tốc độ.
+- Lỗi không đội mũ bảo hiểm (chọn ở màn mở đầu) và dùng điện thoại khi lái.
+- Hai thanh điểm riêng: luật và văn hóa.
+
+**Giai đoạn 2 (bản 1.x): mở rộng bản đồ khoảng 3–4 lần, chia theo khu, mỗi khu một nhóm tình huống**
+
+- Đại lộ có phân làn ô tô / xe máy, dải phân cách, điểm mở để quay đầu.
+- Giao lộ lớn: đèn mũi tên rẽ trái riêng, nhiều biển chỉ dẫn, làn rẽ riêng.
+- Khu chợ và hẻm nhỏ: nhường đường khi từ hẻm ra đường chính, người đi bộ, hàng rong lấn đường.
+- Khu trường học: hạn chế tốc độ, trẻ em qua đường.
+- Đường sắt cắt ngang có biển và chuông.
+- Vòng xuyến lớn nhiều lối ra.
+
+Việc kỹ thuật bắt buộc kèm theo: viết bộ sinh lộ trình NPC tự động. Hiện `ROUTES` trong `js/ban-do.js` viết tay từng tuyến, bản đồ to gấp mấy lần thì không quản nổi.
+
+**Giai đoạn 3 (bản 2.x): độ khó sống động**
+
+- Giờ cao điểm: mật độ xe thay đổi theo giờ trong game.
+- Mưa: đường trơn, phanh ăn kém, tầm nhìn giảm.
+- Ban đêm, đèn xe, lỗi không bật đèn.
+- Xe ưu tiên (cứu thương, cứu hỏa) phải nhường đường.
+- NPC đi ẩu có chủ ý để người chơi tập phòng vệ.
+
+**Sau giai đoạn 3 mới tới đồ họa 3D (mục 10.1).**
+
+Câu hỏi chờ người dùng chốt: thứ tự ba giai đoạn; việc nào trong giai đoạn 1 làm trước; bản đồ mở rộng gấp mấy lần; có cần chế độ dễ riêng cho người mới không.
