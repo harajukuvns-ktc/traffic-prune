@@ -8,6 +8,7 @@
    4. TRẠNG THÁI GAME
    ========================================================= */
 const SAVE_KEY = 'trafficPrune.v1';
+const VIEWS = ['nav', 'bike', 'map'];
 const S = {
   now: 0, paused: true, xungho: 'anh', view: 'nav', assist: true,
   money: 5000000, pts: 12, streak: 0, trips: 0, stats: {},
@@ -66,7 +67,7 @@ function load(){
     const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
     if (d){ S.xungho = d.xungho || 'anh'; S.money = d.money ?? 5000000; S.pts = d.pts ?? 12;
       S.streak = d.streak || 0; S.trips = d.trips || 0; S.stats = d.stats || {};
-      S.view = d.view === 'map' ? 'map' : 'nav'; S.assist = d.assist !== false;
+      S.view = VIEWS.includes(d.view) ? d.view : 'nav'; S.assist = d.assist !== false;
       if (d.sound) S.sound = {on: d.sound.on !== false, fx: clamp(+d.sound.fx || 0, 0, 1), voice: clamp(+d.sound.voice || 0, 0, 1), npc: d.sound.npc == null ? 0.8 : clamp(+d.sound.npc || 0, 0, 1), bike: d.sound.bike === 'ga' ? 'ga' : 'so'};
       S.suspended = S.pts <= 0; }
   } catch(e){}
@@ -743,16 +744,29 @@ const canvas = $('game'), stage = $('stage'), mini = $('mini');
 const ctx = canvas.getContext('2d'), mctx = mini.getContext('2d');
 let VW = 800, VH = 600, DPR = 1, RES = 1, CW = 800, CH = 600, zoom = 1, camX = START.x, camY = START.y, camA = START.a, ancX = 400, ancY = 300;
 let isTouch = false;
-const TILT = 57;
+// Ba kiểu nhìn: 'nav' dẫn đường (nghiêng 57°), 'bike' sau tay lái (thấp, sát xe, có ghi đông), 'map' từ trên xuống
+const TILT = 57, TILT_BIKE = 75;
+const tilted = () => S.view !== 'map';
 function resize(){
   DPR = window.devicePixelRatio || 1;
   VW = window.innerWidth || 800; VH = window.innerHeight || 600;
-  const nav = S.view === 'nav';
+  const nav = tilted(), bike = S.view === 'bike';
+  const tilt = bike ? TILT_BIKE : TILT, persp = Math.round(VH * (bike ? 0.9 : 1.3)), originY = bike ? 0.46 : 0.7;
   if (nav){
-    CW = Math.round(VW * 2.4); CH = Math.round(VH * 2.0);
-    zoom = clamp(VW / 600, 1.7, 2.2);
-    RES = clamp(Math.sqrt(3e6 / (CW * CH)), 0.7, Math.min(DPR, 2));
+    CW = Math.round(VW * 2.4); CH = Math.round(VH * (bike ? 2.6 : 2.0));
+    zoom = clamp(VW / 600, 1.7, 2.2) * (bike ? 1.9 : 1);
+    // góc nhìn sau tay lái: canvas cao hơn nên giảm bớt độ nét cho nhẹ máy (vật ở gần vốn đã to)
+    RES = clamp(Math.sqrt((bike ? 2.2e6 : 3e6) / (CW * CH)), bike ? 0.55 : 0.7, Math.min(DPR, 2));
     ancX = CW / 2; ancY = CH - VH * (isTouch ? 0.33 : 0.2);
+    if (bike){
+      // đặt xe của người chơi đúng dưới đồng hồ trên ghi đông: tìm khoảng cách d trên canvas sao cho điểm đó chiếu lên màn hình ở độ cao mong muốn
+      const want = VH - (isTouch ? 92 : 0) - Math.min(560, VW) * 0.14;
+      const th = tilt * Math.PI / 180, oy = VH * originY;
+      const scr = d => oy + (VH - d * Math.cos(th) - oy) * persp / (persp + d * Math.sin(th));
+      let lo = 0, hi = CH;
+      for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; if (scr(m) > want) lo = m; else hi = m; }
+      ancY = CH - (lo + hi) / 2;
+    }
   } else {
     CW = VW; CH = VH; zoom = clamp(Math.min(VW / 660, VH / 560), 0.72, 1.6);
     RES = Math.min(DPR, 2); ancX = VW / 2; ancY = VH / 2;
@@ -760,11 +774,13 @@ function resize(){
   canvas.width = Math.round(CW * RES); canvas.height = Math.round(CH * RES);
   const st = canvas.style;
   st.width = CW + 'px'; st.height = CH + 'px'; st.left = Math.round((VW - CW) / 2) + 'px'; st.top = (VH - CH) + 'px';
-  st.transform = nav ? 'rotateX(' + TILT + 'deg)' : 'none';
-  stage.style.perspective = nav ? Math.round(VH * 1.3) + 'px' : 'none';
-  stage.style.perspectiveOrigin = '50% 70%';
+  st.transform = nav ? 'rotateX(' + tilt + 'deg)' : 'none';
+  stage.style.perspective = nav ? persp + 'px' : 'none';
+  document.body.classList.toggle('bike', bike);
+  stage.style.perspectiveOrigin = '50% ' + Math.round(originY * 100) + '%';
   mini.width = Math.round(180 * Math.min(DPR, 2)); mini.height = Math.round(135 * Math.min(DPR, 2));
-  $('viewBtn').innerHTML = nav ? '🗺️<span class="lbl"> Bản đồ</span>' : '🧭<span class="lbl"> Dẫn đường</span>';
+  // nút hiện kiểu nhìn sẽ chuyển sang khi bấm
+  $('viewBtn').innerHTML = S.view === 'nav' ? '🏍️<span class="lbl"> Sau tay lái</span>' : bike ? '🗺️<span class="lbl"> Bản đồ</span>' : '🧭<span class="lbl"> Dẫn đường</span>';
 }
 function rr(c, x, y, w, h, r){
   c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
@@ -773,12 +789,12 @@ function rr(c, x, y, w, h, r){
 // Vẽ một vật "đứng thẳng" trên màn hình tại điểm (x, y) của bản đồ: biển báo, cột đèn, chữ
 function up(x, y, fn){
   ctx.save(); ctx.translate(x, y); ctx.rotate(camA + Math.PI/2);
-  if (S.view === 'nav') ctx.scale(1, 1.35);
+  if (tilted()) ctx.scale(1, S.view === 'bike' ? 2.2 : 1.35);
   fn(); ctx.restore();
 }
 function label(x, y, text, opt){
   opt = opt || {};
-  if (S.view === 'nav' && Math.hypot(x - player.x, y - player.y) > 620) return;   // quá xa thì chữ nhỏ không đọc được, bỏ qua cho nhẹ máy
+  if (tilted() && Math.hypot(x - player.x, y - player.y) > (S.view === 'bike' ? 420 : 620)) return;   // quá xa thì chữ nhỏ không đọc được, bỏ qua cho nhẹ máy
   const fs = (opt.size || 13) / zoom;
   up(x, y, () => {
     ctx.font = (opt.bold ? '700 ' : '600 ') + fs + 'px "Segoe UI", Roboto, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -896,9 +912,9 @@ function drawDest(){
 }
 
 function drawHouses(){
-  const nav = S.view === 'nav';
+  const nav = tilted();
   const U = nav ? {x: Math.cos(camA), y: Math.sin(camA)} : {x: 0, y: -1};
-  const hgt = nav ? 12 : 5;
+  const hgt = S.view === 'bike' ? 20 : nav ? 12 : 5;
   // chỉ vẽ những nhà nằm trong vùng nhìn thấy
   const seen = h => {
     const cx = h.x + h.w/2 - camX, cy = h.y + h.h/2 - camY, R = (h.w + h.h) * 0.5 * zoom;
@@ -960,6 +976,7 @@ function drawAgents(){
     if (n.kind === 'bus') drawBus(n); else drawBike(n, n.color, n.helmet, false);
     ctx.globalAlpha = 1;
   }
+  if (S.view === 'bike') return;   // góc nhìn sau tay lái: xe của mình là ghi đông ở mép dưới màn hình
   drawBike(player, '#ff8a3d', '#ffffff', true);
   ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.a); ctx.fillStyle = '#c0703a'; ctx.fillRect(-11, -4, 6, 8); ctx.restore();
 }
@@ -1070,7 +1087,7 @@ function drawMini(){
 
 function render(dt){
   dt = dt || 0.016;
-  const nav = S.view === 'nav';
+  const nav = tilted();
   ctx.setTransform(RES, 0, 0, RES, 0, 0);
   ctx.save();
   if (nav){ ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(CW, 0); ctx.lineTo(CW/2 + VW*0.58, CH); ctx.lineTo(CW/2 - VW*0.58, CH); ctx.closePath(); ctx.clip(); }
@@ -1143,6 +1160,15 @@ function updHUD(){
     if (la && la.state === 'red') w = '🔴 Đèn đỏ phía trước: dừng trước vạch dừng';
     else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc và dừng trước vạch dừng';
   }
+  // đồng hồ trên ghi đông (góc nhìn sau tay lái): kim quay 0–60 km/h (xe trong game chạy tối đa khoảng 40 km/h)
+  if (S.view === 'bike'){
+    const kmh = Math.round(Math.abs(player.v) / 3), ck = kmh + '|' + (S.sound.bike === 'ga' ? '' : S.gear || 1);
+    if (hudCache.ck !== ck){ hudCache.ck = ck;
+      $('needle').setAttribute('transform', 'rotate(' + (-128 + Math.min(kmh, 60) / 60 * 256).toFixed(1) + ' 200 74)');
+      $('ckSpeed').textContent = kmh;
+      $('ckUnit').textContent = 'km/h' + (S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1));
+    }
+  }
   if (hudCache.warn !== w){ hudCache.warn = w; warnEl.textContent = w; warnEl.style.display = w ? 'block' : 'none'; }
   const fo = S.flash > 0 ? String(Math.min(1, S.flash * 2).toFixed(2)) : '0';
   if (hudCache.flash !== fo){ hudCache.flash = fo; flashEl.style.opacity = fo; }
@@ -1195,7 +1221,7 @@ function setupInput(){
   $('bookBtn').addEventListener('click', () => { renderBook(); openOverlay('book'); });
   $('bookClose').addEventListener('click', () => closeOverlay('book'));
   $('resetBtn').addEventListener('click', () => { resetAll(); renderBook(); });
-  $('viewBtn').addEventListener('click', () => { S.view = S.view === 'nav' ? 'map' : 'nav'; camX = player.x; camY = player.y; camA = player.a; save(); resize(); });
+  $('viewBtn').addEventListener('click', () => { S.view = VIEWS[(VIEWS.indexOf(S.view) + 1) % VIEWS.length]; hudCache.ck = null; camX = player.x; camY = player.y; camA = player.a; save(); resize(); });
   window.addEventListener('resize', resize);
 }
 

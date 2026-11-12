@@ -1,6 +1,6 @@
 # Webgame giao thông đường phố Việt Nam: ghi chép phỏng vấn
 Ngày: 2026-11-11 · Mục tiêu: làm rõ ý tưởng webgame để người chơi hiểu và nắm được luật giao thông đường bộ Việt Nam
-Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.7 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.7 (nhất là trên iPhone), và ghi nhận xét theo mục "Gợi ý chơi thử".
+Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.8 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.8 (nhất là trên iPhone), và ghi nhận xét theo mục "Gợi ý chơi thử".
 
 ## Tóm tắt các quyết định
 - Đối tượng ban đầu: 2 nhóm (người thi A1/B1 và người lớn đi xe lâu năm). Đã thu hẹp ở Câu 2.
@@ -107,7 +107,8 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
   - Cách xử lý ở bản 0.7: tiếng xe tay ga cao và đều hơn; mở khóa âm thanh trên iPhone lúc nhấc tay khỏi màn hình; chữ thập ▲▼◀▶ bên trái (▲ như GA, ▼ phanh rồi lùi), PHANH và GA bên phải; ô đỗ trên lòng đường sát vỉa hè, chỉ đường vào ô đúng chiều.
   - Câu 3 chọn (b) phạt đỗ sai chiều: NĐ 168/2024 không có lỗi này cho xe máy (chỉ có cho ô tô), Claude báo lại 3 phương án.
 - Góp ý lúc 09:14 ngày 12/11/2026: "Ok, chỉ nhắc nhở theo đúng luật." -> đỗ trong ô P mà đầu xe ngược chiều đi: NPC nhắc, hiện căn cứ (khoản 6 Điều 18 Luật TTATGTĐB 2024), không phạt tiền, không trừ điểm, chuyến không tính sạch; có trong 📘 Sổ tay.
-- Góp ý lúc 09:38 ngày 12/11/2026: "Thêm góc nhìn thứ nhất cho game!" -> Claude gửi kế hoạch (2 cách làm, các vấn đề, câu hỏi cần chốt), chờ người dùng xác nhận rồi mới làm.
+- Góp ý lúc 09:38 ngày 12/11/2026: "Thêm góc nhìn thứ nhất cho game!" -> Claude gửi kế hoạch (2 cách làm, các vấn đề, câu hỏi cần chốt).
+- Góp ý lúc 10:16 ngày 12/11/2026: "1. A 2. Một lựa chọn thêm. 3. Có." -> bản 0.8: thêm góc nhìn "sau tay lái" (cách A) vào nút đổi góc nhìn (dẫn đường → sau tay lái → bản đồ), có ghi đông và đồng hồ tốc độ; kiểu dẫn đường vẫn là mặc định.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?

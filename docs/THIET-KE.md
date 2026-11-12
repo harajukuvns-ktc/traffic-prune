@@ -31,13 +31,13 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 - **Quyền riêng tư.** Chỉ lưu thông tin người chơi tự khai báo và cách họ chơi; bản thử nghiệm chỉ lưu trên máy người chơi.
 - **Ưu tiên điện thoại, chơi được trên máy tính**, chạy ngay trên trình duyệt, không cần cài.
 
-## 3. Đã có trong bản 0.7
+## 3. Đã có trong bản 0.8
 
 | Mảng | Nội dung |
 |---|---|
 | Bản đồ | Khu phố hư cấu 1600×1200 đơn vị (4 đơn vị = 1 m): 2 đường ngang, 2 đường dọc, 3 ngã tư có đèn, 1 phố một chiều, 1 vòng xuyến, chợ, 9 điểm giao hàng, 11 ô đỗ xe P kẻ vạch trên lòng đường sát mép vỉa hè bên phải theo chiều đi (Điều 18 Luật TTATGTĐB 2024), vỉa hè bo cong ở giao lộ |
 | Vạch kẻ | Vạch vàng liền gần nút giao (90 đơn vị), vạch đứt ở giữa đoạn; thứ tự ở ngã tư: vạch dừng (trắng) → vạch người đi bộ → cột đèn |
-| Góc nhìn | Kiểu ứng dụng dẫn đường: nghiêng 57°, xoay theo hướng xe; nút đổi sang bản đồ nhìn từ trên xuống |
+| Góc nhìn | Ba kiểu, đổi vòng bằng một nút: **dẫn đường** (mặc định, nghiêng 57°, xoay theo hướng xe) → **sau tay lái** (`S.view = 'bike'`: máy quay thấp và sát xe, nghiêng 75°, không vẽ xe người chơi mà hiện ghi đông + đồng hồ tốc độ ở mép dưới) → **bản đồ** nhìn từ trên xuống. Kiểu sau tay lái vẫn là tấm bản đồ phẳng nghiêng đi (cách A), nhà chưa có tường; góc nhìn thứ nhất 3D thật (cách B) để sau |
 | Chỉ đường | Vạch chấm xanh mảnh + bảng chỉ dẫn rẽ; tránh đi ngược chiều, không bảo quay đầu ở đoạn vạch liền; luôn dẫn vào ô đỗ theo đúng chiều của ô (ô ở lề bên kia thì bảo quay đầu); giọng đọc tiếng Việt của trình duyệt |
 | Điều khiển | Ga, phanh (Space: chỉ phanh), rẽ; trợ lái giữ làn và giữ xe thẳng trong ô đỗ (tắt được); trên điện thoại: chữ thập ▲▼◀▶ bên trái (▲ = ga, ▼ = phanh rồi lùi), PHANH và GA bên phải |
 | Lỗi bắt được | Vượt đèn đỏ (đầu xe qua vạch dừng), đi ngược chiều phố một chiều, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến, đi ngược chiều trong vòng xuyến, gây va chạm khi đang vi phạm. **Chỉ nhắc nhở** (không phạt tiền, không trừ điểm, chuyến không tính sạch): đỗ trong ô P mà đầu xe ngược chiều đi |
@@ -107,6 +107,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.5 | 11/11/2026 | Tiếng máy xe làm lại: xe số có 4 số (vòng tua tụt khi lên số), thêm lựa chọn xe tay ga; ô tốc độ hiện số đang chạy |
 | 0.6 | 11/11/2026 | Giọng NPC kiểu game (phương án A): chữ hiện dần, bíp theo dấu thanh, giọng riêng theo nhân vật; thanh chỉnh âm lượng giọng NPC |
 | 0.7 | 12/11/2026 | Quy tắc làm việc (lập kế hoạch, báo cáo, chờ xác nhận); ô đỗ chuyển xuống lòng đường sát vỉa hè theo chiều đi, chỉ đường vào ô đúng chiều; chữ thập 4 nút trên điện thoại; tiếng xe tay ga làm lại; sửa iPhone không có tiếng. Đỗ ngược chiều trong ô P: chỉ nhắc nhở theo đúng luật (người dùng chốt 09:14) |
+| 0.8 | 12/11/2026 | Thêm góc nhìn "sau tay lái" (cách A, là lựa chọn thêm): máy quay thấp sát xe, ghi đông và đồng hồ tốc độ |
 
 ## 8. Kiểm tra pháp lý
 
@@ -129,7 +130,8 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
 
 - (Đã chốt 12/11/2026 lúc 09:14: "Ok, chỉ nhắc nhở theo đúng luật.") Đỗ xe ngược chiều: NĐ 168/2024 Điều 7 không có mức phạt riêng cho xe máy, nên game chỉ nhắc nhở (mục `parkdir` trong `js/luat.js`). Nếu sau này muốn phạt, chỉ có thể dùng điểm d khoản 2 Điều 7 (đỗ ở lòng đường gây cản trở) hoặc điểm e khoản 2 (đỗ nơi cấm, ví dụ bên trái đường một chiều).
-- Người dùng chơi thử bản 0.7 trên iPhone thật: âm thanh đã có chưa, chữ thập dễ bấm không.
+- Người dùng chơi thử bản 0.8 trên iPhone thật: âm thanh đã có chưa, chữ thập dễ bấm không, góc nhìn sau tay lái có mượt và dễ lái không.
+- Góc nhìn thứ nhất 3D thật (cách B: nhà có tường, đèn và biển đứng thẳng) nếu cách A chưa đủ; khi đó cân nhắc gương chiếu hậu và mũi tên báo ô P bên cạnh.
 - Giọng NPC: đã làm phương án A (bíp kiểu game). Khi lời thoại ổn định, có thể thêm C (thu âm giọng thật) hoặc D (giọng AI tạo sẵn) cho vài câu "đinh".
 - Âm thanh (bản 0.4), tiếng máy xe (bản 0.5) và giọng NPC (bản 0.6) chưa được nghe trên máy thật.
 - Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.

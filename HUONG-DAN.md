@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.7)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.8)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,9 +50,10 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.7)
+## Cách chơi (bản 0.8)
 
-- **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút **🗺️ Bản đồ** ở góc phải đổi về kiểu nhìn từ trên xuống của bản 0.1, bấm lần nữa để quay lại.
+- **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
+- **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
 - **Lái xe:** ↑ hoặc W để ga, **Space để phanh** (chỉ phanh, dừng hẳn thì đứng yên), ↓ hoặc S cũng phanh nhưng giữ tiếp sau khi dừng thì xe lùi chậm, ← → hoặc A D để rẽ trái, rẽ phải. Vì bản đồ xoay theo xe nên ← luôn là rẽ sang trái của bạn. Trên điện thoại: bên trái có 4 nút hình chữ thập (▲ tiến, giống GA; ▼ phanh, dừng hẳn rồi giữ tiếp thì lùi chậm; ◀ ▶ rẽ), bên phải có PHANH (chỉ phanh, không lùi) và GA.
 - **Trợ lái giữ làn:** khi bạn thả phím rẽ ra, xe tự chạy thẳng theo làn bên phải. Bạn chỉ cần bấm rẽ ở ngã tư, khi vào ô đỗ hoặc khi muốn vượt. Tắt được ở màn hình mở đầu (nút ❔).
 - **Giao hàng:** tới nơi thì tấp vào **ô đỗ xe có biển P** của điểm giao (đang nhấp nháy xanh) và dừng hẳn lại. Dừng ngoài lòng đường không tính.
@@ -68,6 +69,10 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 0.8 đổi gì so với bản 0.7
+
+1. Thêm góc nhìn "sau tay lái" có ghi đông và đồng hồ tốc độ. Bấm nút đầu tiên ở góc phải (🏍️) để chuyển.
 
 ## Bản 0.7 đổi gì so với bản 0.6
 
@@ -108,7 +113,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 3. Vạch giữa đường có đoạn đứt và đoạn liền, thêm lỗi "đè vạch liền" (200.000–400.000đ).
 4. Màn hình kiểu ứng dụng dẫn đường: đường xanh chỉ lối, bảng chỉ dẫn rẽ, vòng xuyến báo "ra ở lối thứ mấy".
 
-Nếu màn hình dẫn đường bị giật trên máy bạn, bấm **🗺️ Bản đồ** để dùng kiểu nhìn nhẹ hơn và báo lại cho Claude.
+Nếu màn hình dẫn đường hoặc sau tay lái bị giật trên máy bạn, bấm nút đổi kiểu nhìn tới khi về **bản đồ** để dùng kiểu nhìn nhẹ hơn và báo lại cho Claude.
 
 ## Gợi ý chơi thử để tinh chỉnh
 
