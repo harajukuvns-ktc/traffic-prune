@@ -1,5 +1,5 @@
 const {TP} = require('./harness.js');
-const {S, player, npcs, keys, step, lightOf, LIGHTS, RB, DESTS, computeRoute, navText, render, classify} = TP;
+const {S, player, npcs, keys, step, lightOf, LIGHTS, RB, DESTS, computeRoute, navText, render, classify, BAYS, HALF, OW} = TP;
 const dt = 1/60;
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
@@ -165,7 +165,12 @@ r = setTrip('trà đá');
 ok(r.instr.type === 'ring', `đang ở đoạn vạch liền trước vòng xuyến, cần quay lại: ${navText().main}`);
 player.x = 700; player.y = 280; player.a = Math.PI;
 r = setTrip('bánh mì');
-ok(r.instr.type === 'arrive' && r.instr.side === 'trái', `điểm giao phía trước bên trái (qua vạch đứt): ${navText().main}`);
+ok(r.instr.type !== 'arrive' && /Quay đầu/.test(navText().main), `điểm giao ở lề bên kia đường thì phải quay đầu để đỗ đúng chiều: ${navText().main}`);
+// mọi ô đỗ nằm trên lòng đường, sát mép vỉa hè, không lấn lên vỉa hè
+ok(BAYS.every(b => { const c = classify(b.cx, b.cy); return c.t === 'bay'; }) &&
+   BAYS.every(b => b.w > b.h ? Math.abs((b.side === 'S' ? b.y + b.h : b.y) - (b.proj.y + (b.side === 'S' ? HALF : -HALF))) < 0.5
+                             : Math.abs((b.side === 'E' ? b.x + b.w : b.x) - (b.proj.x + (b.side === 'E' ? 1 : -1) * (b.proj.x === OW.x ? 22 : HALF))) < 0.5),
+   'ô đỗ kẻ trên lòng đường, sát mép vỉa hè');
 // mọi cặp điểm đều có đường đi hợp lệ
 let bad = 0;
 for (const a of DESTS) for (const b of DESTS){ if (a === b) continue;

@@ -10,8 +10,18 @@ const SND = (function(){
   const nav = {key: '', stage: 0, t: -99};
   let viVoice = null, voiceChecked = false;
   const can = () => ac && S.sound.on && !S.paused;
+  // Phát một mẫu âm im lặng ngay trong lúc người chơi chạm: cách để iPhone mở khóa âm thanh của trang
+  function primeSilent(){
+    try { const b = ac.createBuffer(1, 1, ac.sampleRate), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); } catch(e){}
+  }
+  let speechPrimed = false;
+  function primeSpeech(){
+    // iPhone chỉ cho đọc giọng sau khi đã có một lần đọc bắt đầu từ thao tác chạm của người chơi
+    if (speechPrimed || !window.speechSynthesis) return;
+    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; window.speechSynthesis.speak(u); speechPrimed = true; } catch(e){}
+  }
   function init(){
-    if (ac){ if (ac.state === 'suspended') ac.resume(); return; }
+    if (ac){ if (ac.state !== 'running'){ try { ac.resume(); } catch(e){} primeSilent(); } primeSpeech(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     try {
       ac = new AC();
@@ -35,8 +45,10 @@ const SND = (function(){
       shift.connect(g); g.connect(fxBus);
       g.gain.value = 0; shift.gain.value = 1;
       o1.start(); o2.start(); o3.start(); wh.start(); lfo.start();
-      eng = {o1, o2, o3, wh, gw, lp, g, shift, lfo};
+      eng = {o1, o2, o3, wh, gw, g3, lg, lp, g, shift, lfo};
       applyVolume();
+      try { ac.resume(); } catch(e){}
+      primeSilent(); primeSpeech();
     } catch(e){ ac = null; }
   }
   function applyVolume(){ if (fxBus) fxBus.gain.value = S.sound.on ? S.sound.fx : 0; }
@@ -188,16 +200,20 @@ const SND = (function(){
     const sp = Math.abs(player.v), t = ac.currentTime, bike = S.sound.bike || 'so';
     const m = engineModel(sp, keys.up, bike);
     S.gear = m.gear;
-    // tần số nốt nền 34–92 Hz theo vòng tua; xe tay ga cao và mượt hơn
-    const f = bike === 'ga' ? 44 + m.rpm * 70 : 34 + m.rpm * 58;
-    const tc = bike === 'ga' ? 0.12 : 0.05;
+    // Xe số: nốt nền 34–92 Hz, có tiếng bành bạch của máy một xy-lanh.
+    // Xe tay ga: cao hơn hẳn (khoảng 105–200 Hz), gần như không bành bạch, nghe "vù vù" đều kèm tiếng rít curoa.
+    const ga = bike === 'ga';
+    const f = ga ? 105 + m.rpm * 105 : 34 + m.rpm * 58;
+    const tc = ga ? 0.15 : 0.05;
     eng.o1.frequency.setTargetAtTime(f, t, tc);
     eng.o2.frequency.setTargetAtTime(f * 2, t, tc);
     eng.o3.frequency.setTargetAtTime(f, t, tc);
-    eng.wh.frequency.setTargetAtTime(f * 7.5, t, 0.15);
-    eng.gw.gain.setTargetAtTime(bike === 'ga' ? 0.05 + m.rpm * 0.06 : 0, t, 0.2);
-    eng.lfo.frequency.setTargetAtTime(f / 2, t, tc);
-    eng.lp.frequency.setTargetAtTime(260 + m.rpm * 700 + (keys.up ? 160 : 0), t, 0.08);
+    eng.g3.gain.setTargetAtTime(ga ? 0.03 : 0.12, t, 0.1);
+    eng.lg.gain.setTargetAtTime(ga ? 0.04 : 0.18, t, 0.1);
+    eng.wh.frequency.setTargetAtTime(f * 4.2, t, 0.15);
+    eng.gw.gain.setTargetAtTime(ga ? 0.06 + m.rpm * 0.1 : 0, t, 0.2);
+    eng.lfo.frequency.setTargetAtTime(ga ? f / 4 : f / 2, t, tc);
+    eng.lp.frequency.setTargetAtTime((ga ? 700 + m.rpm * 1100 : 260 + m.rpm * 700) + (keys.up ? 160 : 0), t, 0.08);
     // lên số: hụt ga một nhịp ngắn rồi máy kéo lại ở vòng tua thấp hơn
     if (bike !== 'ga' && m.gear > lastGear && on){
       eng.shift.gain.cancelScheduledValues(t);
@@ -229,6 +245,11 @@ const SND = (function(){
     navSpeech();
   }
   if (window.speechSynthesis) try { window.speechSynthesis.onvoiceschanged = () => { voiceChecked = false; findVoice(); }; } catch(e){}
-  return {npcSyllable, toneMark, syllableCount: () => syllables, engineModel, init, update, whistle, shutter, thud, reward, applyVolume, voiceStatus, announceTrip, speak,
+  function audioStatus(){
+    if (!ac) return 'Âm thanh: chưa bật, hãy chạm vào màn hình một lần.';
+    if (ac.state === 'running') return 'Âm thanh: đang chạy.';
+    return 'Âm thanh: đang bị trình duyệt chặn, hãy chạm vào màn hình. Trên iPhone, kiểm tra nút gạt im lặng và âm lượng.';
+  }
+  return {audioStatus, npcSyllable, toneMark, syllableCount: () => syllables, engineModel, init, update, whistle, shutter, thud, reward, applyVolume, voiceStatus, announceTrip, speak,
     stopVoice(){ try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){} }};
 })();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Traffic Prune · bản chơi thử 0.6</title>
+<title>Traffic Prune · bản chơi thử 0.7</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%B5%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -43,9 +43,11 @@
 </div>
 
 <div id="controls">
-  <div class="pad">
-    <button class="cbtn" data-k="left">◀</button>
-    <button class="cbtn" data-k="right">▶</button>
+  <div class="pad dpad">
+    <button class="cbtn d-up" data-k="up" aria-label="Tiến">▲</button>
+    <button class="cbtn d-left" data-k="left" aria-label="Rẽ trái">◀</button>
+    <button class="cbtn d-right" data-k="right" aria-label="Rẽ phải">▶</button>
+    <button class="cbtn d-down" data-k="down" aria-label="Lùi">▼</button>
   </div>
   <div class="pad">
     <button class="cbtn small" data-k="brake">PHANH</button>
@@ -56,7 +58,7 @@
 <div class="overlay" id="start">
   <div class="card">
     <h1>Traffic Prune</h1>
-    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.6)</p>
+    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.7)</p>
     <ul>
       <li>Bạn là shipper xe máy. Màn hình giống <b>ứng dụng dẫn đường</b>: bản đồ xoay theo hướng xe, <b>vạch chấm xanh có mũi tên nhỏ</b> chỉ lối, bảng xanh lá phía trên báo chỗ rẽ sắp tới.</li>
       <li>Tới nơi thì <b>tấp vào ô đỗ xe chữ P</b> và dừng lại để giao hàng. Muốn nghỉ thì cũng đỗ vào ô P, đừng dừng giữa đường.</li>

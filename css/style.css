@@ -33,13 +33,17 @@
   #mini{width:180px;height:135px;border-radius:10px;border:4px solid rgba(255,250,242,.92);box-shadow:0 2px 6px rgba(0,0,0,.15);pointer-events:none}
   #flash{position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:flex-start;justify-content:center;padding-top:30vh;
     font-size:22px;font-weight:700;color:var(--bad);opacity:0;pointer-events:none;z-index:4}
-  #controls{position:fixed;left:0;right:0;bottom:0;height:140px;display:none;justify-content:space-between;align-items:flex-end;padding:0 14px 16px;pointer-events:none;z-index:3}
+  #controls{position:fixed;left:0;right:0;bottom:0;height:200px;display:none;justify-content:space-between;align-items:flex-end;padding:0 14px 16px;pointer-events:none;z-index:3}
   body.touch #controls{display:flex}
   .pad{display:flex;gap:12px;pointer-events:auto}
   .cbtn{width:78px;height:78px;border-radius:50%;border:0;background:rgba(255,250,242,.88);font-size:28px;font-weight:700;color:var(--ink);
     box-shadow:0 3px 8px rgba(0,0,0,.2);touch-action:none}
   .cbtn.on{background:var(--accent);color:#fff}
   .cbtn.small{font-size:15px}
+  .dpad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:2px;
+    grid-template-areas:". up ." "left . right" ". down ."}
+  .dpad .cbtn{width:58px;height:58px;font-size:22px}
+  .d-up{grid-area:up} .d-down{grid-area:down} .d-left{grid-area:left} .d-right{grid-area:right}
   @media (min-width:1000px){
     #bubble{position:fixed;top:12px;left:440px;right:210px;margin:0 auto;max-width:470px}
     #law{position:fixed;left:10px;bottom:10px;width:400px}
@@ -50,7 +54,7 @@
     #chips{max-width:calc(100% - 150px)}
     .btn{padding:6px 9px;font-size:13px}
   }
-  @media (max-width:600px){ .cbtn{width:70px;height:70px} #navMain{font-size:15.5px} #law{font-size:12.5px} .lbl{display:none} #chips{max-width:calc(100% - 132px)} }
+  @media (max-width:600px){ .cbtn{width:70px;height:70px} .dpad .cbtn{width:54px;height:54px} .dpad{grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px)} #navMain{font-size:15.5px} #law{font-size:12.5px} .lbl{display:none} #chips{max-width:calc(100% - 132px)} }
   .overlay{position:fixed;inset:0;background:rgba(43,42,51,.45);display:flex;align-items:center;justify-content:center;padding:14px;z-index:10}
   .overlay.hidden{display:none}
   .card{background:var(--paper);border-radius:20px;max-width:640px;width:100%;max-height:calc(100vh - 28px);overflow:auto;padding:22px 24px;box-shadow:0 10px 30px rgba(0,0,0,.25);

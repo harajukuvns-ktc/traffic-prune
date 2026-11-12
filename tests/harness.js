@@ -13,7 +13,7 @@ const ctxProxy = new Proxy({}, {
 });
 function el(){ return {querySelectorAll:()=>[], style:{}, classList:{add(){},remove(){},toggle(){}}, addEventListener(){}, innerHTML:'', textContent:'', value:'anh', checked:true, className:'', dataset:{}, getContext:()=>ctxProxy}; }
 const els = {};
-global.document = {getElementById: id => (els[id] = els[id] || el()), querySelectorAll: () => [], body: el()};
+global.document = {getElementById: id => (els[id] = els[id] || el()), querySelectorAll: () => [], body: el(), addEventListener(){}, hidden: false};
 const store = {};
 global.localStorage = {getItem:k=>store[k]??null, setItem:(k,v)=>{store[k]=v;}, removeItem:k=>{delete store[k];}};
 global.window = global; window.innerWidth = 1280; window.innerHeight = 800; window.devicePixelRatio = 1;

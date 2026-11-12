@@ -98,12 +98,14 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Góp ý lúc 20:59 ngày 11/11/2026 và cách xử lý ở bản 0.6:
   - "Nhất trí với phương án làm A trước" -> giọng NPC kiểu game: chữ hiện dần, mỗi tiếng một tiếng bíp uốn theo dấu thanh, giọng riêng theo kiểu nhân vật, có thanh chỉnh âm lượng; giọng chỉ đường được ưu tiên.
 
-- Góp ý lúc 08:18 ngày 12/11/2026 (sau khi chơi bản 0.6 trên máy tính và điện thoại), chờ kế hoạch được xác nhận:
+- Góp ý lúc 08:18 ngày 12/11/2026 (sau khi chơi bản 0.6 trên máy tính và điện thoại); kế hoạch được xác nhận lúc 08:45 ("1. Iphone, không ở chế độ im lặng. 2. Đồng ý 3. (b) 4. Ổn"), xử lý ở bản 0.7:
   - "Trên PC: Tiếng xe tay ga ù ù như đi số thấp mà tăng ga."
   - "Trên điện thoại: không nghe được âm thanh gì."
   - "Nút điều khiển trên điện thoại chỉ có nút trái, phải mà không có lùi. Hãy làm 4 nút tiến, lùi, trái, phải ở màn hình bên trái ở khu vực nút trái phải hiện tại. Màn hình bên phải vẫn giữ 2 nút Phanh, Ga như hiện tại."
   - "Các điểm giao hàng là bãi đỗ xe đang chiếm diện tích của vỉa hè, điều này không phù hợp thực tế với hạ tầng giao thông ở Việt Nam, nơi thông thường chỉ kẻ vạch đỗ xe ngay trên lòng đường, sát vỉa hè theo chiều đi."
   - "Từ giờ luôn kế hoạch trước khi làm, báo cáo mình các vấn đề, chờ xác nhận mới tiến hành nhé. Đưa ý này vào tài liệu và luôn tuân thủ mỗi phiên làm việc trừ khi mình nhắc không cần báo cáo ở bước cụ thể nào đó." -> đã ghi vào CLAUDE.md và mục 0 của docs/THIET-KE.md.
+  - Cách xử lý ở bản 0.7: tiếng xe tay ga cao và đều hơn; mở khóa âm thanh trên iPhone lúc nhấc tay khỏi màn hình; chữ thập ▲▼◀▶ bên trái (▲ như GA, ▼ phanh rồi lùi), PHANH và GA bên phải; ô đỗ trên lòng đường sát vỉa hè, chỉ đường vào ô đúng chiều.
+  - Câu 3 chọn (b) phạt đỗ sai chiều: chưa làm. NĐ 168/2024 không có lỗi này cho xe máy (chỉ có cho ô tô), đã báo người dùng 3 phương án thay thế, chờ chọn.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?

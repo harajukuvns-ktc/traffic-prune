@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.6)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.7)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,23 +50,30 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.6)
+## Cách chơi (bản 0.7)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút **🗺️ Bản đồ** ở góc phải đổi về kiểu nhìn từ trên xuống của bản 0.1, bấm lần nữa để quay lại.
-- **Lái xe:** ↑ hoặc W để ga, **Space để phanh** (chỉ phanh, dừng hẳn thì đứng yên), ↓ hoặc S cũng phanh nhưng giữ tiếp sau khi dừng thì xe lùi chậm, ← → hoặc A D để rẽ trái, rẽ phải. Vì bản đồ xoay theo xe nên ← luôn là rẽ sang trái của bạn. Trên điện thoại dùng 4 nút ở dưới màn hình (nút PHANH chỉ phanh, không lùi).
+- **Lái xe:** ↑ hoặc W để ga, **Space để phanh** (chỉ phanh, dừng hẳn thì đứng yên), ↓ hoặc S cũng phanh nhưng giữ tiếp sau khi dừng thì xe lùi chậm, ← → hoặc A D để rẽ trái, rẽ phải. Vì bản đồ xoay theo xe nên ← luôn là rẽ sang trái của bạn. Trên điện thoại: bên trái có 4 nút hình chữ thập (▲ tiến, giống GA; ▼ phanh, dừng hẳn rồi giữ tiếp thì lùi chậm; ◀ ▶ rẽ), bên phải có PHANH (chỉ phanh, không lùi) và GA.
 - **Trợ lái giữ làn:** khi bạn thả phím rẽ ra, xe tự chạy thẳng theo làn bên phải. Bạn chỉ cần bấm rẽ ở ngã tư, khi vào ô đỗ hoặc khi muốn vượt. Tắt được ở màn hình mở đầu (nút ❔).
 - **Giao hàng:** tới nơi thì tấp vào **ô đỗ xe có biển P** của điểm giao (đang nhấp nháy xanh) và dừng hẳn lại. Dừng ngoài lòng đường không tính.
-- **Ô đỗ xe P:** có 11 ô. Đỗ trong ô thì không cản ai và không ai đụng bạn. Dừng lâu giữa đường làm người khác phải chờ thì sẽ bị nhắc.
-- **Vạch giữa đường:** vạch vàng **đứt** thì được cắt qua để rẽ, vượt hoặc vào ô P bên kia đường, xong phải về làn ngay. Vạch vàng **liền** (gần ngã tư và vòng xuyến) thì không được đè lên.
+- **Ô đỗ xe P:** có 11 ô, kẻ vạch trắng ngay trên lòng đường, sát vỉa hè bên phải theo chiều xe chạy, giống ngoài đời. Muốn đỗ vào ô ở lề bên kia thì phải quay đầu để đỗ đúng chiều; chỉ đường sẽ dẫn bạn như vậy. Đỗ trong ô thì không cản ai và không ai đụng bạn. Dừng lâu giữa đường làm người khác phải chờ thì sẽ bị nhắc.
+- **Vạch giữa đường:** vạch vàng **đứt** thì được cắt qua để rẽ, vượt hoặc vào làn bên kia để quay đầu, xong phải về làn ngay. Vạch vàng **liền** (gần ngã tư và vòng xuyến) thì không được đè lên.
 - **Đèn tín hiệu:** khi tiến vào ngã tư, bạn sẽ gặp lần lượt **vạch dừng** (màu trắng), **vạch người đi bộ**, rồi **cột đèn** ở góc giao lộ. Đèn đỏ thì dừng trước vạch dừng; đầu xe vượt qua vạch dừng lúc đèn đỏ là bị phạt. Có dòng nhắc "🔴 Đèn đỏ phía trước" khi bạn tới gần.
 - **Thưởng:** chuyến đi không vi phạm được thưởng thêm, chuỗi chuyến sạch càng dài thì thưởng càng cao. Cứ 5 chuyến sạch liên tiếp thì hồi 1 điểm GPLX.
 - **Phạt:** vượt đèn đỏ, đi ngược chiều Phố Chợ, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
 - **Đền:** ai bị bạn làm kẹt xe hoặc đụng phải thì được đền tiền từ ví của bạn. Người bị ảnh hưởng hiện mặt 😤.
 - **Hết điểm GPLX:** bị trừ hết 12 điểm thì xe dừng ngay, không lái tiếp được, đúng như luật. Muốn lái lại thì làm bài kiểm tra 5 câu về luật, đúng từ 4 câu là được phục hồi đủ 12 điểm. Nếu không muốn thi, bạn có thể chọn chơi lại từ đầu.
-- **Âm thanh (nút 🔊):** tiếng máy xe theo loại xe bạn chọn trong bảng 🔊: **xe số** (có 4 số, máy kéo lên rồi tụt nhẹ mỗi lần lên số; ô tốc độ hiện bạn đang ở số mấy) hoặc **xe tay ga** (tiếng đều, êm); tiếng "tít tít" khi bạn lao tới đèn vàng; tiếng "ting" khi đèn chuyển xanh lúc bạn đang chờ; tiếng còi CSGT, và tiếng máy ảnh khi vượt đèn đỏ; NPC bị bạn chặn đường sẽ bấm còi, càng chờ lâu càng bấm nhiều; tiếng nhạc thưởng khi giao hàng, chuỗi chuyến sạch càng dài thì nốt càng cao. Bảng 🔊 có nút bật tắt, chọn loại xe, ba thanh chỉnh âm lượng (tiếng động, giọng chỉ đường, giọng NPC) và nút **▶ Nghe thử**.
+- **Âm thanh (nút 🔊):** tiếng máy xe theo loại xe bạn chọn trong bảng 🔊: **xe số** (có 4 số, máy kéo lên rồi tụt nhẹ mỗi lần lên số; ô tốc độ hiện bạn đang ở số mấy) hoặc **xe tay ga** (tiếng cao, đều, kèm tiếng rít nhẹ của dây curoa); tiếng "tít tít" khi bạn lao tới đèn vàng; tiếng "ting" khi đèn chuyển xanh lúc bạn đang chờ; tiếng còi CSGT, và tiếng máy ảnh khi vượt đèn đỏ; NPC bị bạn chặn đường sẽ bấm còi, càng chờ lâu càng bấm nhiều; tiếng nhạc thưởng khi giao hàng, chuỗi chuyến sạch càng dài thì nốt càng cao. Bảng 🔊 có nút bật tắt, chọn loại xe, ba thanh chỉnh âm lượng (tiếng động, giọng chỉ đường, giọng NPC) và nút **▶ Nghe thử**.
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 0.7 đổi gì so với bản 0.6
+
+1. Ô đỗ xe P chuyển xuống lòng đường, sát vỉa hè, theo chiều xe chạy. Chỉ đường dẫn vào ô đúng chiều.
+2. Trên điện thoại có thêm chữ thập 4 nút ▲▼◀▶ bên trái, có lùi xe.
+3. Tiếng xe tay ga làm lại cho cao và đều hơn.
+4. Sửa lỗi iPhone không có tiếng. Nếu vẫn không nghe, chạm vào màn hình một lần rồi mở bảng 🔊 xem dòng "Âm thanh: …".
 
 ## Bản 0.6 đổi gì so với bản 0.5
 

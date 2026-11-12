@@ -283,6 +283,7 @@ function nearestSeg(p){
   SEGS.forEach((s, i) => { const d = dist(p, projOn(p, N[s.a], N[s.b])); if (d < bd){ bd = d; best = i; } });
   return best;
 }
+function sameDir(a, b){ return a.x*b.x + a.y*b.y > 0.5; }
 function trimOf(id){ return id === 'F' ? R_OFF : DEAD[id] ? 0 : HALF; }
 function segOff(a, b){ const s = SEGS[segIdx(a, b)]; return s && s.oneway ? 0 : 20; }
 function segName(a, b){ const s = SEGS[segIdx(a, b)]; return s ? s.name : ''; }
@@ -311,7 +312,8 @@ function computeRoute(){
     if (!s.oneway) addStart(s.a, dist(pr, a) + (fwd > 0.2 ? UT : 0), fwd > 0.2, s.b);
     if (si === dest.seg){
       const al = (dp.x - pr.x)*dab.x + (dp.y - pr.y)*dab.y, sgn = al >= 0 ? 1 : -1;
-      if (!(s.oneway && sgn < 0)){ const ut = fwd * sgn < -0.2;
+      const td = {x: dab.x * sgn, y: dab.y * sgn};
+      if (!(s.oneway && sgn < 0) && sameDir(td, dest.bay.dir)){ const ut = fwd * sgn < -0.2;
         cands.push({type:'direct', cost: Math.abs(al) + (ut ? UT : 0), uturn: ut, sgn}); }
     }
   }
@@ -331,8 +333,11 @@ function computeRoute(){
   }
   // tới nút rồi quay ngược lại đúng đoạn vừa đi cũng tính là quay đầu
   const back = (node, next) => (node !== 'F' && (prev[node] || (startInfo[node] && startInfo[node].other)) === next ? UTURN_COST : 0);
-  cands.push({type:'via', node: ds.a, next: ds.b, cost: cost[ds.a] + dist(N[ds.a], dp) + back(ds.a, ds.b)});
-  if (!ds.oneway) cands.push({type:'via', node: ds.b, next: ds.a, cost: cost[ds.b] + dist(N[ds.b], dp) + back(ds.b, ds.a)});
+  // chỉ nhận hướng tiếp cận trùng chiều xe chạy của ô đỗ (đỗ bên phải theo chiều đi)
+  if (sameDir(unit(N[ds.a], N[ds.b]), dest.bay.dir))
+    cands.push({type:'via', node: ds.a, next: ds.b, cost: cost[ds.a] + dist(N[ds.a], dp) + back(ds.a, ds.b)});
+  if (!ds.oneway && sameDir(unit(N[ds.b], N[ds.a]), dest.bay.dir))
+    cands.push({type:'via', node: ds.b, next: ds.a, cost: cost[ds.b] + dist(N[ds.b], dp) + back(ds.b, ds.a)});
   cands.sort((x, y) => x.cost - y.cost);
   const cand = cands[0];
   if (!cand || !(cand.cost < Infinity)) return null;
@@ -486,9 +491,10 @@ function laneAssist(c, dt){
   // Thả phím rẽ ra thì xe tự nắn thẳng theo làn bên phải của hướng đang đi
   const ca = Math.cos(player.a), sa = Math.sin(player.a);
   let base = null, e = 0, k = 45, lim = 0.3;
-  if (c.t === 'bay'){ k = 28; lim = 0.5;   // rời ô đỗ: nắn xe nhập vào làn của đường bên cạnh
-    const b = c.bay;
-    c = b.w > b.h ? {t:'h', Y: b.proj.y} : (b.proj.x === OW.x ? {t:'oneway'} : {t:'v', X: b.proj.x});
+  if (c.t === 'bay'){   // trong ô đỗ: giữ xe thẳng giữa ô theo chiều của ô; chạy hết ô thì tự nhập lại làn
+    const b = c.bay, d = b.dir;
+    if (ca*d.x + sa*d.y < 0.8) return;
+    base = Math.atan2(d.y, d.x); e = (player.x - b.cx) * -d.y + (player.y - b.cy) * d.x; k = 28;
   }
   if (c.t === 'h' && Math.abs(ca) > 0.8){ const dx = ca >= 0 ? 1 : -1; base = dx > 0 ? 0 : Math.PI; e = (player.y - (c.Y + 20*dx)) * dx; }
   else if (c.t === 'v' && Math.abs(sa) > 0.8){ const dy = sa >= 0 ? 1 : -1; base = dy > 0 ? Math.PI/2 : -Math.PI/2; e = (player.x - (c.X - 20*dy)) * -dy; }
@@ -774,9 +780,12 @@ function drawGround(){
   }
   // ô đỗ xe
   for (const b of BAYS){
-    ctx.fillStyle = '#727888'; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(b.x, b.y, b.w, b.h);
     ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
     ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2); ctx.setLineDash([]);
+    ctx.save(); ctx.translate(b.cx, b.cy); ctx.rotate(Math.atan2(b.dir.y, b.dir.x) + Math.PI/2);
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('P', 0, 0); ctx.restore();
   }
   // đảo vòng xuyến
   ctx.fillStyle = '#9fd38b'; ctx.beginPath(); ctx.arc(RB.x, RB.y, RB.rIn, 0, Math.PI*2); ctx.fill();
@@ -1127,10 +1136,12 @@ function setupInput(){
   window.addEventListener('keydown', e => { const k = map[e.code]; if (k){ keys[k] = true; e.preventDefault(); } });
   window.addEventListener('keyup', e => { const k = map[e.code]; if (k){ keys[k] = false; e.preventDefault(); } });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  // nút cảm ứng: có 2 nút cùng làm một việc (▲ và GA), nên đếm số nút đang giữ
+  const held = {};
   document.querySelectorAll('.cbtn').forEach(b => {
-    const k = b.dataset.k;
-    const on = e => { keys[k] = true; b.classList.add('on'); e.preventDefault(); };
-    const off = e => { keys[k] = false; b.classList.remove('on'); e.preventDefault(); };
+    const k = b.dataset.k; let down = false;
+    const on = e => { if (!down){ down = true; held[k] = (held[k] || 0) + 1; } keys[k] = true; b.classList.add('on'); e.preventDefault(); };
+    const off = e => { if (down){ down = false; held[k] = Math.max(0, (held[k] || 1) - 1); } keys[k] = held[k] > 0; b.classList.remove('on'); e.preventDefault(); };
     b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
     b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
   });
@@ -1140,10 +1151,12 @@ function setupInput(){
     SND.init(); if (S.suspended) showSuspend(); else SND.announceTrip(); });
   $('helpBtn').addEventListener('click', () => openOverlay('start'));
   // âm thanh: trình duyệt chỉ cho phát tiếng sau khi người chơi bấm hoặc gõ phím
-  const unlock = () => SND.init();
-  window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
+  // iPhone chỉ cho bật tiếng khi nhấc tay khỏi màn hình (touchend) hoặc bấm (click), không phải lúc vừa chạm xuống
+  const unlock = () => { SND.init(); syncSound(); };
+  window.addEventListener('touchend', unlock); window.addEventListener('click', unlock); window.addEventListener('keydown', unlock);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) SND.init(); });
   const syncSound = () => { $('soundBtn').textContent = S.sound.on ? '🔊' : '🔇'; $('sndOn').checked = S.sound.on;
-    $('sndFx').value = S.sound.fx; $('sndVoice').value = S.sound.voice; $('sndNpc').value = S.sound.npc; $('sndBike').value = S.sound.bike || 'so'; $('sndStatus').textContent = SND.voiceStatus(); };
+    $('sndFx').value = S.sound.fx; $('sndVoice').value = S.sound.voice; $('sndNpc').value = S.sound.npc; $('sndBike').value = S.sound.bike || 'so'; $('sndStatus').textContent = SND.audioStatus() + ' ' + SND.voiceStatus(); };
   syncSound();
   $('soundBtn').addEventListener('click', () => { SND.init(); syncSound(); $('soundPanel').classList.toggle('open'); });
   $('sndOn').addEventListener('change', () => { S.sound.on = $('sndOn').checked; if (!S.sound.on) SND.stopVoice(); SND.applyVolume(); syncSound(); save(); });
@@ -1179,4 +1192,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText};
+window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW};

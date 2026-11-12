@@ -27,11 +27,18 @@ function lightOf(L, axis, t){
 function lightAt(X, Y){ return LIGHTS.find(L => L.x === X && L.y === Y) || null; }
 
 // Ô đỗ xe (khoét vào vỉa hè, sát mép đường)
+// Ô đỗ xe kẻ vạch NGAY TRÊN LÒNG ĐƯỜNG, sát mép vỉa hè bên phải theo chiều xe chạy của làn đó
+// (khoản 6 Điều 18 Luật TTATGTĐB 2024: trên đường phố chỉ được dừng, đỗ sát lề đường, vỉa hè phía bên phải theo chiều đi).
+//   side 'S': mép nam của đường ngang, xe đi hướng đông · 'N': mép bắc, hướng tây
+//   side 'E': mép đông của đường dọc, xe đi hướng bắc · 'W': mép tây, hướng nam
+//   dir: chiều xe phải hướng theo khi đỗ trong ô
 const BAY_L = 70, BAY_D = 16;
-function bayH(Y, side, x){ const y = side === 'S' ? Y + HALF : Y - HALF - BAY_D;
-  return {x: x - BAY_L/2, y, w: BAY_L, h: BAY_D, cx: x, cy: y + BAY_D/2, side, proj: {x, y: Y}}; }
-function bayV(X, side, y, half){ half = half || HALF; const x = side === 'E' ? X + half : X - half - BAY_D;
-  return {x, y: y - BAY_L/2, w: BAY_D, h: BAY_L, cx: x + BAY_D/2, cy: y, side, proj: {x: X, y}}; }
+function bayH(Y, side, x){ const y = side === 'S' ? Y + HALF - BAY_D : Y - HALF;
+  return {x: x - BAY_L/2, y, w: BAY_L, h: BAY_D, cx: x, cy: y + BAY_D/2, side, proj: {x, y: Y},
+          dir: side === 'S' ? {x: 1, y: 0} : {x: -1, y: 0}}; }
+function bayV(X, side, y, half){ half = half || HALF; const x = side === 'E' ? X + half - BAY_D : X - half;
+  return {x, y: y - BAY_L/2, w: BAY_D, h: BAY_L, cx: x + BAY_D/2, cy: y, side, proj: {x: X, y},
+          dir: side === 'E' ? {x: 0, y: -1} : {x: 0, y: 1}}; }
 
 // Nút và đoạn đường (dùng cho chỉ đường)
 const N = {W1:{x:0,y:300}, A:{x:400,y:300}, B:{x:800,y:300}, C:{x:1200,y:300}, E1:{x:1600,y:300},
