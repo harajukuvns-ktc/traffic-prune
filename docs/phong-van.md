@@ -1,6 +1,6 @@
 # Webgame giao thông đường phố Việt Nam: ghi chép phỏng vấn
 Ngày: 2026-11-11 · Mục tiêu: làm rõ ý tưởng webgame để người chơi hiểu và nắm được luật giao thông đường bộ Việt Nam
-Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.6 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.6 và ghi nhận xét theo mục "Gợi ý chơi thử".
+Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.7 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.7 (nhất là trên iPhone), chọn phương án phạt đỗ sai chiều, và ghi nhận xét theo mục "Gợi ý chơi thử".
 
 ## Tóm tắt các quyết định
 - Đối tượng ban đầu: 2 nhóm (người thi A1/B1 và người lớn đi xe lâu năm). Đã thu hẹp ở Câu 2.
