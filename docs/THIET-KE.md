@@ -5,6 +5,12 @@ Tài liệu này là **nguồn sự thật** của dự án. Mọi phiên làm v
 - Ghi chép phỏng vấn gốc và góp ý theo từng phiên bản: [`phong-van.md`](phong-van.md)
 - Hướng dẫn cài đặt, cách chơi cho người dùng: [`../HUONG-DAN.md`](../HUONG-DAN.md)
 
+## 0. Quy tắc làm việc
+
+**Quy tắc làm việc (người dùng yêu cầu ngày 12/11/2026): luôn lập kế hoạch trước khi làm, báo cáo các vấn đề và cách xử lý cho người dùng, chờ người dùng xác nhận rồi mới tiến hành.** Chỉ bỏ qua bước báo cáo ở bước cụ thể nào mà người dùng nói rõ là không cần. Áp dụng cho mọi phiên làm việc.
+
+Trình tự mỗi lần có việc mới: (1) đọc tài liệu này; (2) gửi người dùng kế hoạch: vấn đề, nguyên nhân, cách xử lý, câu hỏi cần chốt; (3) chờ xác nhận; (4) làm, kiểm tra, cập nhật tài liệu; (5) báo kết quả.
+
 ## 1. Mục tiêu
 
 Webgame giúp **người lớn đã đi xe lâu năm**, hay quen thói sai luật, nhận ra cái sai và học đi đúng luật giao thông đường bộ Việt Nam **mà không bị lên lớp**. Hai điểm mấu chốt:
