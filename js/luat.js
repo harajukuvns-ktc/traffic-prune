@@ -36,9 +36,17 @@ const LAW = {
     name: 'Gây va chạm khi đang vi phạm', fine: 12000000, range: '10.000.000–14.000.000đ', pts: 10,
     ref: 'NĐ 168/2024/NĐ-CP, Điều 7: điểm a khoản 10 (vd. đi ngược chiều, sai phần đường mà gây tai nạn) hoặc điểm b khoản 10 (vd. vượt đèn đỏ, đè vạch, không nhường đường ở vòng xuyến mà gây tai nạn); trừ 10 điểm theo điểm d khoản 13',
     tip: 'Một lỗi nhỏ cộng thêm một cú va chạm là thành lỗi rất nặng. Chậm lại vài giây rẻ hơn nhiều.'
+  },
+  // CHỈ NHẮC NHỞ (người dùng chốt 12/11/2026): xe máy không có mức phạt riêng cho hành vi này.
+  // remind: true → không phạt tiền, không trừ điểm, nhưng chuyến đó không tính là chuyến sạch.
+  parkdir: {
+    name: 'Đỗ xe không đúng chiều đi', fine: 0, range: 'Không phạt tiền, chỉ nhắc nhở', pts: 0, remind: true,
+    // Kiểm tra độc lập 12/11/2026: đúng số khoản; sửa câu chữ theo đề xuất của agent kiểm tra.
+    ref: 'Khoản 6 Điều 18 Luật TTATGTĐB 2024 (Luật số 36/2024/QH15): trên đường phố chỉ được dừng, đỗ xe sát lề đường, vỉa hè phía bên phải theo chiều đi. Điều 7 NĐ 168/2024/NĐ-CP (đã sửa đổi bởi NĐ 238/2026/NĐ-CP) không quy định xử phạt hành vi đỗ xe máy ngược chiều lưu thông (hành vi này chỉ bị phạt với ô tô, điểm d khoản 2 Điều 6)',
+    tip: 'Đỗ xe ven đường: tấp vào lề bên phải theo chiều mình đang đi, đầu xe xuôi theo dòng xe. Ô đỗ ở lề bên kia thì quay đầu ở chỗ được phép rồi mới vào ô.'
   }
 };
-const LAW_ORDER = ['red','wrongway','line','lane','ring','crash'];
+const LAW_ORDER = ['red','wrongway','line','lane','ring','crash','parkdir'];
 
 // Bài kiểm tra khi bằng lái hết điểm. Đáp án đúng luôn đặt ở vị trí đầu (a[0]); game tự xáo trộn khi hiển thị.
 const QUIZ = [

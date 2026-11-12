@@ -40,7 +40,7 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 | Góc nhìn | Kiểu ứng dụng dẫn đường: nghiêng 57°, xoay theo hướng xe; nút đổi sang bản đồ nhìn từ trên xuống |
 | Chỉ đường | Vạch chấm xanh mảnh + bảng chỉ dẫn rẽ; tránh đi ngược chiều, không bảo quay đầu ở đoạn vạch liền; luôn dẫn vào ô đỗ theo đúng chiều của ô (ô ở lề bên kia thì bảo quay đầu); giọng đọc tiếng Việt của trình duyệt |
 | Điều khiển | Ga, phanh (Space: chỉ phanh), rẽ; trợ lái giữ làn và giữ xe thẳng trong ô đỗ (tắt được); trên điện thoại: chữ thập ▲▼◀▶ bên trái (▲ = ga, ▼ = phanh rồi lùi), PHANH và GA bên phải |
-| Lỗi bắt được | Vượt đèn đỏ (đầu xe qua vạch dừng), đi ngược chiều phố một chiều, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến, đi ngược chiều trong vòng xuyến, gây va chạm khi đang vi phạm |
+| Lỗi bắt được | Vượt đèn đỏ (đầu xe qua vạch dừng), đi ngược chiều phố một chiều, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến, đi ngược chiều trong vòng xuyến, gây va chạm khi đang vi phạm. **Chỉ nhắc nhở** (không phạt tiền, không trừ điểm, chuyến không tính sạch): đỗ trong ô P mà đầu xe ngược chiều đi |
 | Hậu quả | Phạt tiền + trừ điểm GPLX; đền 50.000đ mỗi xe bị làm kẹt (xe buýt 100.000đ), 1.500.000đ khi va chạm có lỗi; NPC nói câu nhắc; hết điểm thì dừng xe, làm bài kiểm tra 5 câu (đúng ≥ 4) để phục hồi |
 | Văn hóa (mới có một phần) | Nhắc khi dừng giữa đường, khi leo vỉa hè gặp người đi bộ, khi bám đuôi; NPC bấm còi khi bị chặn |
 | Kinh tế | Tiền công theo quãng đường; thưởng đi sạch tăng theo chuỗi; 5 chuyến sạch liên tiếp hồi 1 điểm GPLX |
@@ -106,7 +106,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.4.1 | 11/11/2026 | Tách thành nhiều file theo mảng, thêm tài liệu thiết kế và kiểm tra tự động; sửa căn cứ pháp lý theo kết quả kiểm tra độc lập |
 | 0.5 | 11/11/2026 | Tiếng máy xe làm lại: xe số có 4 số (vòng tua tụt khi lên số), thêm lựa chọn xe tay ga; ô tốc độ hiện số đang chạy |
 | 0.6 | 11/11/2026 | Giọng NPC kiểu game (phương án A): chữ hiện dần, bíp theo dấu thanh, giọng riêng theo nhân vật; thanh chỉnh âm lượng giọng NPC |
-| 0.7 | 12/11/2026 | Quy tắc làm việc (lập kế hoạch, báo cáo, chờ xác nhận); ô đỗ chuyển xuống lòng đường sát vỉa hè theo chiều đi, chỉ đường vào ô đúng chiều; chữ thập 4 nút trên điện thoại; tiếng xe tay ga làm lại; sửa iPhone không có tiếng. Chưa làm: phạt đỗ sai chiều (chờ người dùng chọn căn cứ) |
+| 0.7 | 12/11/2026 | Quy tắc làm việc (lập kế hoạch, báo cáo, chờ xác nhận); ô đỗ chuyển xuống lòng đường sát vỉa hè theo chiều đi, chỉ đường vào ô đúng chiều; chữ thập 4 nút trên điện thoại; tiếng xe tay ga làm lại; sửa iPhone không có tiếng. Đỗ ngược chiều trong ô P: chỉ nhắc nhở theo đúng luật (người dùng chốt 09:14) |
 
 ## 8. Kiểm tra pháp lý
 
@@ -118,9 +118,17 @@ Lần gần nhất: 11/11/2026, agent độc lập đối chiếu `js/luat.js` v
 - Lưu ý thiết kế: đè vạch liền rồi chạy hẳn sang phần đường ngược chiều có thể bị xử theo điểm d khoản 3 (sai phần đường) thay vì điểm a khoản 1. Game hiện chỉ phạt lỗi đè vạch trong trường hợp này.
 - Nguồn chính: luatvietnam.vn (NĐ 238/2026, Thông tư 105/2026), thuvienphapluat.vn (bảng lỗi trừ điểm), ketoananpha.vn (toàn văn NĐ 168/2024, Luật TTATGTĐB 2024), pbgdpl.cantho.gov.vn, lsvn.vn.
 
+### Kiểm tra ngày 12/11/2026: lỗi nhắc nhở "Đỗ xe không đúng chiều đi" (`parkdir`)
+
+- Agent độc lập xác nhận: khoản 6 Điều 18 Luật TTATGTĐB 2024 yêu cầu dừng, đỗ sát lề, vỉa hè bên phải theo chiều đi, áp dụng cho mọi người điều khiển phương tiện, kể cả xe máy. Cấm dừng, đỗ bên trái đường một chiều ở điểm a khoản 4 Điều 18.
+- Điều 7 NĐ 168/2024 (xe máy) **không có** hành vi đỗ ngược chiều. Với ô tô thì có: điểm d khoản 2 Điều 6, phạt 600.000–800.000đ. NĐ 238/2026 không sửa Điều 7 về dừng, đỗ.
+- Các lỗi dừng, đỗ của xe máy ở Điều 7 (để dùng sau này): điểm a khoản 2 (đỗ trên phần đường xe chạy ngoài đô thị nơi có lề), điểm d khoản 2 (đỗ ở lòng đường gây cản trở), điểm e khoản 2 (nơi giao nhau, nơi có biển cấm dừng, đỗ…), đều 400.000–600.000đ.
+- Đã sửa câu căn cứ trong `js/luat.js` theo đề xuất: ghi đủ số luật, ghi NĐ 168 đã sửa đổi bởi NĐ 238, nói rõ "không quy định xử phạt".
+- Chưa xác minh được: toàn văn NĐ 168 và NĐ 238 từ trang chính thức (vbpl.vn, chinhphu.vn không mở được); chưa loại trừ hẳn việc áp lỗi chung "không chấp hành vạch kẻ đường" nếu ô đỗ có vạch chỉ hướng. Lời luật lấy từ hethongphapluat.com, luatvietnam.vn, ketoananpha.vn.
+
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
 
-- **Chờ người dùng quyết:** người dùng chọn (b) "phạt lỗi đỗ xe sai chiều" (12/11/2026). Tra cứu cho thấy NĐ 168/2024 Điều 7 (xe máy) không có hành vi "đỗ ngược chiều lưu thông"; hành vi này chỉ có ở Điều 6 (ô tô). Luật TTATGTĐB 2024 Điều 18 khoản 6 vẫn yêu cầu đỗ sát lề bên phải theo chiều đi. Đã đề xuất 3 phương án: (1) chỉ nhắc, chuyến không tính sạch; (2) phạt theo điểm d khoản 2 Điều 7 khi đỗ gây cản trở; (3) phạt theo điểm e khoản 2 khi đỗ bên trái đường một chiều (nơi cấm dừng, đỗ theo khoản 4 Điều 18). Phương án nào cũng phải qua agent độc lập kiểm tra trước khi vào `js/luat.js`.
+- (Đã chốt 12/11/2026 lúc 09:14: "Ok, chỉ nhắc nhở theo đúng luật.") Đỗ xe ngược chiều: NĐ 168/2024 Điều 7 không có mức phạt riêng cho xe máy, nên game chỉ nhắc nhở (mục `parkdir` trong `js/luat.js`). Nếu sau này muốn phạt, chỉ có thể dùng điểm d khoản 2 Điều 7 (đỗ ở lòng đường gây cản trở) hoặc điểm e khoản 2 (đỗ nơi cấm, ví dụ bên trái đường một chiều).
 - Người dùng chơi thử bản 0.7 trên iPhone thật: âm thanh đã có chưa, chữ thập dễ bấm không.
 - Giọng NPC: đã làm phương án A (bíp kiểu game). Khi lời thoại ổn định, có thể thêm C (thu âm giọng thật) hoặc D (giọng AI tạo sẵn) cho vài câu "đinh".
 - Âm thanh (bản 0.4), tiếng máy xe (bản 0.5) và giọng NPC (bản 0.6) chưa được nghe trên máy thật.

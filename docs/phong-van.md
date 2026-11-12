@@ -1,6 +1,6 @@
 # Webgame giao thông đường phố Việt Nam: ghi chép phỏng vấn
 Ngày: 2026-11-11 · Mục tiêu: làm rõ ý tưởng webgame để người chơi hiểu và nắm được luật giao thông đường bộ Việt Nam
-Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.7 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.7 (nhất là trên iPhone), chọn phương án phạt đỗ sai chiều, và ghi nhận xét theo mục "Gợi ý chơi thử".
+Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.7 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.7 (nhất là trên iPhone), và ghi nhận xét theo mục "Gợi ý chơi thử".
 
 ## Tóm tắt các quyết định
 - Đối tượng ban đầu: 2 nhóm (người thi A1/B1 và người lớn đi xe lâu năm). Đã thu hẹp ở Câu 2.
@@ -105,7 +105,8 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
   - "Các điểm giao hàng là bãi đỗ xe đang chiếm diện tích của vỉa hè, điều này không phù hợp thực tế với hạ tầng giao thông ở Việt Nam, nơi thông thường chỉ kẻ vạch đỗ xe ngay trên lòng đường, sát vỉa hè theo chiều đi."
   - "Từ giờ luôn kế hoạch trước khi làm, báo cáo mình các vấn đề, chờ xác nhận mới tiến hành nhé. Đưa ý này vào tài liệu và luôn tuân thủ mỗi phiên làm việc trừ khi mình nhắc không cần báo cáo ở bước cụ thể nào đó." -> đã ghi vào CLAUDE.md và mục 0 của docs/THIET-KE.md.
   - Cách xử lý ở bản 0.7: tiếng xe tay ga cao và đều hơn; mở khóa âm thanh trên iPhone lúc nhấc tay khỏi màn hình; chữ thập ▲▼◀▶ bên trái (▲ như GA, ▼ phanh rồi lùi), PHANH và GA bên phải; ô đỗ trên lòng đường sát vỉa hè, chỉ đường vào ô đúng chiều.
-  - Câu 3 chọn (b) phạt đỗ sai chiều: chưa làm. NĐ 168/2024 không có lỗi này cho xe máy (chỉ có cho ô tô), đã báo người dùng 3 phương án thay thế, chờ chọn.
+  - Câu 3 chọn (b) phạt đỗ sai chiều: NĐ 168/2024 không có lỗi này cho xe máy (chỉ có cho ô tô), Claude báo lại 3 phương án.
+- Góp ý lúc 09:14 ngày 12/11/2026: "Ok, chỉ nhắc nhở theo đúng luật." -> đỗ trong ô P mà đầu xe ngược chiều đi: NPC nhắc, hiện căn cứ (khoản 6 Điều 18 Luật TTATGTĐB 2024), không phạt tiền, không trừ điểm, chuyến không tính sạch; có trong 📘 Sổ tay.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?

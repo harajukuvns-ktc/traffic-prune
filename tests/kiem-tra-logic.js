@@ -5,7 +5,7 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
-  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; };
+  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -135,7 +135,7 @@ let d = S.trip.dest, m0 = S.money;
 player.x = d.bay.proj.x; player.y = d.bay.proj.y; player.v = 0;   // dừng trên đường cạnh điểm giao: chưa tính
 step(dt);
 ok(S.money === m0 && S.trip.dest === d, 'dừng ngoài đường cạnh điểm giao thì chưa giao được');
-player.x = d.bay.cx; player.y = d.bay.cy; player.v = 0;
+player.x = d.bay.cx; player.y = d.bay.cy; player.v = 0; player.a = Math.atan2(d.bay.dir.y, d.bay.dir.x);
 step(dt);
 ok(S.money > m0 && S.streak === 1, `đỗ vào ô P thì giao hàng thành công, được trả ${S.money - m0}đ`);
 
@@ -171,6 +171,20 @@ ok(BAYS.every(b => { const c = classify(b.cx, b.cy); return c.t === 'bay'; }) &&
    BAYS.every(b => b.w > b.h ? Math.abs((b.side === 'S' ? b.y + b.h : b.y) - (b.proj.y + (b.side === 'S' ? HALF : -HALF))) < 0.5
                              : Math.abs((b.side === 'E' ? b.x + b.w : b.x) - (b.proj.x + (b.side === 'E' ? 1 : -1) * (b.proj.x === OW.x ? 22 : HALF))) < 0.5),
    'ô đỗ kẻ trên lòng đường, sát mép vỉa hè');
+// Đỗ trong ô P: đúng chiều thì không nhắc; ngược chiều thì chỉ nhắc (không phạt tiền, không trừ điểm), chuyến không sạch
+{ const D = DESTS.find(d => d.bay.side === 'S');
+  reset(); S.trip.dest = D; S.trip.clean = true;
+  player.x = D.bay.cx; player.y = D.bay.cy; player.a = 0; player.v = 0; step(dt); step(dt);
+  ok(!S.stats.parkdir, 'đỗ đúng chiều trong ô P: không bị nhắc');
+  reset(); const other = DESTS.find(d => d !== D); S.trip.dest = other; S.trip.clean = true;
+  const m0 = S.money, p0 = S.pts;
+  player.x = D.bay.cx; player.y = D.bay.cy; player.a = Math.PI; player.v = 0; step(dt); step(dt); step(dt);
+  ok(S.stats.parkdir === 1 && S.money === m0 && S.pts === p0 && S.trip.clean === false,
+     `đỗ ngược chiều: chỉ nhắc 1 lần, không trừ tiền/điểm, chuyến không sạch (nhắc ${S.stats.parkdir}, tiền ${S.money - m0}, điểm ${S.pts - p0})`);
+  reset(); S.trip.dest = D; S.trip.clean = true; const tr0 = S.trips;
+  player.x = D.bay.cx; player.y = D.bay.cy; player.a = Math.PI; player.v = 0; step(dt);
+  ok(S.trips === tr0 + 1 && S.stats.parkdir === 1, 'đỗ ngược chiều ở đúng điểm giao: vẫn giao được, có nhắc');
+}
 // mọi cặp điểm đều có đường đi hợp lệ
 let bad = 0;
 for (const a of DESTS) for (const b of DESTS){ if (a === b) continue;

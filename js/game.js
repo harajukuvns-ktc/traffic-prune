@@ -165,6 +165,21 @@ function showLaw(html, good){
   lawEl.innerHTML = html; lawEl.className = good ? 'good' : ''; lawEl.style.display = 'block'; S.lawT = 9;
 }
 function warn(text){ S.warnText = text; S.warnT = 0.6; }
+// Lỗi chỉ nhắc nhở (LAW[type].remind): không phạt tiền, không trừ điểm, chuyến không còn sạch
+function remind(type, speaker){
+  const law = LAW[type];
+  S.stats[type] = (S.stats[type] || 0) + 1;
+  const n = S.stats[type];
+  if (S.trip) S.trip.clean = false;
+  S.streak = 0;
+  const who = speaker || nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true};
+  let line = fill(pick(LINES[type]), n);
+  if (n >= 2) line = fill(pick(LINES.again), n) + line;
+  say(who, line);
+  showLaw(`<b>📘 ${law.name}</b>: ${law.range.toLowerCase()}<br><small>${law.ref}</small><br>💡 ${law.tip}<br>`+
+    `<small>Chuyến này không còn được tính là chuyến sạch.</small>`);
+  save();
+}
 function violate(type, quipKey, speaker){
   const law = LAW[type];
   S.stats[type] = (S.stats[type] || 0) + 1;
@@ -261,9 +276,12 @@ function arrive(){
   S.money += pay; S.trips++;
   SND.reward(t.clean ? S.streak : 0);
   const cust = {name: 'Khách ở ' + t.dest.name, x: t.dest.bay.cx, y: t.dest.bay.cy};
-  say(cust, fill(pick(LINES[t.clean ? 'praise' : 'meh'])));
+  // vừa đỗ ngược chiều ngay tại điểm giao: khách nhắc luôn, bảng thông báo ghi kèm căn cứ
+  const wrongPark = S.parkDirBay === t.dest.bay;
+  say(cust, fill(pick(LINES[wrongPark ? 'parkdir' : t.clean ? 'praise' : 'meh'])));
   showLaw(`<b>📦 Giao hàng thành công tới ${t.dest.name}</b><br>Tiền công ${fmt(base)}` +
-    (t.clean ? ` + thưởng đi sạch ${fmt(bonus)} (chuỗi ${S.streak} chuyến sạch)` : ` (chuyến có vi phạm nên không có thưởng)`) +
+    (t.clean ? ` + thưởng đi sạch ${fmt(bonus)} (chuỗi ${S.streak} chuyến sạch)` : ` (chuyến có vi phạm hoặc bị nhắc nên không có thưởng)`) +
+    (wrongPark ? `<br>⚠️ ${LAW.parkdir.name}: ${LAW.parkdir.range.toLowerCase()}. 💡 ${LAW.parkdir.tip}<br><small>${LAW.parkdir.ref}</small>` : '') +
     (t.clean && S.streak % 5 === 0 ? `<br>🪪 5 chuyến sạch liên tiếp: được hồi 1 điểm GPLX.` : ''), true);
   floatText(player.x, player.y, '+' + fmt(pay), '#2f9e6b');
   newTrip(); save();
@@ -655,6 +673,14 @@ function checkRules(prev, prevC, dt){
     const blocked = npcs.find(n => !n.hidden && n.blockedBy === player && n.waitT > 1.5);
     if (blocked){ S.stopSaidT = S.now; say(blocked, fill(pick(LINES.stopping))); }
   }
+
+  // Đỗ trong ô P mà đầu xe ngược chiều đi của làn: chỉ nhắc (mỗi lần vào ô nhắc một lần)
+  if (c.t === 'bay' && sp < 12){
+    const d = c.bay.dir;
+    if (Math.cos(player.a)*d.x + Math.sin(player.a)*d.y < -0.5 && S.parkDirBay !== c.bay){
+      S.parkDirBay = c.bay; remind('parkdir');
+    }
+  } else if (c.t !== 'bay') S.parkDirBay = null;
 
   // Giao hàng: đỗ trong ô P của điểm giao và dừng lại
   const t = S.trip;
@@ -1125,7 +1151,7 @@ function renderBook(){
   $('bookList').innerHTML = LAW_ORDER.map(k => {
     const L = LAW[k], c = S.stats[k] || 0;
     return `<div class="lawitem"><span class="cnt ${c ? 'nz' : 'z'}">${c ? 'Bạn đã mắc ' + c + ' lần' : 'Chưa mắc lần nào 👍'}</span>`+
-      `<b>${L.name}</b><br>Phạt ${L.range}${L.pts ? ', trừ ' + L.pts + ' điểm GPLX' : ''}<br>💡 ${L.tip}<br><span class="fine">${L.ref}</span></div>`;
+      `<b>${L.name}</b><br>${L.remind ? L.range : 'Phạt ' + L.range}${L.pts ? ', trừ ' + L.pts + ' điểm GPLX' : ''}<br>💡 ${L.tip}<br><span class="fine">${L.ref}</span></div>`;
   }).join('') + `<p class="fine">Số người bạn làm kẹt xe và đã phải đền: ${S.stats.affected || 0}. Tổng số đơn đã giao: ${S.trips}.</p>`;
 }
 function openOverlay(id){ $(id).classList.remove('hidden'); S.paused = true; }

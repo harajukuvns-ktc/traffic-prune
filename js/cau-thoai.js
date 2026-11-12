@@ -53,6 +53,11 @@ const LINES = {
     'Dừng giữa đường thế này cả phố phải chờ {x} đó. Có ô chữ P ven đường kìa, tấp vào cho thong thả!',
     '{X} muốn nghỉ chân thì ghé ô đỗ xe chữ P nha. Lòng đường đâu phải phòng khách.'
   ],
+  parkdir: [
+    'Ơ kìa {x}, cả dãy xe đỗ xuôi chiều, mỗi {x} đỗ ngược. Định đứng ra chào khách à?',
+    '{X} đỗ ngược chiều rồi kìa. Lúc ra xe lại phải cắt ngang dòng xe, nguy hiểm lắm đó!',
+    'Đỗ xe thì xuôi theo chiều đi nha {x}. Đầu xe ngược thế này nhìn như đang cãi nhau với cả phố.'
+  ],
   victim: ['Ấy chết, tôi xin lỗi {x}! Để tôi đền nhé.'],
   sidewalk: [
     'Vỉa hè là của người đi bộ mà {x} ơi! Tôi đi bộ mà cũng phải né xe.',
