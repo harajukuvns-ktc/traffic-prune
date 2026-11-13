@@ -239,11 +239,16 @@ Ba việc người dùng chọn làm trước:
 - **Xi-nhan:** phím Q và E trên máy tính, hai nút nhỏ ngay trên chữ thập trên điện thoại; đèn xi-nhan nhấp nháy trên xe, có tiếng tích tắc; bảng chỉ dẫn nhắc "bật xi-nhan" trước chỗ rẽ. **Xi-nhan không tự tắt**; quên tắt quá lâu thì NPC nhắc, không phạt (người dùng chốt 13/11/2026).
   - Chỉ phạt lỗi không xi-nhan khi xe **rẽ ở ngã tư** (đổi hướng rõ rệt) hoặc **quay đầu**; bỏ qua khi trợ lái đang can thiệp. Không bắt khi cắt vạch đứt để vượt, vì vượt xe không báo hiệu là lỗi khác (xem mục 8, kiểm tra 13/11/2026).
 
-Rồi mới tới:
+Rồi mới tới (người dùng chốt lúc 10:05 ngày 13/11/2026, đồng ý cả 5 điểm; chia làm 3 bản):
 
-- Biển hạn chế tốc độ và lỗi chạy quá tốc độ.
-- Lỗi không đội mũ bảo hiểm (chọn ở màn mở đầu) và dùng điện thoại khi lái.
-- Hai thanh điểm riêng: luật và văn hóa.
+- **Bản 0.10: biển hạn chế tốc độ.** Nâng tốc độ tối đa của xe lên khoảng 55 km/h. Đường thường cắm biển 40 km/h; đoạn trước trường mầm non Sơn Ca cắm biển 30 km/h kèm biển "Trẻ em". Đồng hồ đổi màu khi quá tốc độ, có dòng nhắc. Chỉ phạt khi vượt quá trên 5 km/h, mỗi đoạn đường phạt một lần. Mức phạt theo bậc km/h vượt quá: **phải đọc lại toàn văn NĐ 168 trước khi ghi vào `js/luat.js`**.
+- **Bản 0.11: mũ bảo hiểm và điện thoại.**
+  - Mũ bảo hiểm: mỗi đầu chuyến có nút "🪖 Đội mũ". Quên đội vẫn chạy được, nhưng bị phạt khi đi ngang **chốt CSGT** (2 chốt cố định); NPC nhắc khi thấy.
+  - Điện thoại: thỉnh thoảng reo (khách gọi hỏi đơn). Nghe khi đang chạy thì bị phạt nếu đi qua chốt hoặc camera. Tấp vào ô P rồi nghe thì được cộng điểm văn hóa. Không nghe thì khách gọi lại, không mất gì.
+- **Bản 1.0: hai thanh điểm.** Thanh luật là điểm GPLX hiện có (12 điểm). Thanh văn hóa 0–100, bắt đầu 70.
+  - Trừ khi: dừng giữa đường làm người khác chờ, leo vỉa hè gặp người đi bộ, bám đuôi, quên tắt xi-nhan, làm người khác kẹt xe.
+  - Cộng khi: dừng nhường người đi bộ, tấp vào ô P để nghe điện thoại, chuyến đi không làm ai phải chờ.
+  - Văn hóa cao thì khách boa thêm tiền, văn hóa thấp thì khách chấm sao thấp.
 
 **Không làm chế độ dễ riêng cho người mới** (người dùng chốt 13/11/2026). Độ khó đến từ giao thông và từ việc người chơi tự chọn hành trình.
 
