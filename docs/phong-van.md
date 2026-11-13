@@ -1,6 +1,6 @@
 # Webgame giao thông đường phố Việt Nam: ghi chép phỏng vấn
 Ngày: 2026-11-11 · Mục tiêu: làm rõ ý tưởng webgame để người chơi hiểu và nắm được luật giao thông đường bộ Việt Nam
-Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.9 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.9 (nhất là hai nút xi-nhan trên iPhone), và ghi nhận xét theo mục "Gợi ý chơi thử". Ghi chú: các góp ý bản 0.8 (iPhone) chưa có kết quả.
+Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.10 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.10 (nhất là xe 55 km/h, biển tốc độ và hai nút xi-nhan trên iPhone), rồi làm bản 0.11 (mũ bảo hiểm, điện thoại), và ghi nhận xét theo mục "Gợi ý chơi thử". Ghi chú: các góp ý bản 0.8 (iPhone) chưa có kết quả.
 
 ## Tóm tắt các quyết định
 - Đối tượng ban đầu: 2 nhóm (người thi A1/B1 và người lớn đi xe lâu năm). Đã thu hẹp ở Câu 2.

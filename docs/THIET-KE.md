@@ -264,7 +264,7 @@ Ba việc người dùng chọn làm trước:
 
 Rồi mới tới (người dùng chốt lúc 10:05 ngày 13/11/2026, đồng ý cả 5 điểm; chia làm 3 bản):
 
-- **Bản 0.10: biển hạn chế tốc độ.** Nâng tốc độ tối đa của xe lên khoảng 55 km/h. Đường thường cắm biển 40 km/h; đoạn trước trường mầm non Sơn Ca cắm biển 30 km/h kèm biển "Trẻ em". Đồng hồ đổi màu khi quá tốc độ, có dòng nhắc. Chỉ phạt khi vượt quá trên 5 km/h, mỗi đoạn đường phạt một lần. Mức phạt theo bậc km/h vượt quá: **phải đọc lại toàn văn NĐ 168 trước khi ghi vào `js/luat.js`**.
+- **Bản 0.10: biển hạn chế tốc độ.** Nâng tốc độ tối đa của xe lên khoảng 55 km/h. Đường thường cắm biển 40 km/h; đoạn trước trường mầm non Sơn Ca cắm biển 30 km/h kèm biển "Trẻ em". Đồng hồ đổi màu khi quá tốc độ, có dòng nhắc. Chỉ phạt khi vượt quá từ 5 km/h, mỗi đoạn đường phạt một lần. **Đã làm ở bản 0.10** (13/11/2026); mức phạt ba bậc đã đối chiếu toàn văn NĐ 168 và một agent độc lập, ghi ở mục 8.
 - **Bản 0.11: mũ bảo hiểm và điện thoại.**
   - Mũ bảo hiểm: mỗi đầu chuyến có nút "🪖 Đội mũ". Quên đội vẫn chạy được, nhưng bị phạt khi đi ngang **chốt CSGT** (2 chốt cố định); NPC nhắc khi thấy.
   - Điện thoại: thỉnh thoảng reo (khách gọi hỏi đơn). Nghe khi đang chạy thì bị phạt nếu đi qua chốt hoặc camera. Tấp vào ô P rồi nghe thì được cộng điểm văn hóa. Không nghe thì khách gọi lại, không mất gì.
