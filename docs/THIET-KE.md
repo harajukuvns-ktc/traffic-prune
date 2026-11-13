@@ -167,7 +167,7 @@ Lần 1 (agent Sonnet) không mở được văn bản gốc. Lần 2 (Claude Op
 - Người dùng chơi thử bản 0.9 (và 0.8) trên iPhone thật: hai nút xi-nhan nhỏ có dễ bấm không, biển chỉ dẫn có đủ to để đọc không, tiếng tích-tắc nghe có khó chịu không; âm thanh đã có chưa, chữ thập dễ bấm không, góc nhìn sau tay lái có mượt và dễ lái không. (Bản 0.8 chưa có kết quả.)
 - Bản 0.9: hình dạng, màu biển chỉ dẫn hướng đi vẽ dạng chung vì chưa tra được Điều 38 QCVN 41; biển thật ở phố đi bộ Việt Nam chưa xác minh (xem mục 8).
 - Bản 0.9: game tạm không còn phố một chiều (Phố Chợ đã thành phố đi bộ) nên bài học biển P.102/I.407 chỉ còn trong bài kiểm tra; cần có lại ở bản đồ mở rộng (giai đoạn 2).
-- Bản 0.9: ngưỡng bắt lỗi xi-nhan (rẽ quá khoảng 50 độ khi lượt rẽ đi qua nút giao; quay đầu quá khoảng 137 độ; bật xi-nhan trễ tối đa 0,25 giây sau khi bắt đầu rẽ) là do mình chọn, cần chơi thử xem có phạt oan hay bỏ sót không. âm thanh đã có chưa, chữ thập dễ bấm không, góc nhìn sau tay lái có mượt và dễ lái không.
+- Bản 0.9: ngưỡng bắt lỗi xi-nhan (rẽ quá khoảng 50 độ khi lượt rẽ đi qua nút giao; quay đầu quá khoảng 137 độ; bật xi-nhan trễ tối đa 0,25 giây sau khi bắt đầu rẽ) là do mình chọn, cần chơi thử xem có phạt oan hay bỏ sót không.
 - Góc nhìn thứ nhất 3D thật (cách B) và các việc mở rộng khác: xem lộ trình ở mục 10. Khi làm cách B, cân nhắc thêm gương chiếu hậu và mũi tên báo ô P bên cạnh.
 - Giọng NPC: đã làm phương án A (bíp kiểu game). Khi lời thoại ổn định, có thể thêm C (thu âm giọng thật) hoặc D (giọng AI tạo sẵn) cho vài câu "đinh".
 - Âm thanh (bản 0.4), tiếng máy xe (bản 0.5) và giọng NPC (bản 0.6) chưa được nghe trên máy thật.
