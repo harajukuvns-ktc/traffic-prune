@@ -173,19 +173,42 @@ Nấc 3 chỉ tính đến khi dự án có thêm người hoặc đã có ngư�
 - Thư viện vẽ 3D để ngay trong thư mục game, giữ được việc nháy đúp `index.html` là chạy.
 - Luôn giữ lại kiểu nhìn bản đồ nhẹ cho máy yếu.
 
-### 10.2 Mở rộng bản đồ và nâng độ khó (ĐỀ XUẤT, chờ người dùng chốt)
+### 10.2 Mở rộng bản đồ và nâng độ khó (ĐÃ CHỐT 13/11/2026)
 
-Người dùng yêu cầu lúc 10:57 ngày 12/11/2026: lộ trình mở rộng bản đồ, nâng độ khó (ví dụ nhiều bảng chỉ dẫn ở nơi giao nhau), Claude đề xuất thêm nội dung.
+Người dùng yêu cầu lúc 10:57 ngày 12/11/2026 và chốt lúc 08:15 ngày 13/11/2026: "Mình nhất trí với thứ tự ba giai đoạn bạn đề xuất, nhớ lưu lại để tránh sót giai đoạn; trong giai đoạn 1 nên làm biển chỉ dẫn, biển cấm xe máy, ô tô và xi-nhan; bản đồ mở rộng gấp 2; không cần chế độ dễ riêng cho người mới."
+
+**Làm theo đúng thứ tự giai đoạn 1 → 2 → 3 → 3D. Mỗi phiên làm việc đọc bảng này trước để không sót việc.**
+
+| Việc | Giai đoạn | Trạng thái |
+|---|---|---|
+| Biển chỉ dẫn hướng đi trước giao lộ | 1 (làm trước) | Chưa làm |
+| Biển cấm xe máy, biển cấm ô tô | 1 (làm trước) | Chưa làm |
+| Xi-nhan và lỗi không xi-nhan | 1 (làm trước) | Chưa làm |
+| Biển hạn chế tốc độ, lỗi quá tốc độ | 1 | Chưa làm |
+| Mũ bảo hiểm, dùng điện thoại khi lái | 1 | Chưa làm |
+| Hai thanh điểm: luật và văn hóa | 1 | Chưa làm |
+| Mở rộng bản đồ gấp 2, chia theo khu | 2 | Chưa làm |
+| Bộ sinh lộ trình NPC tự động | 2 | Chưa làm |
+| Giờ cao điểm, mưa, ban đêm, xe ưu tiên, NPC đi ẩu | 3 | Chưa làm |
+| Đồ họa 3D nấc 2 (mục 10.1) | Sau cùng | Chưa làm |
 
 **Giai đoạn 1 (bản 0.9–1.0): làm sâu trên bản đồ hiện có, chưa mở rộng**
 
+Ba việc người dùng chọn làm trước:
+
 - Biển chỉ dẫn hướng đi (biển xanh) đặt trước mỗi giao lộ; mũi tên kẻ trên mặt đường cho làn rẽ.
+- Biển cấm xe máy và biển cấm ô tô, kèm lỗi đi vào đường cấm. Cần agent tra cứu Quy chuẩn 41 để lấy đúng hình và số hiệu biển, và tra NĐ 168 để lấy mức phạt, trước khi đưa vào `js/luat.js`.
 - Xi-nhan: thêm phím và nút; lỗi không xi-nhan khi rẽ hoặc chuyển làn.
+
+Rồi mới tới:
+
 - Biển hạn chế tốc độ và lỗi chạy quá tốc độ.
 - Lỗi không đội mũ bảo hiểm (chọn ở màn mở đầu) và dùng điện thoại khi lái.
 - Hai thanh điểm riêng: luật và văn hóa.
 
-**Giai đoạn 2 (bản 1.x): mở rộng bản đồ khoảng 3–4 lần, chia theo khu, mỗi khu một nhóm tình huống**
+**Không làm chế độ dễ riêng cho người mới** (người dùng chốt 13/11/2026). Độ khó đến từ giao thông và từ việc người chơi tự chọn hành trình.
+
+**Giai đoạn 2 (bản 1.x): mở rộng bản đồ gấp 2, chia theo khu, mỗi khu một nhóm tình huống**
 
 - Đại lộ có phân làn ô tô / xe máy, dải phân cách, điểm mở để quay đầu.
 - Giao lộ lớn: đèn mũi tên rẽ trái riêng, nhiều biển chỉ dẫn, làn rẽ riêng.
@@ -194,7 +217,9 @@ Người dùng yêu cầu lúc 10:57 ngày 12/11/2026: lộ trình mở rộng b
 - Đường sắt cắt ngang có biển và chuông.
 - Vòng xuyến lớn nhiều lối ra.
 
-Việc kỹ thuật bắt buộc kèm theo: viết bộ sinh lộ trình NPC tự động. Hiện `ROUTES` trong `js/ban-do.js` viết tay từng tuyến, bản đồ to gấp mấy lần thì không quản nổi.
+Bản đồ gấp 2 nghĩa là khoảng 3200×1200 hoặc 1600×2400 đơn vị; chọn hướng nào tùy bố cục khu, quyết định khi bắt tay làm giai đoạn 2.
+
+Việc kỹ thuật bắt buộc kèm theo: viết bộ sinh lộ trình NPC tự động. Hiện `ROUTES` trong `js/ban-do.js` viết tay từng tuyến, bản đồ to gấp đôi thì không quản nổi.
 
 **Giai đoạn 3 (bản 2.x): độ khó sống động**
 
@@ -206,4 +231,28 @@ Việc kỹ thuật bắt buộc kèm theo: viết bộ sinh lộ trình NPC t�
 
 **Sau giai đoạn 3 mới tới đồ họa 3D (mục 10.1).**
 
-Câu hỏi chờ người dùng chốt: thứ tự ba giai đoạn; việc nào trong giai đoạn 1 làm trước; bản đồ mở rộng gấp mấy lần; có cần chế độ dễ riêng cho người mới không.
+Mỗi khi xong một việc, đổi trạng thái trong bảng trên và thêm dòng vào bảng lịch sử phiên bản ở mục 7.
+
+## 11. Chọn mô hình cho từng loại việc (để đỡ tốn hạn mức)
+
+Người dùng hỏi ngày 13/11/2026. Nguyên tắc chung theo hướng dẫn của Anthropic: Sonnet là lựa chọn mặc định cho phần lớn việc viết code; Opus dành cho việc khó hoặc động đến nhiều chỗ; Haiku cho việc máy móc. Cách dùng hiệu quả nhất là **lập kế hoạch bằng Opus, thực hiện bằng Sonnet**; đổi mô hình giữa chừng không làm mất nội dung cuộc trò chuyện.
+
+| Loại việc trong dự án này | Mô hình | Vì sao |
+|---|---|---|
+| Lập kế hoạch, lộ trình, quyết định thiết kế, tư vấn | Opus | Ít lượt, mỗi quyết định ảnh hưởng dài; đây là chỗ Opus đáng tiền nhất |
+| Viết code một việc đã có kế hoạch rõ (thêm biển báo, thêm xi-nhan, thêm một lỗi) | Sonnet | Phần lớn việc code hằng ngày; nhanh và rẻ hơn nhiều |
+| Dựng bản đồ: thêm đường, nút, ô đỗ, tuyến NPC theo khuôn có sẵn | Sonnet | Việc lặp lại, nhiều số liệu, đã có mẫu trong `js/ban-do.js`. Riêng việc **quyết định bố cục khu nào dạy gì** thì nằm ở bước lập kế hoạch (Opus) |
+| Soạn câu thoại NPC, câu hỏi kiểm tra, cập nhật tài liệu, đổi tên, sửa chữ | Haiku | Việc máy móc, không cần suy luận sâu |
+| Lỗi khó tìm, sửa chạm nhiều file, đổi cách vẽ (ví dụ lên 3D) | Opus | Đúng loại việc Opus mạnh hơn hẳn |
+| Agent tra cứu luật, tra cứu biển báo | Sonnet | Đọc nhiều nguồn rồi tóm lại; Claude rà lại kết luận trước khi đưa vào `js/luat.js` |
+
+Mức effort là đòn bẩy thứ hai: để thấp hoặc vừa cho việc thường, chỉ để cao khi việc khó.
+
+Thói quen giúp đỡ tốn hạn mức:
+
+- **Mỗi việc lớn mở một phiên mới.** Tài liệu trong Project được cache nên dùng lại ít tốn hơn là kéo dài một phiên đã rất dài.
+- Gộp nhiều góp ý vào một lượt thay vì nhắn từng ý.
+- Giao việc đọc nhiều (tra cứu luật, biển báo) cho agent riêng, vì agent chỉ trả về bản tóm tắt ngắn.
+- Xem mức đã dùng ở Settings > Usage.
+
+Nguồn: hướng dẫn của Anthropic về chọn mô hình và về hạn mức sử dụng (support.claude.com).
