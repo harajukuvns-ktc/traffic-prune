@@ -10,6 +10,7 @@
 const W = 1600, H = 1200, HALF = 40;
 const HR = [{y:300, name:'Đường Hoa Sữa'}, {y:900, name:'Đường Me Chua'}];
 const VR = [{x:400, name:'Phố Bánh Mì'}, {x:1200, name:'Đường Cầu Vồng'}];
+// Phố Chợ: phố đi bộ (từ bản 0.9), hai đầu cắm biển P.104 cấm xe máy và P.103a cấm ô tô
 const OW = {x:800, y1:300, y2:900, half:22, name:'Phố Chợ'};
 const RB = {x:1200, y:900, rOut:100, rIn:48, rLane:76};
 const LIGHTS = [{x:400,y:300,off:0},{x:1200,y:300,off:7},{x:400,y:900,off:14}];
@@ -49,8 +50,8 @@ const SEGS = [
   {a:'W1',b:'A',name:'Đường Hoa Sữa'}, {a:'A',b:'B',name:'Đường Hoa Sữa'}, {a:'B',b:'C',name:'Đường Hoa Sữa'}, {a:'C',b:'E1',name:'Đường Hoa Sữa'},
   {a:'W2',b:'D',name:'Đường Me Chua'}, {a:'D',b:'E',name:'Đường Me Chua'}, {a:'E',b:'F',name:'Đường Me Chua'}, {a:'F',b:'E2',name:'Đường Me Chua'},
   {a:'N1',b:'A',name:'Phố Bánh Mì'}, {a:'A',b:'D',name:'Phố Bánh Mì'}, {a:'D',b:'S1',name:'Phố Bánh Mì'},
-  {a:'N2',b:'C',name:'Đường Cầu Vồng'}, {a:'C',b:'F',name:'Đường Cầu Vồng'}, {a:'F',b:'S2',name:'Đường Cầu Vồng'},
-  {a:'E',b:'B',name:'Phố Chợ',oneway:true}
+  {a:'N2',b:'C',name:'Đường Cầu Vồng'}, {a:'C',b:'F',name:'Đường Cầu Vồng'}, {a:'F',b:'S2',name:'Đường Cầu Vồng'}
+  // Phố Chợ (E–B) là phố đi bộ từ bản 0.9: cắm biển cấm xe máy và ô tô, nên không có trong đồ thị đường cho xe
 ];
 function segIdx(a, b){ return SEGS.findIndex(s => (s.a === a && s.b === b) || (s.a === b && s.b === a)); }
 const RING_SIDE = {C:'N', E:'W', S2:'S', E2:'E'};
@@ -60,7 +61,7 @@ const DESTS = [
   {name:'Tiệm bánh mì Cô Ba', icon:'🥖', bay: bayH(300,'S',600), seg: segIdx('A','B')},
   {name:'Quán trà đá Chú Tèo', icon:'🍵', bay: bayH(300,'N',180), seg: segIdx('W1','A')},
   {name:'Bưu cục Phố Mới', icon:'📮', bay: bayH(300,'S',1420), seg: segIdx('C','E1')},
-  {name:'Chợ Hoa Sữa', icon:'🛒', bay: bayV(800,'E',600,22), seg: segIdx('E','B')},
+  {name:'Chợ Hoa Sữa (bãi đỗ xe cổng chợ)', icon:'🛒', bay: bayH(900,'N',875), seg: segIdx('E','F')},
   {name:'Trường mầm non Sơn Ca', icon:'🏫', bay: bayV(400,'E',620), seg: segIdx('A','D')},
   {name:'Tiệm hoa Bà Tư', icon:'🌸', bay: bayV(1200,'E',600), seg: segIdx('C','F')},
   {name:'Cà phê Hẻm Nhỏ', icon:'☕', bay: bayH(900,'N',950), seg: segIdx('E','F')},
@@ -72,6 +73,41 @@ for (const d of DESTS){
   const b = d.bay;
   d.lx = b.side === 'E' ? b.x + b.w + 16 : b.side === 'W' ? b.x - 16 : b.cx;
   d.ly = b.side === 'S' ? b.y + b.h + 14 : b.side === 'N' ? b.y - 14 : b.cy;
+}
+
+// Biển chỉ dẫn hướng đi đặt trước ngã tư (nền xanh, chữ trắng; dạng chung, không gán số hiệu biển).
+// Đặt bên phải, cách tâm ngã tư SIGN_BACK; mỗi biển ghi tên đường ở các hướng trái / thẳng / phải.
+const SIGN_BACK = [150, 175, 125, 200], SIGN_SIDE = HALF + 8;
+// vị trí cột biển P của các ô đỗ (để biển chỉ dẫn không chồng lên)
+const P_SIGNS = BAYS.map(b => ({x: b.w > b.h ? b.x + 6 : (b.side === 'E' ? b.x + b.w + 3 : b.x - 3), y: b.w > b.h ? (b.side === 'S' ? b.y + b.h + 3 : b.y - 3) : b.y + 6}));
+const SIGN_EXTRA = [{a:'B', b:'E', name:'Phố Chợ (đi bộ)', ped:true}];
+const SIGNBOARDS = [];
+for (const id of ['A','B','C','D','E']){
+  const nb = [];
+  for (const sg of SEGS.concat(SIGN_EXTRA)){
+    if (sg.a === id) nb.push({id: sg.b, name: sg.name, ped: sg.ped});
+    else if (sg.b === id) nb.push({id: sg.a, name: sg.name, ped: sg.ped});
+  }
+  for (const from of nb){
+    if (DEAD[from.id] || from.ped) continue;   // từ mép bản đồ vào, hoặc từ phố đi bộ ra, thì không có biển
+    let hx = N[id].x - N[from.id].x, hy = N[id].y - N[from.id].y; const hl = Math.hypot(hx, hy); hx /= hl; hy /= hl;
+    const rows = [];
+    for (const to of nb){
+      if (to.id === from.id) continue;
+      let dx = N[to.id].x - N[id].x, dy = N[to.id].y - N[id].y; const dl = Math.hypot(dx, dy); dx /= dl; dy /= dl;
+      const cross = hx*dy - hy*dx, dot = hx*dx + hy*dy;   // trục y hướng xuống: cross > 0 là rẽ phải
+      rows.push({k: (Math.abs(cross) < 0.5 && dot > 0) ? 'thang' : (cross > 0 ? 'phai' : 'trai'), name: to.name, ped: !!to.ped});
+    }
+    rows.sort((p, q) => ['trai','thang','phai'].indexOf(p.k) - ['trai','thang','phai'].indexOf(q.k));
+    // thử vài khoảng cách, chọn chỗ đầu tiên không sát cột biển P hay biển chỉ dẫn khác
+    let pos = null;
+    for (const back of SIGN_BACK){
+      const q = {x: N[id].x - hx*back - hy*SIGN_SIDE, y: N[id].y - hy*back + hx*SIGN_SIDE};
+      if (!pos) pos = q;
+      if (!P_SIGNS.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 52) && !SIGNBOARDS.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 60)){ pos = q; break; }
+    }
+    SIGNBOARDS.push({x: pos.x, y: pos.y, rows, node: id});
+  }
 }
 
 // Vỉa hè ở góc giao lộ được bo cong bán kính CURB (khai báo ở trên, cạnh CYCLE)
@@ -100,7 +136,7 @@ function classify(x, y){
   if (dr <= RB.rOut) return dr < RB.rIn ? {t:'island'} : {t:'ring'};
   for (const v of VR) for (const h of HR)
     if (Math.abs(x - v.x) <= HALF && Math.abs(y - h.y) <= HALF) return {t:'junction', X:v.x, Y:h.y};
-  if (Math.abs(x - OW.x) <= OW.half && y >= OW.y1 + HALF && y <= OW.y2 - HALF) return {t:'oneway'};
+  if (Math.abs(x - OW.x) <= OW.half && y >= OW.y1 + HALF && y <= OW.y2 - HALF) return {t:'ped'};
   for (const h of HR) if (Math.abs(y - h.y) <= HALF && x >= 0 && x <= W) return {t:'h', Y:h.y};
   for (const v of VR) if (Math.abs(x - v.x) <= HALF && y >= 0 && y <= H) return {t:'v', X:v.x};
   return inCurb(x, y) || {t:'off'};
@@ -202,13 +238,12 @@ function ringRoute(from, to){
 const ROUTES = [
   {loop:true, n:4, bus:1, pts:[P(420,320), P(1180,320), ...ringRoute('N','W'), P(420,880)]},
   {loop:true, n:3, bus:1, pts:[P(1220,280), P(380,280), P(380,920), ...ringRoute('W','N')]},
-  {loop:true, n:3, bus:0, pts:[P(800,860), P(800,320), P(1180,320), ...ringRoute('N','W'), P(800,880)]},
-  {loop:false, n:2, pts:[P(-40,320), P(1640,320)]},
-  {loop:false, n:2, pts:[P(1640,280), P(-40,280)]},
+  {loop:false, n:3, pts:[P(-40,320), P(1640,320)]},
+  {loop:false, n:3, pts:[P(1640,280), P(-40,280)]},
   {loop:false, n:2, pts:[P(420,1240), P(420,-40)]},
   {loop:false, n:2, pts:[P(380,-40), P(380,1240)]},
-  {loop:false, n:2, pts:[P(-40,920), ...ringRoute('W','E'), P(1640,920)]},
-  {loop:false, n:2, pts:[P(1640,880), ...ringRoute('E','W'), P(-40,880)]},
+  {loop:false, n:3, pts:[P(-40,920), ...ringRoute('W','E'), P(1640,920)]},
+  {loop:false, n:3, pts:[P(1640,880), ...ringRoute('E','W'), P(-40,880)]},
   {loop:false, n:2, pts:[P(1180,-40), ...ringRoute('N','S'), P(1180,1240)]},
   {loop:false, n:2, pts:[P(1220,1240), ...ringRoute('S','N'), P(1220,-40)]}
 ];

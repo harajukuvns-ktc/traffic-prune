@@ -45,6 +45,12 @@
     box-shadow:0 3px 8px rgba(0,0,0,.2);touch-action:none}
   .cbtn.on{background:var(--accent);color:#fff}
   .cbtn.small{font-size:15px}
+  .padcol{display:flex;flex-direction:column;gap:8px;align-items:stretch;pointer-events:none}
+  .sigrow{display:flex;justify-content:space-between;gap:10px;pointer-events:auto}
+  .sbtn{flex:1;height:38px;border-radius:19px;border:0;background:rgba(255,236,179,.92);color:#8a5a00;font-size:13px;font-weight:700;
+    box-shadow:0 3px 8px rgba(0,0,0,.2);touch-action:none;padding:0 8px;white-space:nowrap}
+  .sbtn:active{background:#ffae00;color:#fff}
+  #sigchip b{color:#e08a00;font-size:15px;transition:opacity .05s}
   .dpad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:2px;
     grid-template-areas:". up ." "left . right" ". down ."}
   .dpad .cbtn{width:58px;height:58px;font-size:22px}

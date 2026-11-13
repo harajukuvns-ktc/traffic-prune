@@ -53,6 +53,20 @@ const LINES = {
     'Dừng giữa đường thế này cả phố phải chờ {x} đó. Có ô chữ P ven đường kìa, tấp vào cho thong thả!',
     '{X} muốn nghỉ chân thì ghé ô đỗ xe chữ P nha. Lòng đường đâu phải phòng khách.'
   ],
+  noentry: [
+    'Biển cấm xe máy to đùng thế kia mà {x} vẫn chạy vào. Phố đi bộ là để đi bộ, {x} ơi!',
+    '{X} chạy xe giữa phố đi bộ à? Mấy bác đang dạo chợ nhìn {x} kìa.',
+    'Gạch chéo đỏ nghĩa là xe máy đừng vào. {X} đọc biển chưa, hay biển tự đọc {x}?'
+  ],
+  signal: [
+    'Rẽ mà không xi-nhan, người sau đoán ý {x} kiểu gì? Chưa ai có thần giao cách cảm đâu.',
+    '{X} rẽ bất ngờ như phim kinh dị vậy. Bật xi-nhan trước nha, cả phố đỡ giật mình.',
+    'Cái cần xi-nhan không phải đồ trang trí đâu {x} ơi. Bấm Q hoặc E trước khi rẽ nhé.'
+  ],
+  signaloff: [
+    'Xi-nhan nhấp nháy nãy giờ mà {x} đi thẳng. Tắt giùm đi, người sau đang đoán {x} sắp rẽ đó!',
+    'Đèn xi-nhan bên {x} còn nháy kìa. Xong việc rẽ thì tắt đi nha, kẻo cả phố hiểu lầm.'
+  ],
   parkdir: [
     'Ơ kìa {x}, cả dãy xe đỗ xuôi chiều, mỗi {x} đỗ ngược. Định đứng ra chào khách à?',
     '{X} đỗ ngược chiều rồi kìa. Lúc ra xe lại phải cắt ngang dòng xe, nguy hiểm lắm đó!',

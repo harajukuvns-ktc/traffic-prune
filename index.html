@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Traffic Prune · bản chơi thử 0.8</title>
+<title>Traffic Prune · bản chơi thử 0.9</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%B5%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -18,6 +18,7 @@
     <div class="chip" id="pts"></div>
     <div class="chip" id="streak"></div>
     <div class="chip" id="speed"></div>
+    <div class="chip" id="sigchip" style="display:none"><b id="sigL">◀</b> <span class="lbl">xi-nhan</span> <b id="sigR">▶</b></div>
   </div>
   <div id="warn"></div>
   <div id="bubble"><b id="bubName"></b><span id="bubText"></span></div>
@@ -54,17 +55,25 @@
     <path d="M226 46 A40 40 0 0 1 232 99" fill="none" stroke="#e5484d" stroke-width="3" stroke-linecap="round"/>
     <g id="needle" transform="rotate(-128 200 74)"><path d="M200 74 L200 40" stroke="#ffb020" stroke-width="3.5" stroke-linecap="round"/></g>
     <circle cx="200" cy="74" r="4" fill="#fffaf2"/>
+    <polygon id="sigCkL" points="124,56 146,44 146,68" fill="#ffae00" opacity="0"/>
+    <polygon id="sigCkR" points="276,56 254,44 254,68" fill="#ffae00" opacity="0"/>
     <text id="ckSpeed" x="200" y="100" text-anchor="middle" font-size="19" font-weight="700" fill="#fffaf2" font-family="Segoe UI, Roboto, sans-serif">0</text>
     <text id="ckUnit" x="200" y="112" text-anchor="middle" font-size="8.5" fill="#bdbbc7" font-family="Segoe UI, Roboto, sans-serif">km/h</text>
   </svg>
 </div>
 
 <div id="controls">
-  <div class="pad dpad">
-    <button class="cbtn d-up" data-k="up" aria-label="Tiến">▲</button>
-    <button class="cbtn d-left" data-k="left" aria-label="Rẽ trái">◀</button>
-    <button class="cbtn d-right" data-k="right" aria-label="Rẽ phải">▶</button>
-    <button class="cbtn d-down" data-k="down" aria-label="Lùi">▼</button>
+  <div class="padcol">
+    <div class="sigrow">
+      <button class="sbtn" data-s="-1" aria-label="Xi-nhan trái">◀ xi-nhan</button>
+      <button class="sbtn" data-s="1" aria-label="Xi-nhan phải">xi-nhan ▶</button>
+    </div>
+    <div class="pad dpad">
+      <button class="cbtn d-up" data-k="up" aria-label="Tiến">▲</button>
+      <button class="cbtn d-left" data-k="left" aria-label="Rẽ trái">◀</button>
+      <button class="cbtn d-right" data-k="right" aria-label="Rẽ phải">▶</button>
+      <button class="cbtn d-down" data-k="down" aria-label="Lùi">▼</button>
+    </div>
   </div>
   <div class="pad">
     <button class="cbtn small" data-k="brake">PHANH</button>
@@ -75,13 +84,14 @@
 <div class="overlay" id="start">
   <div class="card">
     <h1>Traffic Prune</h1>
-    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.8)</p>
+    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.9)</p>
     <ul>
       <li>Bạn là shipper xe máy. Màn hình giống <b>ứng dụng dẫn đường</b>: bản đồ xoay theo hướng xe, <b>vạch chấm xanh có mũi tên nhỏ</b> chỉ lối, bảng xanh lá phía trên báo chỗ rẽ sắp tới.</li>
       <li>Tới nơi thì <b>tấp vào ô đỗ xe chữ P</b> và dừng lại để giao hàng. Muốn nghỉ thì cũng đỗ vào ô P, đừng dừng giữa đường.</li>
       <li><b>Vạch vàng đứt</b>: được cắt qua để rẽ, vượt hoặc vào ô P bên kia đường. <b>Vạch vàng liền</b> (gần ngã tư, vòng xuyến): không được đè lên.</li>
       <li>Đi sạch luật thì được thưởng thêm. Phạt tiền và trừ điểm theo <b>mức phạt thật</b> của Nghị định 168/2024/NĐ-CP. Làm ai kẹt xe hay va chạm thì bạn phải <b>đền tiền</b> cho người đó.</li>
       <li>Lái xe: ↑ hoặc W để ga, Space để phanh (↓ hoặc S: phanh, giữ tiếp thì lùi), ← → hoặc A D để rẽ trái, rẽ phải. Trên điện thoại bấm các nút ở dưới màn hình.</li>
+      <li><b>Xi-nhan</b>: bấm <b>Q</b> (trái) hoặc <b>E</b> (phải) <b>trước khi rẽ ở ngã tư hoặc quay đầu</b>; trên điện thoại là hai nút nhỏ phía trên nút mũi tên. Xi-nhan không tự tắt, rẽ xong bấm lại để tắt. Nhìn <b>biển xanh</b> bên đường để biết ngã tư dẫn đi đâu, và nhớ <b>phố đi bộ có biển cấm xe máy</b>.</li>
     </ul>
     <div class="row">
       <label for="xungho">Người trong phố gọi bạn là:</label>

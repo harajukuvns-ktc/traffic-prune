@@ -37,6 +37,18 @@ const LAW = {
     ref: 'NĐ 168/2024/NĐ-CP, Điều 7: điểm a khoản 10 (vd. đi ngược chiều, sai phần đường mà gây tai nạn) hoặc điểm b khoản 10 (vd. vượt đèn đỏ, đè vạch, không nhường đường ở vòng xuyến mà gây tai nạn); trừ 10 điểm theo điểm d khoản 13',
     tip: 'Một lỗi nhỏ cộng thêm một cú va chạm là thành lỗi rất nặng. Chậm lại vài giây rẻ hơn nhiều.'
   },
+  // Phố đi bộ dựng bằng biển P.104 (cấm xe máy) + P.103a (cấm ô tô). Kiểm tra toàn văn NĐ 168 ngày 13/11/2026 (docs/THIET-KE.md mục 8).
+  noentry: {
+    name: 'Đi vào đường có biển cấm xe máy', fine: 2500000, range: '2.000.000–3.000.000đ', pts: 2,
+    ref: 'NĐ 168/2024/NĐ-CP, Điều 7: điểm b khoản 6 (phạt tiền: đi vào khu vực cấm, đường có biển báo hiệu cấm đi vào đối với loại phương tiện đang điều khiển), điểm a khoản 13 (trừ điểm)',
+    tip: 'Biển tròn viền đỏ, gạch chéo đỏ, hình người lái xe máy (P.104) là "Cấm xe máy". Biển cùng kiểu có hình ô tô (P.103a) là "Cấm ô tô". Phố đi bộ cắm hai biển này ở đầu phố: xe máy đừng chạy vào, hãy đi vòng sang đường khác.'
+  },
+  // Chỉ bắt khi rẽ ở ngã tư hoặc quay đầu. Vượt xe không báo hiệu là lỗi khác nên game không bắt.
+  signal: {
+    name: 'Rẽ hoặc quay đầu không bật xi-nhan', fine: 700000, range: '600.000–800.000đ', pts: 0,
+    ref: 'NĐ 168/2024/NĐ-CP, Điều 7, điểm a khoản 3 (chuyển hướng không có tín hiệu báo hướng rẽ; không trừ điểm GPLX). Căn cứ: khoản 2 Điều 15 Luật TTATGTĐB 2024: phải có tín hiệu báo hướng rẽ trước khi chuyển hướng và dùng liên tục trong suốt quá trình chuyển hướng',
+    tip: 'Trước khi rẽ hoặc quay đầu, bật xi-nhan bên sẽ rẽ (phím Q: trái, E: phải; trên điện thoại là hai nút nhỏ phía trên nút mũi tên) và giữ đến khi rẽ xong. Xi-nhan xong nhớ tắt đi.'
+  },
   // CHỈ NHẮC NHỞ (người dùng chốt 12/11/2026): xe máy không có mức phạt riêng cho hành vi này.
   // remind: true → không phạt tiền, không trừ điểm, nhưng chuyến đó không tính là chuyến sạch.
   parkdir: {
@@ -46,7 +58,8 @@ const LAW = {
     tip: 'Đỗ xe ven đường: tấp vào lề bên phải theo chiều mình đang đi, đầu xe xuôi theo dòng xe. Ô đỗ ở lề bên kia thì quay đầu ở chỗ được phép rồi mới vào ô.'
   }
 };
-const LAW_ORDER = ['red','wrongway','line','lane','ring','crash','parkdir'];
+// 'wrongway' tạm không có trong sổ tay vì bản đồ hiện chưa còn phố một chiều (Phố Chợ đã thành phố đi bộ); sẽ có lại ở bản đồ mở rộng.
+const LAW_ORDER = ['red','noentry','signal','line','lane','ring','crash','parkdir'];
 
 // Bài kiểm tra khi bằng lái hết điểm. Đáp án đúng luôn đặt ở vị trí đầu (a[0]); game tự xáo trộn khi hiển thị.
 const QUIZ = [
@@ -66,6 +79,10 @@ const QUIZ = [
    a:['Tấp vào nơi đỗ xe cho phép','Dừng sát vạch giữa đường','Dừng ngay trong ngã tư'], why:'Dừng lâu giữa đường làm người khác phải chờ; hãy vào nơi đỗ xe.'},
   {q:'Người lái xe máy vượt đèn đỏ bị xử phạt thế nào?',
    a:['Phạt 4–6 triệu đồng, trừ 4 điểm GPLX','Phạt 200–400 nghìn đồng','Chỉ bị nhắc nhở'], why:'Theo NĐ 168/2024/NĐ-CP, Điều 7: phạt 4.000.000–6.000.000đ và trừ 4 điểm.'},
+  {q:'Biển tròn, viền đỏ, gạch chéo đỏ, hình người lái xe máy nghĩa là gì?',
+   a:['Cấm xe máy đi vào','Chỉ xe máy được đi','Đường dành cho người đi bộ'], why:'Đó là biển P.104 "Cấm xe máy". Xe máy đi vào đường có biển này bị phạt 2–3 triệu đồng và trừ 2 điểm (điểm b khoản 6 Điều 7 NĐ 168/2024).'},
+  {q:'Bạn sắp rẽ phải ở ngã tư. Việc đúng là gì?',
+   a:['Bật xi-nhan phải trước khi rẽ và giữ đến khi rẽ xong','Rẽ trước, bật xi-nhan sau','Không cần xi-nhan nếu đường vắng'], why:'Khoản 2 Điều 15 Luật TTATGTĐB 2024: phải có tín hiệu báo hướng rẽ trước khi chuyển hướng và dùng liên tục suốt quá trình chuyển hướng. Không bật bị phạt 600–800 nghìn đồng (điểm a khoản 3 Điều 7 NĐ 168/2024).'},
   {q:'Mỗi giấy phép lái xe có bao nhiêu điểm?',
    a:['12 điểm','10 điểm','20 điểm'], why:'Theo Luật Trật tự, an toàn giao thông đường bộ 2024, mỗi GPLX có 12 điểm.'}
 ];

@@ -16,7 +16,10 @@ const S = {
   trip: null, route: null, routeT: 0, bubble: null, floats: [], flash: 0, lawT: 0, warnT: 0, warnText: '',
   wrongT: 0, okT: 0, solidT: 0, sideEp: false, ringWrongT: 0, ringEp: false, wwEp: false,
   jamTick: 0, sidewalkSaidT: -99, crashCool: -1, inBay: false, stopT: 0, stopSaidT: -99, suspended: false,
-  sound: {on: true, fx: 0.7, voice: 0.9, npc: 0.8, bike: 'so'}, gear: 1
+  sound: {on: true, fx: 0.7, voice: 0.9, npc: 0.8, bike: 'so'}, gear: 1,
+  // xi-nhan: turn = -1 (trái), 0 (tắt), 1 (phải); không tự tắt. sigAcc: tổng góc đã quay; sigEp: đã xét lỗi lượt rẽ này
+  turn: 0, sigInJ: false, blinkT: 0, sigOnT: -99, sigAcc: 0, sigStraightT: 0, sigEp: false, turnBegan: false, turnStartT: -99, sigRunT: 0, sigOffSaidT: -99, blinkOn: false,
+  pedEp: false, pedCool: -99
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -30,8 +33,9 @@ function makeNPCs(){
     const count = route.n + (route.bus || 0);
     for (let k = 0; k < count; k++){
       const isBus = k < (route.bus || 0);
-      const s = route.loop ? (L * k / count) : (L * (k + 0.35) / (count + 0.6));
-      const p = pointAt(route, s);
+      let s = route.loop ? (L * k / count) : (L * (k + 0.35) / (count + 0.6));
+      let p = pointAt(route, s);
+      if (Math.hypot(p.x - START.x, p.y - START.y) < 70){ s += 120; p = pointAt(route, s); }   // đừng xếp xe NPC chồng lên ô đỗ lúc người chơi xuất phát
       const n = {
         id: ++uid, route, idx: p.idx, x: p.x, y: p.y, a: 0, v: 0,
         kind: isBus ? 'bus' : 'bike', len: isBus ? 46 : 18, w: isBus ? 16 : 8,
@@ -49,6 +53,13 @@ function makeNPCs(){
   // Người đi bộ trên vỉa hè (đi vòng quanh khối phố, phía trong các ô đỗ xe)
   peds.length = 0;
   const pb = [BLOCKS[1], BLOCKS[3], BLOCKS[4], BLOCKS[0], BLOCKS[7]];
+  // Phố Chợ là phố đi bộ: có vài người dạo chợ giữa phố
+  { const route = {loop:true, pts:[P(789,385), P(789,815), P(811,815), P(811,385)]};
+    for (let k = 0; k < 4; k++){
+      const {L} = pathLen(route.pts, true); const p = pointAt(route, L * k / 4);
+      peds.push({route, idx:p.idx, x:p.x, y:p.y, v:16 + rnd()*8, stopT:0, name: PED_NAMES[Math.floor(rnd()*PED_NAMES.length)],
+        color:['#e76f51','#2a9d8f','#e9c46a','#8e7dbe','#f4a261'][Math.floor(rnd()*5)]});
+    } }
   pb.forEach((b, i) => {
     if (!b) return;
     const m = 20;
@@ -78,7 +89,7 @@ function save(){
 }
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
-  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false;
+  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
   newTrip();
 }
@@ -160,6 +171,12 @@ function say(speaker, text, name){
   $('bubName').textContent = '💬 ' + nm;
   $('bubText').textContent = '';
   bubEl.style.display = 'block';
+}
+// Xi-nhan: dir = -1 (trái) hoặc 1 (phải); bấm lại đúng bên đang bật thì tắt. Không tự tắt.
+function setSignal(dir){
+  S.turn = (S.turn === dir) ? 0 : dir;
+  S.sigOnT = S.now; S.sigRunT = 0; S.blinkT = 0; S.blinkOn = S.turn !== 0;
+  if (S.turn) SND.tick(true);
 }
 function floatText(x, y, text, color){ S.floats.push({x, y, text, color, t: 1.8}); }
 function showLaw(html, good){
@@ -517,7 +534,6 @@ function laneAssist(c, dt){
   }
   if (c.t === 'h' && Math.abs(ca) > 0.8){ const dx = ca >= 0 ? 1 : -1; base = dx > 0 ? 0 : Math.PI; e = (player.y - (c.Y + 20*dx)) * dx; }
   else if (c.t === 'v' && Math.abs(sa) > 0.8){ const dy = sa >= 0 ? 1 : -1; base = dy > 0 ? Math.PI/2 : -Math.PI/2; e = (player.x - (c.X - 20*dy)) * -dy; }
-  else if (c.t === 'oneway' && Math.abs(sa) > 0.8){ const dy = sa >= 0 ? 1 : -1; base = dy > 0 ? Math.PI/2 : -Math.PI/2; e = (player.x - OW.x) * -dy; }
   if (base === null) return;
   const target = base - clamp(e / k, -lim, lim);
   player.a = normA(player.a + normA(target - player.a) * Math.min(1, dt * 3.5));
@@ -534,7 +550,7 @@ function reasonToStop(){
   return false;
 }
 function updPlayer(dt){
-  const prev = {x: player.x, y: player.y};
+  const prev = {x: player.x, y: player.y, a: player.a};
   const prevC = classify(prev.x, prev.y);
   S.inBay = prevC.t === 'bay';
   // Space và nút PHANH: chỉ phanh, dừng hẳn thì đứng yên. Phím ↓ / S: phanh, dừng rồi giữ tiếp thì lùi chậm.
@@ -618,13 +634,12 @@ function checkRules(prev, prevC, dt){
     }
   }
 
-  // 2) Đi ngược chiều trên phố một chiều (phố này chỉ đi hướng bắc)
-  if (c.t === 'oneway'){
-    if (my > 0.5 && sp > 10 && player.stun <= 0){
-      if (!S.wwEp){ S.wwEp = true; violate('wrongway'); }
-      S.faultUntil = Math.max(S.faultUntil, S.now + 1);
-    }
-  } else S.wwEp = false;
+  // 2) Phố Chợ là phố đi bộ (biển P.104 cấm xe máy, P.103a cấm ô tô): xe máy chạy vào là bị phạt
+  if (c.t === 'ped'){
+    warn('⛔ Phố Chợ là phố đi bộ, có biển cấm xe máy: lùi ra và đi đường khác');
+    if (sp > 10 && player.stun <= 0 && !S.pedEp && S.now > S.pedCool){ S.pedEp = true; violate('noentry'); }
+    if (S.pedEp) S.faultUntil = Math.max(S.faultUntil, S.now + 1);
+  } else if (S.pedEp){ S.pedEp = false; S.pedCool = S.now + 4; }
 
   // 3) Vạch giữa đường
   //    Vạch liền: sang phần đường ngược chiều là bị phạt ngay.
@@ -668,11 +683,42 @@ function checkRules(prev, prevC, dt){
   } else if (c.t !== 'ring'){ S.ringWrongT = 0; S.ringEp = false; }
 
   // 5) Dừng giữa đường làm người khác phải chờ: chỉ nhắc nhẹ, chưa phạt
-  const onRoad = c.t === 'h' || c.t === 'v' || c.t === 'oneway' || c.t === 'junction' || c.t === 'ring';
+  const onRoad = c.t === 'h' || c.t === 'v' || c.t === 'junction' || c.t === 'ring';
   if (onRoad && sp < 3 && player.stun <= 0 && !reasonToStop()) S.stopT += dt; else S.stopT = 0;
   if (S.stopT > 4 && S.now - S.stopSaidT > 20){
     const blocked = npcs.find(n => !n.hidden && n.blockedBy === player && n.waitT > 1.5);
     if (blocked){ S.stopSaidT = S.now; say(blocked, fill(pick(LINES.stopping))); }
+  }
+
+  // 6) Xi-nhan. Chỉ bắt khi RẼ Ở NGÃ TƯ (một lượt rẽ đi qua nút giao và quay xe quá khoảng 50 độ) hoặc QUAY ĐẦU (quá khoảng 137 độ).
+  //    Cắt vạch đứt để vượt xe không tính (đó là lỗi khác). Trợ lái chỉ nắn nhẹ trên đường thẳng nên không bị tính là rẽ.
+  //    Phải bật đúng bên và bật TRƯỚC khi bắt đầu rẽ (cho phép trễ 0,25 giây).
+  const sigZone = (c.t === 'junction' || c.t === 'h' || c.t === 'v');
+  if (!sigZone){ S.sigAcc = 0; S.sigStraightT = 0; S.sigEp = false; S.turnBegan = false; S.sigInJ = false; }
+  else if (sp > 8 && player.stun <= 0){
+    if (c.t === 'junction') S.sigInJ = true;   // lượt rẽ này đi qua nút giao
+    const dth = normA(player.a - prev.a), rate = Math.abs(dth) / Math.max(dt, 1e-4);
+    S.sigAcc += dth;
+    if (rate > 0.3){
+      S.sigStraightT = 0;
+      if (!S.turnBegan){ S.turnBegan = true; S.turnStartT = S.now; }
+    } else {
+      S.sigStraightT += dt;
+      if (S.sigStraightT > 1.2){ S.sigAcc = 0; S.sigEp = false; S.turnBegan = false; S.sigInJ = false; }
+    }
+    const need = Math.sign(S.sigAcc), thr = S.sigInJ ? 0.9 : 2.4;
+    if (!S.sigEp && Math.abs(S.sigAcc) >= thr){
+      S.sigEp = true;
+      if (!(S.turn === need && S.sigOnT <= S.turnStartT + 0.25)) violate('signal');
+    }
+    // xi-nhan còn bật mà cứ đi thẳng lâu: NPC nhắc, không phạt
+    if (S.turn !== 0 && rate <= 0.3 && sp > 10){
+      S.sigRunT += dt;
+      if (S.sigRunT > 10 && S.now - S.sigOffSaidT > 30){
+        S.sigOffSaidT = S.now; S.sigRunT = 0;
+        say(nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true}, fill(pick(LINES.signaloff)));
+      }
+    } else if (rate > 0.3) S.sigRunT = 0;
   }
 
   // Đỗ trong ô P mà đầu xe ngược chiều đi của làn: chỉ nhắc (mỗi lần vào ô nhắc một lần)
@@ -711,6 +757,11 @@ function step(dt){
   for (const p of peds) updPed(p, dt);
   updPlayer(dt);
   updJam(dt);
+  if (S.turn !== 0){   // đèn xi-nhan nháy 0,7 giây một nhịp, mỗi lần đổi trạng thái có một tiếng tích/tắc
+    S.blinkT += dt;
+    const on = (S.blinkT % 0.7) < 0.35;
+    if (on !== S.blinkOn){ S.blinkOn = on; SND.tick(on); }
+  } else S.blinkOn = false;
   S.routeT -= dt;
   if (S.routeT <= 0){ S.routeT = 0.1; S.route = computeRoute(); }
   if (S.bubble){
@@ -811,7 +862,6 @@ function drawGround(){
   ctx.fillStyle = '#5b6170';
   for (const h of HR) ctx.fillRect(-EXT, h.y - HALF, W + 2*EXT, HALF*2);
   for (const v of VR) ctx.fillRect(v.x - HALF, -EXT, HALF*2, H + 2*EXT);
-  ctx.fillRect(OW.x - OW.half, OW.y1, OW.half*2, OW.y2 - OW.y1);
   ctx.beginPath(); ctx.arc(RB.x, RB.y, RB.rOut, 0, Math.PI*2); ctx.fill();
   // bo cong góc vỉa hè: phủ màu đường vào góc vuông rồi vẽ lại cung vỉa hè
   for (const c of CORNERS){
@@ -820,6 +870,16 @@ function drawGround(){
     ctx.fillStyle = '#e9e1d3';
     ctx.beginPath(); ctx.moveTo(c.cx, c.cy); ctx.arc(c.cx, c.cy, CURB, 0, Math.PI*2); ctx.fill();
   }
+  // Phố Chợ: phố đi bộ lát gạch (không phải lòng đường cho xe)
+  { const y0 = OW.y1 + HALF, y1 = OW.y2 - HALF;
+    ctx.fillStyle = '#e3d2ad'; ctx.fillRect(OW.x - OW.half, y0, OW.half*2, y1 - y0);
+    ctx.strokeStyle = 'rgba(160,130,90,.45)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (let y = y0; y <= y1; y += 14){ ctx.moveTo(OW.x - OW.half, y); ctx.lineTo(OW.x + OW.half, y); }
+    for (let x = OW.x - OW.half + 11; x < OW.x + OW.half; x += 11){ ctx.moveTo(x, y0); ctx.lineTo(x, y1); }
+    ctx.stroke();
+    ctx.strokeStyle = '#e5484d'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.beginPath();   // vạch đỏ đứt ở hai đầu phố
+    ctx.moveTo(OW.x - OW.half, y0); ctx.lineTo(OW.x + OW.half, y0); ctx.moveTo(OW.x - OW.half, y1); ctx.lineTo(OW.x + OW.half, y1);
+    ctx.stroke(); ctx.setLineDash([]); }
   // ô đỗ xe
   for (const b of BAYS){
     ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(b.x, b.y, b.w, b.h);
@@ -872,12 +932,6 @@ function drawGround(){
   for (const h of HR){ ctx.moveTo(2, h.y - HALF); ctx.lineTo(2, h.y + HALF); ctx.moveTo(W - 2, h.y - HALF); ctx.lineTo(W - 2, h.y + HALF); }
   for (const v of VR){ ctx.moveTo(v.x - HALF, 2); ctx.lineTo(v.x + HALF, 2); ctx.moveTo(v.x - HALF, H - 2); ctx.lineTo(v.x + HALF, H - 2); }
   ctx.stroke(); ctx.setLineDash([]);
-  // mũi tên phố một chiều
-  ctx.fillStyle = 'rgba(255,255,255,.8)';
-  for (let y = 420; y <= 800; y += 130){
-    ctx.beginPath(); ctx.moveTo(OW.x, y - 16); ctx.lineTo(OW.x + 9, y - 2); ctx.lineTo(OW.x + 3, y - 2); ctx.lineTo(OW.x + 3, y + 14);
-    ctx.lineTo(OW.x - 3, y + 14); ctx.lineTo(OW.x - 3, y - 2); ctx.lineTo(OW.x - 9, y - 2); ctx.closePath(); ctx.fill();
-  }
 }
 
 function drawRoute(){
@@ -945,7 +999,7 @@ function drawHouses(){
   }
 }
 
-function drawBike(o, body, helmet, glow){
+function drawBike(o, body, helmet, glow, sig){
   ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.a);
   if (glow){ ctx.fillStyle = 'rgba(52,125,246,.25)'; ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI*2); ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI*2); ctx.stroke(); }
@@ -954,6 +1008,11 @@ function drawBike(o, body, helmet, glow){
   ctx.fillStyle = body; rr(ctx, -6, -4, 12, 8, 3); ctx.fill();
   ctx.fillStyle = helmet; ctx.beginPath(); ctx.arc(-1, 0, 4, 0, Math.PI*2); ctx.fill();
   ctx.fillStyle = '#fff6cc'; ctx.fillRect(8, -1.5, 2, 3);
+  if (sig && S.blinkOn){   // đèn xi-nhan phía bên đang bật (bên phải của xe là hướng +y)
+    const y = sig * 6;
+    ctx.fillStyle = 'rgba(255,170,0,.35)'; ctx.beginPath(); ctx.arc(7, y, 5, 0, Math.PI*2); ctx.arc(-9, y, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#ffae00'; ctx.beginPath(); ctx.arc(7, y, 2.2, 0, Math.PI*2); ctx.arc(-9, y, 2.2, 0, Math.PI*2); ctx.fill();
+  }
   ctx.restore();
 }
 function drawBus(o){
@@ -977,7 +1036,7 @@ function drawAgents(){
     ctx.globalAlpha = 1;
   }
   if (S.view === 'bike') return;   // góc nhìn sau tay lái: xe của mình là ghi đông ở mép dưới màn hình
-  drawBike(player, '#ff8a3d', '#ffffff', true);
+  drawBike(player, '#ff8a3d', '#ffffff', true, S.turn);
   ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.a); ctx.fillStyle = '#c0703a'; ctx.fillRect(-11, -4, 6, 8); ctx.restore();
 }
 
@@ -996,6 +1055,23 @@ function signSquare(x, y, draw){
     ctx.fillStyle = '#2f6fde'; rr(ctx, -7, -28, 14, 14, 2.5); ctx.fill();
     draw();
   });
+}
+const ARROW = {trai: '←', thang: '↑', phai: '→'};
+function drawSignboards(){
+  for (const sb of SIGNBOARDS){
+    if (tilted() && Math.hypot(sb.x - player.x, sb.y - player.y) > (S.view === 'bike' ? 420 : 560)) continue;   // xa quá thì chữ không đọc được
+    up(sb.x, sb.y, () => {
+      const rh = 9.2, w = 66, h = sb.rows.length * rh + 5, top = -14 - h;
+      ctx.fillStyle = '#555'; ctx.fillRect(-1, -14, 2, 14);
+      ctx.fillStyle = '#fff'; rr(ctx, -w/2 - 1, top - 1, w + 2, h + 2, 3.5); ctx.fill();
+      ctx.fillStyle = '#1b6fb8'; rr(ctx, -w/2, top, w, h, 3); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '700 6.4px "Segoe UI", Roboto, sans-serif'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      sb.rows.forEach((r, i) => {
+        const y = top + 2.5 + rh * (i + 0.5);
+        ctx.fillText(ARROW[r.k], -w/2 + 3, y); ctx.fillText(r.name, -w/2 + 13, y);
+      });
+    });
+  }
 }
 function drawUprights(){
   // cột đèn tín hiệu, mỗi hướng đi vào có một cột bên tay phải người lái
@@ -1019,10 +1095,28 @@ function drawUprights(){
       });
     }
   }
-  // biển cấm đi ngược chiều (đầu bắc Phố Chợ), biển đường một chiều (đầu nam)
-  const noEntry = () => { ctx.fillStyle = '#fff'; ctx.fillRect(-5, -22.5, 10, 3); };
-  signDisc(OW.x + 33, OW.y1 + 50, '#e5484d', noEntry); signDisc(OW.x - 33, OW.y1 + 50, '#e5484d', noEntry);
-  signSquare(OW.x + 33, OW.y2 - 50, () => { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(0, -27); ctx.lineTo(5, -21); ctx.lineTo(-5, -21); ctx.closePath(); ctx.fill(); ctx.fillRect(-1.5, -22, 3, 6); });
+  // Phố Chợ là phố đi bộ: ở hai đầu có biển P.104 "Cấm xe máy" (bên trái) và P.103a "Cấm ô tô" (bên phải)
+  const banDisc = (x, y, icon) => signDisc(x, y, '#e5484d', () => {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -21, 5.2, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#222'; ctx.strokeStyle = '#222'; icon();
+    ctx.strokeStyle = '#e5484d'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-4, -25); ctx.lineTo(4, -17); ctx.stroke();   // gạch chéo đỏ
+  });
+  const iconRider = () => {   // người lái xe máy
+    ctx.beginPath(); ctx.arc(0.4, -24.2, 1.2, 0, Math.PI*2); ctx.fill();
+    ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(0.2, -22.9); ctx.lineTo(-0.6, -20.6); ctx.moveTo(0.3, -22.2); ctx.lineTo(2.2, -21); ctx.stroke();
+    ctx.lineWidth = 0.8; ctx.beginPath(); ctx.arc(-2.8, -18.8, 1.4, 0, Math.PI*2); ctx.moveTo(4.2, -18.8); ctx.arc(2.8, -18.8, 1.4, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-2.8, -18.8); ctx.lineTo(-1, -20.6); ctx.lineTo(2.2, -20.6); ctx.lineTo(2.8, -18.8); ctx.stroke();
+  };
+  const iconCar = () => {   // ô tô nhìn nghiêng
+    rr(ctx, -4, -21.2, 8, 3.2, 1); ctx.fill(); rr(ctx, -2.4, -23.4, 4.6, 2.6, 1); ctx.fill();
+    ctx.beginPath(); ctx.arc(-2.3, -17.9, 1, 0, Math.PI*2); ctx.arc(2.3, -17.9, 1, 0, Math.PI*2); ctx.fill();
+  };
+  for (const y of [OW.y1 + HALF + 10, OW.y2 - HALF - 10]){
+    banDisc(OW.x - 33, y, iconRider); banDisc(OW.x + 33, y, iconCar);
+    label(OW.x, y + (y < 600 ? 22 : -22), 'PHỐ ĐI BỘ', {size: 12, bold: true, bg: '#1b6fb8', color: '#fff'});
+  }
+  // biển chỉ dẫn hướng đi trước các ngã tư
+  drawSignboards();
   // biển vòng xuyến trước mỗi cửa vào
   for (const [x, y] of [[1150, RB.y - 128], [1250, RB.y + 128], [RB.x - 128, 950], [RB.x + 128, 850]])
     signDisc(x, y, '#2f6fde', () => { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6;
@@ -1035,7 +1129,7 @@ function drawUprights(){
   }
   // tên đường
   const names = [[HR[0].name, 690, 246], [HR[0].name, 1390, 246], [HR[1].name, 620, 954], [HR[1].name, 1420, 846],
-    [VR[0].name, 346, 640], [VR[0].name, 454, 140], [VR[1].name, 1146, 560], [VR[1].name, 1254, 1100], [OW.name + ' (một chiều)', 762, 480]];
+    [VR[0].name, 346, 640], [VR[0].name, 454, 140], [VR[1].name, 1146, 560], [VR[1].name, 1254, 1100], [OW.name + ' (đi bộ)', 762, 480]];
   for (const [t, x, y] of names) label(x, y, t, {size: 12, bg: 'rgba(43,42,51,.62)', color: '#fff'});
   label(925, 395, '🛒 CHỢ HOA SỮA', {size: 14, bold: true, color: '#b5482b'});
   for (const h of HR){ label(34, h.y, 'Hết khu chơi thử', {size: 11}); label(W - 34, h.y, 'Hết khu chơi thử', {size: 11}); }
@@ -1072,7 +1166,7 @@ function drawMini(){
   c.fillStyle = '#7d8290';
   for (const h of HR) c.fillRect(0, (h.y - HALF)*s, mw, HALF*2*s);
   for (const v of VR) c.fillRect((v.x - HALF)*s, 0, HALF*2*s, mh);
-  c.fillRect((OW.x - OW.half)*s, OW.y1*s, OW.half*2*s, (OW.y2 - OW.y1)*s);
+  c.fillStyle = '#e3d2ad'; c.fillRect((OW.x - OW.half)*s, (OW.y1 + HALF)*s, OW.half*2*s, (OW.y2 - OW.y1 - 2*HALF)*s); c.fillStyle = '#7d8290';
   c.beginPath(); c.arc(RB.x*s, RB.y*s, RB.rOut*s, 0, Math.PI*2); c.fill();
   const r = S.route;
   if (r && r.pts.length > 1){
@@ -1152,6 +1246,12 @@ function updHUD(){
   setHTML('pts', `🪪<span class="lbl"> Điểm GPLX</span> <b>${S.pts}/12</b>`);
   setHTML('streak', `⭐<span class="lbl"> Chuỗi sạch</span> <b>${S.streak}</b>`);
   setHTML('speed', `🏍️ <b>${Math.round(Math.abs(player.v) / 3)}</b> km/h${S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1)}`);
+  // đèn xi-nhan trên thanh thông tin và trên ghi đông
+  { const L = S.turn < 0 && S.blinkOn, R = S.turn > 0 && S.blinkOn, sk = (S.turn || 0) + '|' + (S.blinkOn ? 1 : 0);
+    if (hudCache.sig !== sk){ hudCache.sig = sk;
+      $('sigchip').style.display = S.turn ? 'inline-block' : 'none';
+      $('sigL').style.opacity = L ? '1' : '.25'; $('sigR').style.opacity = R ? '1' : '.25';
+      $('sigCkL').setAttribute('opacity', L ? '1' : '0'); $('sigCkR').setAttribute('opacity', R ? '1' : '0'); } }
   // cảnh báo: sai phần đường (ưu tiên), rồi tới đèn phía trước
   let w = '';
   if (S.warnT > 0) w = S.warnText;
@@ -1159,6 +1259,13 @@ function updHUD(){
     const la = playerLightAhead(230);
     if (la && la.state === 'red') w = '🔴 Đèn đỏ phía trước: dừng trước vạch dừng';
     else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc và dừng trước vạch dừng';
+    else {   // sắp rẽ hoặc quay đầu mà chưa bật xi-nhan đúng bên: nhắc
+      const i = S.route && S.route.instr;
+      if (i && (i.type === 'left' || i.type === 'right' || i.type === 'uturn') && (i.type === 'uturn' || i.dist <= 240)){
+        const want = i.type === 'right' ? 1 : -1;
+        if (S.turn !== want) w = '💡 Bật xi-nhan ' + (want > 0 ? 'phải' : 'trái') + ' trước khi ' + (i.type === 'uturn' ? 'quay đầu' : 'rẽ') + ' (' + (isTouch ? 'nút xi-nhan nhỏ phía trên nút mũi tên' : 'phím ' + (want > 0 ? 'E' : 'Q')) + ')';
+      }
+    }
   }
   // đồng hồ trên ghi đông (góc nhìn sau tay lái): kim quay 0–60 km/h (xe trong game chạy tối đa khoảng 40 km/h)
   if (S.view === 'bike'){
@@ -1185,7 +1292,10 @@ function closeOverlay(id){ $(id).classList.add('hidden'); S.paused = false; if (
 
 function setupInput(){
   const map = {ArrowUp:'up', KeyW:'up', ArrowDown:'down', KeyS:'down', Space:'brake', ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right'};
-  window.addEventListener('keydown', e => { const k = map[e.code]; if (k){ keys[k] = true; e.preventDefault(); } });
+  window.addEventListener('keydown', e => {
+    const k = map[e.code]; if (k){ keys[k] = true; e.preventDefault(); }
+    if (!e.repeat && !S.paused){ if (e.code === 'KeyQ') setSignal(-1); else if (e.code === 'KeyE') setSignal(1); }   // Q: xi-nhan trái, E: xi-nhan phải
+  });
   window.addEventListener('keyup', e => { const k = map[e.code]; if (k){ keys[k] = false; e.preventDefault(); } });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
   // nút cảm ứng: có 2 nút cùng làm một việc (▲ và GA), nên đếm số nút đang giữ
@@ -1196,6 +1306,10 @@ function setupInput(){
     const off = e => { if (down){ down = false; held[k] = Math.max(0, (held[k] || 1) - 1); } keys[k] = held[k] > 0; b.classList.remove('on'); e.preventDefault(); };
     b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
     b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+  });
+  // hai nút xi-nhan nhỏ trên điện thoại: chạm một lần để bật, chạm lại để tắt
+  document.querySelectorAll('.sbtn').forEach(b => {
+    b.addEventListener('pointerdown', e => { if (!S.paused) setSignal(+b.dataset.s); e.preventDefault(); });
   });
   isTouch = ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   if (isTouch) document.body.classList.add('touch');
@@ -1244,4 +1358,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW};
+window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS};

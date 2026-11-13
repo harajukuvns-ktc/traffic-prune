@@ -11,7 +11,7 @@ const ctxProxy = new Proxy({}, {
   get(t, p){ if (p === 'measureText') return s => ({width: String(s).length * 7}); if (p in t) return t[p]; return () => ctxProxy; },
   set(t, p, v){ t[p] = v; return true; }
 });
-function el(){ return {querySelectorAll:()=>[], style:{}, classList:{add(){},remove(){},toggle(){}}, addEventListener(){}, innerHTML:'', textContent:'', value:'anh', checked:true, className:'', dataset:{}, getContext:()=>ctxProxy}; }
+function el(){ return {querySelectorAll:()=>[], style:{}, classList:{add(){},remove(){},toggle(){}}, addEventListener(){}, setAttribute(){}, innerHTML:'', textContent:'', value:'anh', checked:true, className:'', dataset:{}, getContext:()=>ctxProxy}; }
 const els = {};
 global.document = {getElementById: id => (els[id] = els[id] || el()), querySelectorAll: () => [], body: el(), addEventListener(){}, hidden: false};
 const store = {};

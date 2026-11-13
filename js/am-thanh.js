@@ -80,6 +80,8 @@ const SND = (function(){
   }
   function shutter(){ noise(0.05, 0.35, 2500, 0.15); noise(0.07, 0.3, 1800, 0.23); }
   function thud(){ tone(95, 0.3, 'sine', 0.5, 0, 38); noise(0.18, 0.25, 0, 0); }
+  // tiếng xi-nhan: "tích" khi đèn sáng, "tắc" (trầm hơn) khi đèn tắt
+  function tick(on){ tone(on ? 1400 : 1000, 0.035, 'square', 0.1, 0); }
   // E. thưởng: nốt nhạc cao dần theo chuỗi chuyến sạch
   function reward(streak){
     const k = Math.pow(2, Math.min(streak || 0, 8) / 12), notes = streak ? [523.25, 659.25, 783.99, 1046.5] : [523.25, 659.25];
@@ -250,6 +252,6 @@ const SND = (function(){
     if (ac.state === 'running') return 'Âm thanh: đang chạy.';
     return 'Âm thanh: đang bị trình duyệt chặn, hãy chạm vào màn hình. Trên iPhone, kiểm tra nút gạt im lặng và âm lượng.';
   }
-  return {audioStatus, npcSyllable, toneMark, syllableCount: () => syllables, engineModel, init, update, whistle, shutter, thud, reward, applyVolume, voiceStatus, announceTrip, speak,
+  return {audioStatus, npcSyllable, toneMark, syllableCount: () => syllables, engineModel, init, update, whistle, shutter, thud, tick, reward, applyVolume, voiceStatus, announceTrip, speak,
     stopVoice(){ try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){} }};
 })();

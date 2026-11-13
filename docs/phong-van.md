@@ -249,3 +249,5 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Ranh giới giọng điệu "sâu cay" của NPC -> người dùng
 - (Đã chốt 19:55) Âm thanh: làm A, B, D, E, F trước; C và G để sau.
 - Âm thanh bản 0.4 chưa được nghe thử trên máy thật; giọng đọc tiếng Việt tùy máy -> người dùng chơi thử
+- Góp ý lúc 08:54 ngày 13/11/2026: "(a)" -> chốt cách xác minh luật: tự mở văn bản gốc. Kết quả: đã đọc toàn văn NĐ 168/2024 và NĐ 238/2026 (ghi ở mục 8 của docs/THIET-KE.md): đi vào đường cấm (2–3 triệu, trừ 2 điểm), rẽ không xi-nhan (600–800 nghìn, không trừ điểm); NĐ 238 không đổi hai mức này.
+- Góp ý lúc 09:02 ngày 13/11/2026: "đồng ý" (với ba điều chỉnh: phố đi bộ dùng hai biển cấm P.104 và P.103a kèm bảng "PHỐ ĐI BỘ"; chỉ bắt lỗi xi-nhan khi rẽ ở ngã tư và quay đầu, không bắt khi cắt vạch đứt để vượt; biển chỉ dẫn vẽ dạng chung) -> làm bản 0.9. Hệ quả mình đã báo thêm: Phố Chợ thành phố đi bộ nên game tạm không còn phố một chiều; Chợ Hoa Sữa chuyển chỗ giao hàng ra bãi đỗ cổng chợ trên đường Me Chua.

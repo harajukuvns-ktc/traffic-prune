@@ -31,16 +31,17 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 - **Quyền riêng tư.** Chỉ lưu thông tin người chơi tự khai báo và cách họ chơi; bản thử nghiệm chỉ lưu trên máy người chơi.
 - **Ưu tiên điện thoại, chơi được trên máy tính**, chạy ngay trên trình duyệt, không cần cài.
 
-## 3. Đã có trong bản 0.8
+## 3. Đã có trong bản 0.9
 
 | Mảng | Nội dung |
 |---|---|
-| Bản đồ | Khu phố hư cấu 1600×1200 đơn vị (4 đơn vị = 1 m): 2 đường ngang, 2 đường dọc, 3 ngã tư có đèn, 1 phố một chiều, 1 vòng xuyến, chợ, 9 điểm giao hàng, 11 ô đỗ xe P kẻ vạch trên lòng đường sát mép vỉa hè bên phải theo chiều đi (Điều 18 Luật TTATGTĐB 2024), vỉa hè bo cong ở giao lộ |
+| Bản đồ | Khu phố hư cấu 1600×1200 đơn vị (4 đơn vị = 1 m): 2 đường ngang, 2 đường dọc, 3 ngã tư có đèn, 1 phố đi bộ (Phố Chợ, cấm xe máy và ô tô), 1 vòng xuyến, chợ, 9 điểm giao hàng (Chợ Hoa Sữa nay đỗ ở bãi cổng chợ trên đường Me Chua), 11 ô đỗ xe P kẻ vạch trên lòng đường sát mép vỉa hè bên phải theo chiều đi (Điều 18 Luật TTATGTĐB 2024), vỉa hè bo cong ở giao lộ |
+| Biển báo | **Biển chỉ dẫn hướng đi** (nền xanh, chữ trắng, dạng chung không gán số hiệu) đặt bên phải, cách ngã tư khoảng 150 đơn vị (≈ 37 m), ghi tên đường ở các hướng trái / thẳng / phải; tự tránh đè lên cột biển P (`SIGNBOARDS` trong `js/ban-do.js`). Hai đầu Phố Chợ có biển **P.104 cấm xe máy** (bên trái), **P.103a cấm ô tô** (bên phải) và bảng "PHỐ ĐI BỘ"; biển vòng xuyến, biển P ở ô đỗ |
 | Vạch kẻ | Vạch vàng liền gần nút giao (90 đơn vị), vạch đứt ở giữa đoạn; thứ tự ở ngã tư: vạch dừng (trắng) → vạch người đi bộ → cột đèn |
 | Góc nhìn | Ba kiểu, đổi vòng bằng một nút: **dẫn đường** (mặc định, nghiêng 57°, xoay theo hướng xe) → **sau tay lái** (`S.view = 'bike'`: máy quay thấp và sát xe, nghiêng 75°, không vẽ xe người chơi mà hiện ghi đông + đồng hồ tốc độ ở mép dưới) → **bản đồ** nhìn từ trên xuống. Kiểu sau tay lái vẫn là tấm bản đồ phẳng nghiêng đi (cách A), nhà chưa có tường; góc nhìn thứ nhất 3D thật (cách B) để sau |
-| Chỉ đường | Vạch chấm xanh mảnh + bảng chỉ dẫn rẽ; tránh đi ngược chiều, không bảo quay đầu ở đoạn vạch liền; luôn dẫn vào ô đỗ theo đúng chiều của ô (ô ở lề bên kia thì bảo quay đầu); giọng đọc tiếng Việt của trình duyệt |
-| Điều khiển | Ga, phanh (Space: chỉ phanh), rẽ; trợ lái giữ làn và giữ xe thẳng trong ô đỗ (tắt được); trên điện thoại: chữ thập ▲▼◀▶ bên trái (▲ = ga, ▼ = phanh rồi lùi), PHANH và GA bên phải |
-| Lỗi bắt được | Vượt đèn đỏ (đầu xe qua vạch dừng), đi ngược chiều phố một chiều, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến, đi ngược chiều trong vòng xuyến, gây va chạm khi đang vi phạm. **Chỉ nhắc nhở** (không phạt tiền, không trừ điểm, chuyến không tính sạch): đỗ trong ô P mà đầu xe ngược chiều đi |
+| Chỉ đường | Vạch chấm xanh mảnh + bảng chỉ dẫn rẽ; không bao giờ dẫn qua Phố Chợ (phố đi bộ), không bảo quay đầu ở đoạn vạch liền; luôn dẫn vào ô đỗ theo đúng chiều của ô (ô ở lề bên kia thì bảo quay đầu); giọng đọc tiếng Việt của trình duyệt |
+| Điều khiển | Ga, phanh (Space: chỉ phanh), rẽ; trợ lái giữ làn và giữ xe thẳng trong ô đỗ (tắt được); trên điện thoại: chữ thập ▲▼◀▶ bên trái (▲ = ga, ▼ = phanh rồi lùi), PHANH và GA bên phải. **Xi-nhan:** phím Q (trái), E (phải); trên điện thoại hai nút nhỏ "◀ xi-nhan" và "xi-nhan ▶" ngay phía trên chữ thập; bấm lại đúng bên để tắt, không tự tắt. Đèn nháy 0,7 giây một nhịp trên thanh thông tin, ghi đông (góc sau tay lái) và trên xe, có tiếng tích/tắc; bảng cảnh báo nhắc "bật xi-nhan" khi còn ≤ 60 m tới chỗ rẽ, và khi cần quay đầu |
+| Lỗi bắt được | Vượt đèn đỏ (đầu xe qua vạch dừng), **đi vào phố đi bộ có biển cấm xe máy** (2–3 triệu, trừ 2 điểm; mỗi lần vào chỉ phạt một lần, nghỉ 4 giây mới xét lại), **rẽ ở ngã tư hoặc quay đầu không bật xi-nhan đúng bên, đúng lúc** (600–800 nghìn, không trừ điểm; phải bật trước khi bắt đầu rẽ, cho trễ 0,25 giây; không bắt khi cắt vạch đứt để vượt), đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến, đi ngược chiều trong vòng xuyến, gây va chạm khi đang vi phạm. **Chỉ nhắc nhở** (không phạt tiền, không trừ điểm, chuyến không tính sạch): đỗ trong ô P mà đầu xe ngược chiều đi. NPC cũng nhắc (không phạt) khi quên tắt xi-nhan, đi thẳng hơn 10 giây. Lỗi "đi ngược chiều phố một chiều" (`wrongway`) vẫn còn trong `js/luat.js` nhưng tạm không có trong Sổ tay vì bản đồ hiện chưa còn phố một chiều; sẽ có lại ở bản đồ mở rộng (giai đoạn 2) |
 | Hậu quả | Phạt tiền + trừ điểm GPLX; đền 50.000đ mỗi xe bị làm kẹt (xe buýt 100.000đ), 1.500.000đ khi va chạm có lỗi; NPC nói câu nhắc; hết điểm thì dừng xe, làm bài kiểm tra 5 câu (đúng ≥ 4) để phục hồi |
 | Văn hóa (mới có một phần) | Nhắc khi dừng giữa đường, khi leo vỉa hè gặp người đi bộ, khi bám đuôi; NPC bấm còi khi bị chặn |
 | Kinh tế | Tiền công theo quãng đường; thưởng đi sạch tăng theo chuỗi; 5 chuyến sạch liên tiếp hồi 1 điểm GPLX |
@@ -108,6 +109,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.6 | 11/11/2026 | Giọng NPC kiểu game (phương án A): chữ hiện dần, bíp theo dấu thanh, giọng riêng theo nhân vật; thanh chỉnh âm lượng giọng NPC |
 | 0.7 | 12/11/2026 | Quy tắc làm việc (lập kế hoạch, báo cáo, chờ xác nhận); ô đỗ chuyển xuống lòng đường sát vỉa hè theo chiều đi, chỉ đường vào ô đúng chiều; chữ thập 4 nút trên điện thoại; tiếng xe tay ga làm lại; sửa iPhone không có tiếng. Đỗ ngược chiều trong ô P: chỉ nhắc nhở theo đúng luật (người dùng chốt 09:14) |
 | 0.8 | 12/11/2026 | Thêm góc nhìn "sau tay lái" (cách A, là lựa chọn thêm): máy quay thấp sát xe, ghi đông và đồng hồ tốc độ |
+| 0.9 | 13/11/2026 | Giai đoạn 1, đợt 1: biển chỉ dẫn hướng đi trước ngã tư; Phố Chợ thành phố đi bộ (biển P.104 + P.103a, lỗi đi vào đường cấm, chợ chuyển điểm giao ra bãi đỗ cổng chợ, người dạo chợ); xi-nhan (Q/E, hai nút nhỏ trên chữ thập, lỗi không xi-nhan, NPC nhắc khi quên tắt); 2 câu hỏi mới trong bài kiểm tra |
 
 ## 8. Kiểm tra pháp lý
 
@@ -162,7 +164,10 @@ Lần 1 (agent Sonnet) không mở được văn bản gốc. Lần 2 (Claude Op
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
 
 - (Đã chốt 12/11/2026 lúc 09:14: "Ok, chỉ nhắc nhở theo đúng luật.") Đỗ xe ngược chiều: NĐ 168/2024 Điều 7 không có mức phạt riêng cho xe máy, nên game chỉ nhắc nhở (mục `parkdir` trong `js/luat.js`). Nếu sau này muốn phạt, chỉ có thể dùng điểm d khoản 2 Điều 7 (đỗ ở lòng đường gây cản trở) hoặc điểm e khoản 2 (đỗ nơi cấm, ví dụ bên trái đường một chiều).
-- Người dùng chơi thử bản 0.8 trên iPhone thật: âm thanh đã có chưa, chữ thập dễ bấm không, góc nhìn sau tay lái có mượt và dễ lái không.
+- Người dùng chơi thử bản 0.9 (và 0.8) trên iPhone thật: hai nút xi-nhan nhỏ có dễ bấm không, biển chỉ dẫn có đủ to để đọc không, tiếng tích-tắc nghe có khó chịu không; âm thanh đã có chưa, chữ thập dễ bấm không, góc nhìn sau tay lái có mượt và dễ lái không. (Bản 0.8 chưa có kết quả.)
+- Bản 0.9: hình dạng, màu biển chỉ dẫn hướng đi vẽ dạng chung vì chưa tra được Điều 38 QCVN 41; biển thật ở phố đi bộ Việt Nam chưa xác minh (xem mục 8).
+- Bản 0.9: game tạm không còn phố một chiều (Phố Chợ đã thành phố đi bộ) nên bài học biển P.102/I.407 chỉ còn trong bài kiểm tra; cần có lại ở bản đồ mở rộng (giai đoạn 2).
+- Bản 0.9: ngưỡng bắt lỗi xi-nhan (rẽ quá khoảng 50 độ khi lượt rẽ đi qua nút giao; quay đầu quá khoảng 137 độ; bật xi-nhan trễ tối đa 0,25 giây sau khi bắt đầu rẽ) là do mình chọn, cần chơi thử xem có phạt oan hay bỏ sót không. âm thanh đã có chưa, chữ thập dễ bấm không, góc nhìn sau tay lái có mượt và dễ lái không.
 - Góc nhìn thứ nhất 3D thật (cách B) và các việc mở rộng khác: xem lộ trình ở mục 10. Khi làm cách B, cân nhắc thêm gương chiếu hậu và mũi tên báo ô P bên cạnh.
 - Giọng NPC: đã làm phương án A (bíp kiểu game). Khi lời thoại ổn định, có thể thêm C (thu âm giọng thật) hoặc D (giọng AI tạo sẵn) cho vài câu "đinh".
 - Âm thanh (bản 0.4), tiếng máy xe (bản 0.5) và giọng NPC (bản 0.6) chưa được nghe trên máy thật.
@@ -213,9 +218,9 @@ Người dùng yêu cầu lúc 10:57 ngày 12/11/2026 và chốt lúc 08:15 ngà
 
 | Việc | Giai đoạn | Trạng thái |
 |---|---|---|
-| Biển chỉ dẫn hướng đi trước giao lộ | 1 (làm trước) | Chưa làm |
-| Biển cấm xe máy, biển cấm ô tô | 1 (làm trước) | Chưa làm |
-| Xi-nhan và lỗi không xi-nhan | 1 (làm trước) | Chưa làm |
+| Biển chỉ dẫn hướng đi trước giao lộ | 1 (làm trước) | **Xong ở bản 0.9** (chờ chơi thử) |
+| Biển cấm xe máy, biển cấm ô tô | 1 (làm trước) | **Xong ở bản 0.9** (chờ chơi thử) |
+| Xi-nhan và lỗi không xi-nhan | 1 (làm trước) | **Xong ở bản 0.9** (chờ chơi thử) |
 | Biển hạn chế tốc độ, lỗi quá tốc độ | 1 | Chưa làm |
 | Mũ bảo hiểm, dùng điện thoại khi lái | 1 | Chưa làm |
 | Hai thanh điểm: luật và văn hóa | 1 | Chưa làm |

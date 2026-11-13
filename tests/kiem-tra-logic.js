@@ -5,7 +5,7 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
-  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
+  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -61,15 +61,21 @@ player.x = 300; player.y = 320; player.a = 0; player.v = 0;
 run(2);
 ok(!S.stats.red, 'đứng chờ ngay trước vạch dừng không bị phạt');
 
-// 3) Ngược chiều phố một chiều
+// 3) Phố Chợ là phố đi bộ (biển cấm xe máy): chạy xe máy vào thì bị phạt đi vào đường cấm
 reset(); clearNear(800, 500, 300);
-player.x = 800; player.y = 350; player.a = Math.PI/2; player.v = 80; keys.up = true;
+{ const m0 = S.money, p0 = S.pts;
+  player.x = 800; player.y = 330; player.a = Math.PI/2; player.v = 80; keys.up = true;
+  run(1.5); keys.up = false;
+  ok(S.stats.noentry === 1, `đi vào phố đi bộ bị phạt (noentry=${S.stats.noentry})`);
+  ok(m0 - S.money >= 2000000 && p0 - S.pts === 2, `mức phạt 2–3 triệu, trừ 2 điểm (tiền ${m0 - S.money}, điểm ${p0 - S.pts})`); }
+reset(); clearNear(800, 500, 300);
+player.x = 800; player.y = 500; player.a = Math.PI/2; player.v = 80; keys.up = true;
+run(0.8); keys.up = false;
+ok(S.stats.noentry === 1, 'chạy giữa phố đi bộ chỉ bị phạt một lần, không phạt lặp');
+reset(); clearNear(700, 320, 300);
+player.x = 700; player.y = 320; player.a = 0; player.v = 80; keys.up = true;
 run(1.5); keys.up = false;
-ok(S.stats.wrongway === 1, `đi ngược chiều bị phạt (wrongway=${S.stats.wrongway})`);
-reset(); clearNear(800, 600, 320);
-player.x = 800; player.y = 840; player.a = -Math.PI/2; player.v = 80; keys.up = true;
-run(2.5); keys.up = false;
-ok(!S.stats.wrongway && !S.stats.lane && !S.stats.line, 'đi đúng chiều phố một chiều không bị phạt');
+ok(!S.stats.noentry, 'đi trên đường Hoa Sữa ngang qua đầu phố đi bộ không bị phạt');
 
 // 4) Vạch liền: sang phần đường ngược chiều gần ngã tư thì bị phạt "đè vạch liền"
 reset(); S.assist = false; clearNear(500, 290, 250);
@@ -83,7 +89,7 @@ player.x = 560; player.y = 284; player.a = 0; player.v = 60;
 for (let i = 0; i < 2/dt; i++){ player.v = 60; step(dt); }
 ok(!S.stats.line && !S.stats.lane, 'qua vạch đứt 2 giây không bị phạt');
 // 4c) Vạch đứt nhưng chạy lâu bên phần đường ngược chiều thì bị phạt
-reset(); S.assist = false; clearNear(900, 290, 300);
+reset(); S.assist = false; clearNear(900, 290, 650);
 player.x = 840; player.y = 284; player.a = 0; player.v = 40;
 for (let i = 0; i < 4.2/dt; i++){ player.v = 40; step(dt); }
 ok(S.stats.lane === 1 && !S.stats.line, `chạy lâu bên phần đường ngược chiều bị phạt (lane=${S.stats.lane}, line=${S.stats.line}, x=${Math.round(player.x)})`);
@@ -152,8 +158,8 @@ r = setTrip('Tiệm thuốc');
 ok(r.instr.type === 'ring' && r.instr.exitNo === 3, `xuống vòng xuyến để sang Me Chua hướng đông: ${navText().main}`);
 player.x = 600; player.y = 320; player.a = 0;
 r = setTrip('Chợ Hoa Sữa');
-console.log('   tới Chợ Hoa Sữa (phải vào Phố Chợ từ đầu nam):', navText().main, '| còn', Math.round(r.remain), 'px');
-ok(r.remain > 1500, 'không chỉ đường đi ngược chiều vào Phố Chợ');
+console.log('   tới Chợ Hoa Sữa (bãi đỗ cổng chợ trên Me Chua):', navText().main, '| còn', Math.round(r.remain), 'px');
+ok(r.pts.every(p => classify(p.x, p.y).t !== 'ped'), 'chỉ đường không bao giờ đi xuyên qua phố đi bộ');
 player.x = 700; player.y = 320; player.a = 0;
 r = setTrip('bánh mì');
 ok(r.instr.type === 'uturn', `điểm giao ở phía sau: ${navText().main}`);
@@ -194,6 +200,63 @@ for (const a of DESTS) for (const b of DESTS){ if (a === b) continue;
     if (!q || q.pts.length < 2 || !isFinite(q.remain) || q.pts.some(p => !isFinite(p.x) || !isFinite(p.y)) || !navText().main) bad++;
   } }
 ok(bad === 0, `có đường chỉ dẫn cho mọi cặp điểm giao (${bad} lỗi)`);
+
+// 8b) Biển chỉ dẫn hướng đi trước ngã tư
+{ const SB = TP.SIGNBOARDS;
+  ok(SB.length >= 10 && SB.every(b => b.rows.length >= 2 && b.rows.length <= 3 && isFinite(b.x) && isFinite(b.y)), `có ${SB.length} biển chỉ dẫn, mỗi biển 2–3 hướng`);
+  ok(SB.every(b => { const c = classify(b.x, b.y).t; return c === 'off'; }), 'biển chỉ dẫn đặt trên vỉa hè, không nằm giữa lòng đường');
+  ok(SB.some(b => b.rows.some(r => r.ped && /Phố Chợ/.test(r.name))), 'có biển báo hướng vào Phố Chợ (đi bộ)'); }
+
+// 8c) Xi-nhan: bật/tắt; rẽ ở ngã tư và quay đầu mà không xi-nhan thì bị phạt; có xi-nhan đúng bên thì không
+const waitGreenA = () => { while (!(lightOf(LIGHTS[0], 'EW', S.now) === 'green' && lightOf(LIGHTS[0], 'EW', S.now + 5) === 'green')) run(0.1); };
+const turnRight = (withSig) => {   // rẽ phải ở ngã tư Phố Bánh Mì × Hoa Sữa
+  reset(); waitGreenA(); clearNear(400, 320, 500);
+  player.x = 300; player.y = 320; player.a = 0; player.v = 60; S.now += 0.1;
+  if (withSig){ TP.setSignal(1); for (let i = 0; i < 0.5/dt; i++){ player.v = 60; step(dt); } }
+  while (player.x < 352){ player.v = 60; step(dt); }
+  keys.right = true; for (let i = 0; i < 0.9/dt; i++){ player.v = 60; step(dt); } keys.right = false;
+  for (let i = 0; i < 1/dt; i++){ player.v = 60; step(dt); }
+};
+{ reset(); TP.setSignal(-1); ok(S.turn === -1, 'bấm xi-nhan trái thì bật bên trái'); TP.setSignal(-1); ok(S.turn === 0, 'bấm lại cùng bên thì tắt');
+  TP.setSignal(1); TP.setSignal(-1); ok(S.turn === -1, 'bấm bên kia thì đổi bên'); TP.setSignal(-1); }
+{ const b0 = S.money, p0 = S.pts; turnRight(false);
+  ok(S.stats.signal === 1 && b0 - S.money >= 600000 && b0 - S.money <= 800000 && p0 === S.pts, `rẽ phải ở ngã tư không xi-nhan bị phạt 600–800 nghìn, không trừ điểm (phạt ${b0 - S.money}đ, lỗi ${S.stats.signal})`); }
+turnRight(true);
+ok(!S.stats.signal && S.turn === 1, 'rẽ phải có xi-nhan phải bật trước thì không bị phạt, xi-nhan không tự tắt');
+turnRight(false); // làm lại với xi-nhan SAI bên
+{ reset(); waitGreenA(); clearNear(400, 320, 500); player.x = 300; player.y = 320; player.a = 0; player.v = 60; TP.setSignal(-1);
+  for (let i = 0; i < 0.5/dt; i++){ player.v = 60; step(dt); }
+  while (player.x < 352){ player.v = 60; step(dt); }
+  keys.right = true; for (let i = 0; i < 0.9/dt; i++){ player.v = 60; step(dt); } keys.right = false;
+  ok(S.stats.signal === 1, 'rẽ phải mà bật xi-nhan trái thì vẫn bị phạt'); }
+// bật xi-nhan quá trễ (sau khi đã bắt đầu rẽ) vẫn bị phạt
+{ reset(); waitGreenA(); clearNear(400, 320, 500); player.x = 345; player.y = 320; player.a = 0; player.v = 60;
+  keys.right = true; for (let i = 0; i < 0.35/dt; i++){ player.v = 60; step(dt); } TP.setSignal(1);
+  for (let i = 0; i < 0.9/dt; i++){ player.v = 60; step(dt); } keys.right = false;
+  ok(S.stats.signal === 1, 'bật xi-nhan sau khi đã bắt đầu rẽ thì vẫn bị phạt'); }
+// đi thẳng qua ngã tư, hoặc cắt vạch đứt để vượt: không bị phạt xi-nhan
+reset(); waitGreenA(); clearNear(400, 320, 500); player.x = 300; player.y = 320; player.a = 0; player.v = 60;
+for (let i = 0; i < 2.5/dt; i++){ player.v = 60; step(dt); }
+ok(!S.stats.signal, 'đi thẳng qua ngã tư không cần xi-nhan');
+reset(); S.assist = false; clearNear(620, 290, 400); player.x = 560; player.y = 296; player.a = 0; player.v = 60;
+keys.left = true; for (let i = 0; i < 0.2/dt; i++){ player.v = 60; step(dt); } keys.left = false; keys.right = true;
+for (let i = 0; i < 0.2/dt; i++){ player.v = 60; step(dt); } keys.right = false;
+for (let i = 0; i < 1/dt; i++){ player.v = 60; step(dt); }
+ok(!S.stats.signal, 'lách sang vạch đứt để vượt rồi về làn không bị tính là rẽ');
+// quay đầu giữa đường
+reset(); S.assist = false; clearNear(600, 320, 400); player.x = 600; player.y = 320; player.a = 0; player.v = 40;
+keys.left = true; for (let i = 0; i < 1.6/dt; i++){ player.v = 40; step(dt); } keys.left = false;
+ok(S.stats.signal === 1, `quay đầu không xi-nhan bị phạt (signal=${S.stats.signal})`);
+reset(); S.assist = false; clearNear(600, 320, 400); player.x = 600; player.y = 320; player.a = 0; player.v = 40; TP.setSignal(-1);
+for (let i = 0; i < 0.5/dt; i++){ player.v = 40; step(dt); }
+keys.left = true; for (let i = 0; i < 1.6/dt; i++){ player.v = 40; step(dt); } keys.left = false;
+ok(!S.stats.signal, 'quay đầu có xi-nhan trái thì không bị phạt xi-nhan');
+// quên tắt xi-nhan: NPC nhắc, không phạt
+reset(); clearNear(700, 320, 700); player.x = 450; player.y = 320; player.a = 0; player.v = 40; TP.setSignal(1); S.sigOffSaidT = -99;
+{ const m0 = S.money; for (let i = 0; i < 11/dt; i++){ player.v = 40; if (player.x > 1050){ player.x = 450; } step(dt); }
+  ok(!S.stats.signal && S.sigOffSaidT > 0 && S.bubble && /xi-nhan|nháy|nhấp/i.test(S.bubble.text), `quên tắt xi-nhan lâu thì NPC nhắc: "${S.bubble && S.bubble.text}"`);
+  ok(S.money === m0 || S.money > m0 - 400000, 'quên tắt xi-nhan không bị phạt tiền'); }
+TP.setSignal(1);
 
 // 9) Space (phanh) không làm xe lùi
 reset(); clearNear(600, 320, 300);

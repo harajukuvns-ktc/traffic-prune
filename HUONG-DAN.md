@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.8)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.9)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,7 +50,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.8)
+## Cách chơi (bản 0.9)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
 - **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
@@ -61,7 +61,10 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Vạch giữa đường:** vạch vàng **đứt** thì được cắt qua để rẽ, vượt hoặc vào làn bên kia để quay đầu, xong phải về làn ngay. Vạch vàng **liền** (gần ngã tư và vòng xuyến) thì không được đè lên.
 - **Đèn tín hiệu:** khi tiến vào ngã tư, bạn sẽ gặp lần lượt **vạch dừng** (màu trắng), **vạch người đi bộ**, rồi **cột đèn** ở góc giao lộ. Đèn đỏ thì dừng trước vạch dừng; đầu xe vượt qua vạch dừng lúc đèn đỏ là bị phạt. Có dòng nhắc "🔴 Đèn đỏ phía trước" khi bạn tới gần.
 - **Thưởng:** chuyến đi không vi phạm được thưởng thêm, chuỗi chuyến sạch càng dài thì thưởng càng cao. Cứ 5 chuyến sạch liên tiếp thì hồi 1 điểm GPLX.
-- **Phạt:** vượt đèn đỏ, đi ngược chiều Phố Chợ, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
+- **Biển chỉ dẫn:** biển xanh chữ trắng đặt bên phải đường, cách ngã tư khoảng 37 m, cho biết rẽ trái, đi thẳng, rẽ phải sẽ vào đường nào. Nhìn biển trước khi tới ngã tư để chọn làn và bật xi-nhan sớm.
+- **Xi-nhan:** bấm **Q** (xi-nhan trái) hoặc **E** (xi-nhan phải) **trước khi rẽ ở ngã tư hoặc quay đầu**. Trên điện thoại là hai nút nhỏ "◀ xi-nhan" và "xi-nhan ▶" ngay phía trên nút chữ thập. Đèn nháy trên thanh thông tin và trên xe, kèm tiếng tích-tắc. Xi-nhan **không tự tắt**: rẽ xong bấm lại đúng bên để tắt (quên tắt lâu thì người trong phố sẽ nhắc, không bị phạt). Khi sắp tới chỗ rẽ mà chưa bật, game có dòng nhắc 💡. Rẽ hoặc quay đầu mà không bật xi-nhan đúng bên (hoặc bật quá trễ, sau khi đã bắt đầu rẽ) là bị phạt. Cắt vạch đứt để vượt xe thì game không bắt lỗi này.
+- **Phố Chợ là phố đi bộ:** hai đầu phố có biển **cấm xe máy** (tròn, viền đỏ, gạch chéo, hình người lái xe máy) và biển **cấm ô tô**, kèm bảng "PHỐ ĐI BỘ". Xe máy chạy vào là bị phạt. Chỉ đường sẽ không dẫn bạn qua đó. Chợ Hoa Sữa giờ đỗ xe ở bãi ngoài cổng chợ, trên đường Me Chua.
+- **Phạt:** vượt đèn đỏ, đi vào phố đi bộ có biển cấm xe máy, rẽ hoặc quay đầu không xi-nhan, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
 - **Nhắc nhở (không phạt tiền):** đỗ trong ô P mà đầu xe quay ngược chiều đi. Luật yêu cầu đỗ sát lề bên phải theo chiều đi, nhưng với xe máy không có mức phạt riêng, nên game chỉ nhắc. Chuyến đó không được tính là chuyến sạch.
 - **Đền:** ai bị bạn làm kẹt xe hoặc đụng phải thì được đền tiền từ ví của bạn. Người bị ảnh hưởng hiện mặt 😤.
 - **Hết điểm GPLX:** bị trừ hết 12 điểm thì xe dừng ngay, không lái tiếp được, đúng như luật. Muốn lái lại thì làm bài kiểm tra 5 câu về luật, đúng từ 4 câu là được phục hồi đủ 12 điểm. Nếu không muốn thi, bạn có thể chọn chơi lại từ đầu.
@@ -69,6 +72,16 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 0.9 đổi gì so với bản 0.8
+
+1. **Biển chỉ dẫn hướng đi** (nền xanh, chữ trắng) trước các ngã tư.
+2. **Phố Chợ thành phố đi bộ:** lát gạch, có người dạo chợ, hai đầu cắm biển cấm xe máy và cấm ô tô. Xe máy vào là bị phạt 2–3 triệu và trừ 2 điểm GPLX (điểm b khoản 6 Điều 7 NĐ 168/2024). Vì vậy game tạm không còn phố một chiều; phố một chiều sẽ có lại khi mở rộng bản đồ.
+3. **Xi-nhan:** phím Q, E; hai nút nhỏ trên chữ thập ở điện thoại; đèn nháy và tiếng tích-tắc; phạt 600–800 nghìn khi rẽ ở ngã tư hoặc quay đầu không xi-nhan (điểm a khoản 3 Điều 7, không trừ điểm).
+4. Bài kiểm tra có thêm 2 câu hỏi: biển cấm xe máy và xi-nhan khi rẽ.
+5. Chợ Hoa Sữa đổi chỗ giao hàng ra bãi đỗ xe cổng chợ (đường Me Chua).
+
+**Nhờ bạn chơi thử:** hai nút xi-nhan nhỏ trên điện thoại có dễ bấm không? Biển xanh có đủ to để đọc khi đang chạy không? Có lần nào bạn bị phạt xi-nhan mà thấy oan, hoặc rẽ không bật mà không bị phạt không?
 
 ## Bản 0.8 đổi gì so với bản 0.7
 
