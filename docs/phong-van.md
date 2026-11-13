@@ -1,6 +1,6 @@
 # Webgame giao thông đường phố Việt Nam: ghi chép phỏng vấn
 Ngày: 2026-11-11 · Mục tiêu: làm rõ ý tưởng webgame để người chơi hiểu và nắm được luật giao thông đường bộ Việt Nam
-Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.8 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.8 (nhất là trên iPhone), và ghi nhận xét theo mục "Gợi ý chơi thử".
+Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đến 0.9 theo góp ý của người dùng (traffic-prune/index.html, kèm HUONG-DAN.md). Bước tiếp: người dùng chơi thử bản 0.9 (nhất là hai nút xi-nhan trên iPhone), và ghi nhận xét theo mục "Gợi ý chơi thử". Ghi chú: các góp ý bản 0.8 (iPhone) chưa có kết quả.
 
 ## Tóm tắt các quyết định
 - Đối tượng ban đầu: 2 nhóm (người thi A1/B1 và người lớn đi xe lâu năm). Đã thu hẹp ở Câu 2.
@@ -119,6 +119,8 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
   - Người dùng hỏi thêm: nên dùng mô hình nào (Haiku, Sonnet, Opus) cho từng loại việc để đỡ tốn token -> Claude tư vấn, ghi ở mục 11 của docs/THIET-KE.md.
 - Góp ý lúc 08:21 ngày 13/11/2026: "Từ giờ trước khi thực hiện công việc cụ thể, bạn hãy nhắc mình chọn mô hình phù hợp." -> thêm vào CLAUDE.md và mục 0, mục 11 của docs/THIET-KE.md. Người dùng đồng thời yêu cầu bắt đầu giai đoạn 1; Claude gửi kế hoạch cho ba việc đầu (biển chỉ dẫn, biển cấm, xi-nhan).
 - Góp ý lúc 08:25 ngày 13/11/2026: "1. a 2. nhất trí đề xuất 3. nhất trí đề xuất 4. nhất trí đề xuất" -> chốt: (1) Phố Chợ thành phố đi bộ có biển cấm; (2) mũi tên phân làn để sang giai đoạn 2; (3) xi-nhan dùng phím Q, E trên máy tính và hai nút nhỏ trên chữ thập ở điện thoại; (4) xi-nhan không tự tắt, quên tắt lâu thì NPC nhắc chứ không phạt.
+- Góp ý lúc 08:54 ngày 13/11/2026: "(a)" -> chốt cách xác minh luật: tự mở văn bản gốc. Kết quả: đã đọc toàn văn NĐ 168/2024 và NĐ 238/2026 (ghi ở mục 8 của docs/THIET-KE.md): đi vào đường cấm (2–3 triệu, trừ 2 điểm), rẽ không xi-nhan (600–800 nghìn, không trừ điểm); NĐ 238 không đổi hai mức này.
+- Góp ý lúc 09:02 ngày 13/11/2026: "đồng ý" (với ba điều chỉnh: phố đi bộ dùng hai biển cấm P.104 và P.103a kèm bảng "PHỐ ĐI BỘ"; chỉ bắt lỗi xi-nhan khi rẽ ở ngã tư và quay đầu, không bắt khi cắt vạch đứt để vượt; biển chỉ dẫn vẽ dạng chung) -> làm bản 0.9. Hệ quả: Phố Chợ thành phố đi bộ nên game tạm không còn phố một chiều; Chợ Hoa Sữa chuyển chỗ giao hàng ra bãi đỗ cổng chợ trên đường Me Chua.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?
@@ -249,5 +251,4 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Ranh giới giọng điệu "sâu cay" của NPC -> người dùng
 - (Đã chốt 19:55) Âm thanh: làm A, B, D, E, F trước; C và G để sau.
 - Âm thanh bản 0.4 chưa được nghe thử trên máy thật; giọng đọc tiếng Việt tùy máy -> người dùng chơi thử
-- Góp ý lúc 08:54 ngày 13/11/2026: "(a)" -> chốt cách xác minh luật: tự mở văn bản gốc. Kết quả: đã đọc toàn văn NĐ 168/2024 và NĐ 238/2026 (ghi ở mục 8 của docs/THIET-KE.md): đi vào đường cấm (2–3 triệu, trừ 2 điểm), rẽ không xi-nhan (600–800 nghìn, không trừ điểm); NĐ 238 không đổi hai mức này.
-- Góp ý lúc 09:02 ngày 13/11/2026: "đồng ý" (với ba điều chỉnh: phố đi bộ dùng hai biển cấm P.104 và P.103a kèm bảng "PHỐ ĐI BỘ"; chỉ bắt lỗi xi-nhan khi rẽ ở ngã tư và quay đầu, không bắt khi cắt vạch đứt để vượt; biển chỉ dẫn vẽ dạng chung) -> làm bản 0.9. Hệ quả mình đã báo thêm: Phố Chợ thành phố đi bộ nên game tạm không còn phố một chiều; Chợ Hoa Sữa chuyển chỗ giao hàng ra bãi đỗ cổng chợ trên đường Me Chua.
+- Bản 0.9: hai nút xi-nhan nhỏ, độ to của biển chỉ dẫn, ngưỡng bắt lỗi xi-nhan chưa được chơi thử trên máy thật -> người dùng chơi thử
