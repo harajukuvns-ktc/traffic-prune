@@ -1,6 +1,7 @@
 # Hướng dẫn cho Claude khi làm việc trong kho này
 
 - **Quy tắc làm việc (người dùng yêu cầu ngày 12/11/2026): luôn lập kế hoạch trước khi làm, báo cáo các vấn đề và cách xử lý cho người dùng, chờ người dùng xác nhận rồi mới tiến hành.** Chỉ bỏ qua bước báo cáo ở bước cụ thể nào mà người dùng nói rõ là không cần. Áp dụng cho mọi phiên làm việc.
+- **Trước khi bắt tay vào một công việc cụ thể, luôn nhắc người dùng chọn mô hình phù hợp (người dùng yêu cầu ngày 13/11/2026).** Bảng chọn mô hình theo loại việc ở mục 11 của `docs/THIET-KE.md`.
 - Người dùng không biết lập trình. Trả lời bằng tiếng Việt, xưng "mình", gọi người dùng là "bạn"; giải thích ngắn, không thuật ngữ.
 - **Lộ trình đang làm nằm ở mục 10 của `docs/THIET-KE.md`, có bảng theo dõi từng việc. Làm đúng thứ tự giai đoạn 1 → 2 → 3 → 3D, xong việc nào thì đổi trạng thái trong bảng.**
 - **Đọc `docs/THIET-KE.md` trước khi sửa bất cứ thứ gì.** Đó là nguồn sự thật: mục tiêu, các quyết định đã chốt, cấu trúc code, quy ước, việc còn bỏ ngỏ. Ghi chép phỏng vấn gốc ở `docs/phong-van.md`.

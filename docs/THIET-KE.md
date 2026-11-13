@@ -9,7 +9,7 @@ Tài liệu này là **nguồn sự thật** của dự án. Mọi phiên làm v
 
 **Quy tắc làm việc (người dùng yêu cầu ngày 12/11/2026): luôn lập kế hoạch trước khi làm, báo cáo các vấn đề và cách xử lý cho người dùng, chờ người dùng xác nhận rồi mới tiến hành.** Chỉ bỏ qua bước báo cáo ở bước cụ thể nào mà người dùng nói rõ là không cần. Áp dụng cho mọi phiên làm việc.
 
-Trình tự mỗi lần có việc mới: (1) đọc tài liệu này; (2) gửi người dùng kế hoạch: vấn đề, nguyên nhân, cách xử lý, câu hỏi cần chốt; (3) chờ xác nhận; (4) làm, kiểm tra, cập nhật tài liệu; (5) báo kết quả.
+Trình tự mỗi lần có việc mới: (1) đọc tài liệu này; (2) gửi người dùng kế hoạch: vấn đề, nguyên nhân, cách xử lý, câu hỏi cần chốt; (3) **nhắc người dùng chọn mô hình phù hợp cho việc sắp làm, theo bảng ở mục 11** (người dùng yêu cầu ngày 13/11/2026); (4) chờ xác nhận; (5) làm, kiểm tra, cập nhật tài liệu; (6) báo kết quả.
 
 ## 1. Mục tiêu
 
@@ -245,6 +245,8 @@ Người dùng hỏi ngày 13/11/2026. Nguyên tắc chung theo hướng dẫn c
 | Soạn câu thoại NPC, câu hỏi kiểm tra, cập nhật tài liệu, đổi tên, sửa chữ | Haiku | Việc máy móc, không cần suy luận sâu |
 | Lỗi khó tìm, sửa chạm nhiều file, đổi cách vẽ (ví dụ lên 3D) | Opus | Đúng loại việc Opus mạnh hơn hẳn |
 | Agent tra cứu luật, tra cứu biển báo | Sonnet | Đọc nhiều nguồn rồi tóm lại; Claude rà lại kết luận trước khi đưa vào `js/luat.js` |
+
+**Claude phải nhắc người dùng chọn mô hình trước khi bắt tay vào mỗi công việc cụ thể** (người dùng yêu cầu 13/11/2026), vì đổi mô hình giữa chừng không làm mất nội dung cuộc trò chuyện.
 
 Mức effort là đòn bẩy thứ hai: để thấp hoặc vừa cho việc thường, chỉ để cao khi việc khó.
 
