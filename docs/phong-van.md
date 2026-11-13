@@ -117,7 +117,8 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
   - Đã chốt: thứ tự ba giai đoạn; giai đoạn 1 làm trước biển chỉ dẫn + biển cấm xe máy, ô tô + xi-nhan; bản đồ gấp 2; không có chế độ dễ riêng.
   - Mục 10.2 của docs/THIET-KE.md có bảng theo dõi từng việc để không sót giai đoạn.
   - Người dùng hỏi thêm: nên dùng mô hình nào (Haiku, Sonnet, Opus) cho từng loại việc để đỡ tốn token -> Claude tư vấn, ghi ở mục 11 của docs/THIET-KE.md.
-- Góp ý lúc 08:21 ngày 13/11/2026: "Từ giờ trước khi thực hiện công việc cụ thể, bạn hãy nhắc mình chọn mô hình phù hợp." -> thêm vào CLAUDE.md và mục 0, mục 11 của docs/THIET-KE.md. Người dùng đồng thời yêu cầu bắt đầu giai đoạn 1; Claude gửi kế hoạch cho ba việc đầu (biển chỉ dẫn, biển cấm, xi-nhan) và chờ xác nhận.
+- Góp ý lúc 08:21 ngày 13/11/2026: "Từ giờ trước khi thực hiện công việc cụ thể, bạn hãy nhắc mình chọn mô hình phù hợp." -> thêm vào CLAUDE.md và mục 0, mục 11 của docs/THIET-KE.md. Người dùng đồng thời yêu cầu bắt đầu giai đoạn 1; Claude gửi kế hoạch cho ba việc đầu (biển chỉ dẫn, biển cấm, xi-nhan).
+- Góp ý lúc 08:25 ngày 13/11/2026: "1. a 2. nhất trí đề xuất 3. nhất trí đề xuất 4. nhất trí đề xuất" -> chốt: (1) Phố Chợ thành phố đi bộ có biển cấm; (2) mũi tên phân làn để sang giai đoạn 2; (3) xi-nhan dùng phím Q, E trên máy tính và hai nút nhỏ trên chữ thập ở điện thoại; (4) xi-nhan không tự tắt, quên tắt lâu thì NPC nhắc chứ không phạt.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?

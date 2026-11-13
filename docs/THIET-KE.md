@@ -196,9 +196,10 @@ Người dùng yêu cầu lúc 10:57 ngày 12/11/2026 và chốt lúc 08:15 ngà
 
 Ba việc người dùng chọn làm trước:
 
-- Biển chỉ dẫn hướng đi (biển xanh) đặt trước mỗi giao lộ; mũi tên kẻ trên mặt đường cho làn rẽ.
-- Biển cấm xe máy và biển cấm ô tô, kèm lỗi đi vào đường cấm. Cần agent tra cứu Quy chuẩn 41 để lấy đúng hình và số hiệu biển, và tra NĐ 168 để lấy mức phạt, trước khi đưa vào `js/luat.js`.
-- Xi-nhan: thêm phím và nút; lỗi không xi-nhan khi rẽ hoặc chuyển làn.
+- **Biển chỉ dẫn hướng đi** (biển xanh, tên đường và mũi tên) đặt trước mỗi giao lộ. Mũi tên phân làn kẻ trên mặt đường **để sang giai đoạn 2** vì mỗi chiều hiện chỉ có một làn (người dùng chốt 13/11/2026).
+- **Biển cấm xe máy và biển cấm ô tô**, kèm lỗi đi vào đường cấm. **Phố Chợ đổi thành phố đi bộ** có biển cấm (người dùng chọn phương án (a) ngày 13/11/2026), để người chơi đi xe máy gặp hậu quả thật; chỉ đường phải tự tránh Phố Chợ. Cần agent tra Quy chuẩn 41 lấy đúng hình, số hiệu biển và tra NĐ 168 lấy mức phạt trước khi đưa vào `js/luat.js`.
+- **Xi-nhan:** phím Q và E trên máy tính, hai nút nhỏ ngay trên chữ thập trên điện thoại; đèn xi-nhan nhấp nháy trên xe, có tiếng tích tắc; bảng chỉ dẫn nhắc "bật xi-nhan" trước chỗ rẽ. **Xi-nhan không tự tắt**; quên tắt quá lâu thì NPC nhắc, không phạt (người dùng chốt 13/11/2026).
+  - Chỉ phạt lỗi không xi-nhan khi xe **đi qua ngã tư mà đổi hướng rõ rệt** hoặc **cắt qua vạch đứt sang làn bên kia**; bỏ qua khi trợ lái đang can thiệp, để tránh phạt oan.
 
 Rồi mới tới:
 
