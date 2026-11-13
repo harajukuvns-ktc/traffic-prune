@@ -160,10 +160,21 @@ function lineType(axis, fixed, t){
   return 'broken';
 }
 const EXT = 600; // đường kéo dài ra ngoài khu phố cho đẹp mắt
+// Khi VẼ, vạch vàng dừng ở vạch dừng (rồi tới vạch người đi bộ, rồi ngã tư), không chạy vào tận mép ngã tư.
+// Còn việc bắt lỗi đè vạch vẫn dùng lineType() nên không đổi.
+const LINE_DRAW_GAP = HALF + STOPG;
+function drawGap(axis, fixed, t){
+  for (const v of (axis === 'h' ? VR : HR)){
+    const ring = axis === 'h' ? (v.x === RB.x && fixed === RB.y) : (fixed === RB.x && v.y === RB.y);
+    if (ring) continue;
+    if (Math.abs(t - (axis === 'h' ? v.x : v.y)) <= LINE_DRAW_GAP) return true;
+  }
+  return false;
+}
 function lineRuns(axis, fixed, len){
   const runs = []; let cur = null;
   for (let t = -EXT; t <= len + EXT; t += 2){
-    const ty = lineType(axis, fixed, t);
+    const ty = drawGap(axis, fixed, t) ? 'none' : lineType(axis, fixed, t);
     if (!cur || cur.type !== ty){ if (cur) runs.push(cur); cur = {type: ty, a: t, b: t}; } else cur.b = t;
   }
   if (cur) runs.push(cur);

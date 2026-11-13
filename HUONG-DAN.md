@@ -73,6 +73,12 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
 
+## Bản 0.9.1 đổi gì so với bản 0.9
+
+1. Vòng tròn quanh xe nhỏ lại; gặp người đi bộ thì xe chỉ chậm lại một lần rồi lách tránh được.
+2. Vạch vàng giữa đường dừng ở vạch dừng, không chạy vào vạch người đi bộ ở ngã tư.
+3. Nhắc lại: **Q** là xi-nhan trái, **E** là xi-nhan phải trên bàn phím.
+
 ## Bản 0.9 đổi gì so với bản 0.8
 
 1. **Biển chỉ dẫn hướng đi** (nền xanh, chữ trắng) trước các ngã tư.

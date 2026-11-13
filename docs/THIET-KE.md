@@ -110,6 +110,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.7 | 12/11/2026 | Quy tắc làm việc (lập kế hoạch, báo cáo, chờ xác nhận); ô đỗ chuyển xuống lòng đường sát vỉa hè theo chiều đi, chỉ đường vào ô đúng chiều; chữ thập 4 nút trên điện thoại; tiếng xe tay ga làm lại; sửa iPhone không có tiếng. Đỗ ngược chiều trong ô P: chỉ nhắc nhở theo đúng luật (người dùng chốt 09:14) |
 | 0.8 | 12/11/2026 | Thêm góc nhìn "sau tay lái" (cách A, là lựa chọn thêm): máy quay thấp sát xe, ghi đông và đồng hồ tốc độ |
 | 0.9 | 13/11/2026 | Giai đoạn 1, đợt 1: biển chỉ dẫn hướng đi trước ngã tư; Phố Chợ thành phố đi bộ (biển P.104 + P.103a, lỗi đi vào đường cấm, chợ chuyển điểm giao ra bãi đỗ cổng chợ, người dạo chợ); xi-nhan (Q/E, hai nút nhỏ trên chữ thập, lỗi không xi-nhan, NPC nhắc khi quên tắt); 2 câu hỏi mới trong bài kiểm tra |
+| 0.9.1 | 13/11/2026 | Người dùng góp ý sau khi chơi 0.9 trên PC: vòng tròn quanh xe thu còn khoảng một nửa; người đi bộ chỉ làm xe chậm lại một lần mỗi lần gặp (khoảng cách tính là đụng 16 → 10) để còn lách tránh được; vạch vàng giữa đường chỉ vẽ tới vạch dừng, không chạy vào vạch người đi bộ (cách bắt lỗi đè vạch giữ nguyên). Góp ý "không chuyển được về chế độ trên cao" do người dùng nhầm, không phải lỗi |
 
 ## 8. Kiểm tra pháp lý
 

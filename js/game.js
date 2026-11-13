@@ -605,10 +605,10 @@ function updPlayer(dt){
   }
   // người đi bộ trên vỉa hè
   if (!S.inBay) for (const p of peds){
-    if (Math.hypot(p.x - player.x, p.y - player.y) < 16){
+    if (Math.hypot(p.x - player.x, p.y - player.y) < 10){
       p.stopT = 1.2;
       if (S.now - S.sidewalkSaidT > 8){ S.sidewalkSaidT = S.now; say(p, fill(pick(LINES.sidewalk))); }
-      player.v *= 0.5;
+      if (!(p.slowT > S.now)){ player.v *= 0.6; p.slowT = S.now + 1.5; }   // chậm lại một lần mỗi lần gặp, để còn lách tránh được
     }
   }
   checkRules(prev, prevC, dt);
@@ -1001,8 +1001,8 @@ function drawHouses(){
 
 function drawBike(o, body, helmet, glow, sig){
   ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.a);
-  if (glow){ ctx.fillStyle = 'rgba(52,125,246,.25)'; ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI*2); ctx.stroke(); }
+  if (glow){ ctx.fillStyle = 'rgba(52,125,246,.25)'; ctx.beginPath(); ctx.arc(0, 0, 9.5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.arc(0, 0, 9.5, 0, Math.PI*2); ctx.stroke(); }
   ctx.fillStyle = 'rgba(0,0,0,.18)'; rr(ctx, -8, -3, 18, 8, 3); ctx.fill();
   ctx.fillStyle = '#2b2a33'; rr(ctx, -9, -1.5, 18, 3, 1.5); ctx.fill();
   ctx.fillStyle = body; rr(ctx, -6, -4, 12, 8, 3); ctx.fill();
