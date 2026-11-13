@@ -58,6 +58,17 @@ const LINES = {
     '{X} chạy xe giữa phố đi bộ à? Mấy bác đang dạo chợ nhìn {x} kìa.',
     'Gạch chéo đỏ nghĩa là xe máy đừng vào. {X} đọc biển chưa, hay biển tự đọc {x}?'
   ],
+  speed: [
+    'Ơ, {x} đi nhanh quá giới hạn trên biển rồi. Về sớm một phút mà mất cả buổi tiền công thì có lời không?',
+    'Biển ghi số mấy là tốc độ tối đa, không phải tốc độ tối thiểu đâu {x} ơi.',
+    '{X} chạy như đi thi ấy. Giới hạn là giới hạn, đồng hồ đổi màu rồi kìa.',
+    'Ở khu đông người, nhanh một chút cũng đủ làm người khác giật mình. Chậm lại {x} nhé.'
+  ],
+  speedschool: [
+    'Trước cổng trường mà chạy thế này thì các em nhỏ chạy ra sao kịp, {x} ơi!',
+    'Có biển "Trẻ em" đàng hoàng đó {x}. Cổng trường là chỗ để giảm ga, không phải để khoe ga.',
+    'Mấy bé mầm non đang xếp hàng ở cổng, {x} phóng vèo qua thế này thì cô giáo hết hồn.'
+  ],
   signal: [
     'Rẽ mà không xi-nhan, người sau đoán ý {x} kiểu gì? Chưa ai có thần giao cách cảm đâu.',
     '{X} rẽ bất ngờ như phim kinh dị vậy. Bật xi-nhan trước nha, cả phố đỡ giật mình.',

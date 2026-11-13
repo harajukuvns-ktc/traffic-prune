@@ -124,6 +124,7 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Góp ý lúc 09:23 ngày 13/11/2026 (sau khi chơi 0.9): "Khi chuyển sang chế độ sau tay lái thì không chuyển về chế độ trên cao được." / "Vòng tròn định vị quanh xe quá to, trường hợp gặp người đi bộ muốn tránh không được vì lúc đó xe di chuyển rất chậm" / "Vạch liền tại các ngã tư vượt quá khỏi vạch đi bộ sang đường."
 - Góp ý lúc 09:28 ngày 13/11/2026: "1. Mình thử trên PC, có vẻ mình đã nhầm. 2. Đồng ý. 3. Đồng ý. 4. ... Q xin nhan trái, E xin nhan phải." -> bản 0.9.1: thu vòng tròn quanh xe, người đi bộ chỉ làm xe chậm một lần, vạch vàng dừng ở vạch dừng. Q/E đã có từ bản 0.9.
 - Góp ý lúc 10:05 ngày 13/11/2026: "1. đồng ý. 2. đồng ý 3. đồng ý 4. đồng ý 5. Chia 3." -> chốt phần còn lại của giai đoạn 1 (ghi ở mục 10.2 của docs/THIET-KE.md): bản 0.10 biển tốc độ (xe tối đa khoảng 55 km/h, đường thường 40, trước trường 30); bản 0.11 mũ bảo hiểm (nút đội mũ đầu chuyến + chốt CSGT) và điện thoại reo; bản 1.0 thanh văn hóa 0–100, dùng tính tiền boa.
+- Góp ý lúc 10:17 ngày 13/11/2026: "đồng ý" (sau khi nghe báo cáo mức phạt tốc độ đã xác minh: ba bậc 400–600 nghìn / 800 nghìn–1 triệu / 6–8 triệu và trừ 4 điểm; vượt dưới 5 km/h không phạt) -> làm bản 0.10: mỗi đoạn đường phạt một lần theo bậc cao nhất lúc đó (trên đường 40 chỉ tới bậc 2; bậc 3 chỉ gặp ở đoạn trường học 30 km/h); số tiền phạt giữ đúng mức thật. Chờ người dùng chơi thử.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?
@@ -254,4 +255,5 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Ranh giới giọng điệu "sâu cay" của NPC -> người dùng
 - (Đã chốt 19:55) Âm thanh: làm A, B, D, E, F trước; C và G để sau.
 - Âm thanh bản 0.4 chưa được nghe thử trên máy thật; giọng đọc tiếng Việt tùy máy -> người dùng chơi thử
+- Bản 0.10: xe 55 km/h có dễ lái không, biển 40/30 và biển "Trẻ em" có dễ thấy trên điện thoại không, ngưỡng phạt tốc độ (vượt từ 5 km/h liên tục 1 giây, mỗi đoạn một lần) có phạt oan hay bỏ sót không, số tiền phạt có hợp lý không -> người dùng chơi thử
 - Bản 0.9: hai nút xi-nhan nhỏ, độ to của biển chỉ dẫn, ngưỡng bắt lỗi xi-nhan chưa được chơi thử trên máy thật -> người dùng chơi thử

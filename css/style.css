@@ -17,6 +17,9 @@
   #chips{display:flex;flex-wrap:wrap;gap:5px}
   .chip{background:rgba(255,250,242,.95);border-radius:11px;padding:4px 9px;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.12);white-space:nowrap}
   .chip b{font-weight:700}
+  .chip .lim{font-size:11px;opacity:.75}
+  .chip.near{background:#ffd666}
+  .chip.over{background:#e5484d;color:#fff}
   #money.neg{color:var(--bad)}
   #warn{display:none;background:#fff3cd;border-left:5px solid #f5a623;border-radius:11px;padding:6px 10px;font-size:13.5px;line-height:1.35;box-shadow:0 2px 6px rgba(0,0,0,.12)}
   #bubble{display:none;background:var(--paper);border:2px solid var(--accent);border-radius:16px;padding:9px 13px;font-size:15px;line-height:1.4;box-shadow:0 4px 12px rgba(0,0,0,.2)}

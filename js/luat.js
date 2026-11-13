@@ -49,6 +49,23 @@ const LAW = {
     ref: 'NĐ 168/2024/NĐ-CP, Điều 7, điểm a khoản 3 (chuyển hướng không có tín hiệu báo hướng rẽ; không trừ điểm GPLX). Căn cứ: khoản 2 Điều 15 Luật TTATGTĐB 2024: phải có tín hiệu báo hướng rẽ trước khi chuyển hướng và dùng liên tục trong suốt quá trình chuyển hướng',
     tip: 'Trước khi rẽ hoặc quay đầu, bật xi-nhan bên sẽ rẽ (phím Q: trái, E: phải; trên điện thoại là hai nút nhỏ phía trên nút mũi tên) và giữ đến khi rẽ xong. Xi-nhan xong nhớ tắt đi.'
   },
+  // Chạy quá tốc độ (xe mô tô, xe gắn máy). Chỉ phạt khi vượt từ 5 km/h trở lên; dưới 5 km/h không phạt.
+  // Kiểm tra toàn văn NĐ 168/2024 và NĐ 238/2026 ngày 13/11/2026: NĐ 238 không đổi ba bậc này (docs/THIET-KE.md mục 8).
+  speed1: {
+    name: 'Chạy quá tốc độ từ 5 đến dưới 10 km/h', fine: 500000, range: '400.000–600.000đ', pts: 0,
+    ref: 'NĐ 168/2024/NĐ-CP, Điều 7, điểm b khoản 2 (không trừ điểm GPLX)',
+    tip: 'Biển tròn viền đỏ ghi số (P.127) là tốc độ TỐI ĐA cho phép. Vượt từ 5 km/h trở lên là bị phạt. Nhìn đồng hồ, đổi màu là đang chạy quá.'
+  },
+  speed2: {
+    name: 'Chạy quá tốc độ từ 10 đến 20 km/h', fine: 900000, range: '800.000–1.000.000đ', pts: 0,
+    ref: 'NĐ 168/2024/NĐ-CP, Điều 7, điểm a khoản 4 (không trừ điểm GPLX)',
+    tip: 'Biển tròn viền đỏ ghi số (P.127) là tốc độ TỐI ĐA cho phép. Vượt 10 đến 20 km/h bị phạt gần một triệu đồng; vượt trên 20 km/h còn bị trừ điểm.'
+  },
+  speed3: {
+    name: 'Chạy quá tốc độ trên 20 km/h', fine: 7000000, range: '6.000.000–8.000.000đ', pts: 4,
+    ref: 'NĐ 168/2024/NĐ-CP, Điều 7: điểm a khoản 8 (phạt tiền), điểm b khoản 13 (trừ điểm)',
+    tip: 'Trước trường học có biển "Trẻ em" (tam giác vàng, W.225) và biển tốc độ thấp. Vượt trên 20 km/h bị phạt nặng và trừ 4 điểm; nếu gây tai nạn thì còn nặng hơn nhiều.'
+  },
   // CHỈ NHẮC NHỞ (người dùng chốt 12/11/2026): xe máy không có mức phạt riêng cho hành vi này.
   // remind: true → không phạt tiền, không trừ điểm, nhưng chuyến đó không tính là chuyến sạch.
   parkdir: {
@@ -59,7 +76,7 @@ const LAW = {
   }
 };
 // 'wrongway' tạm không có trong sổ tay vì bản đồ hiện chưa còn phố một chiều (Phố Chợ đã thành phố đi bộ); sẽ có lại ở bản đồ mở rộng.
-const LAW_ORDER = ['red','noentry','signal','line','lane','ring','crash','parkdir'];
+const LAW_ORDER = ['red','speed1','speed2','speed3','noentry','signal','line','lane','ring','crash','parkdir'];
 
 // Bài kiểm tra khi bằng lái hết điểm. Đáp án đúng luôn đặt ở vị trí đầu (a[0]); game tự xáo trộn khi hiển thị.
 const QUIZ = [
@@ -83,6 +100,12 @@ const QUIZ = [
    a:['Cấm xe máy đi vào','Chỉ xe máy được đi','Đường dành cho người đi bộ'], why:'Đó là biển P.104 "Cấm xe máy". Xe máy đi vào đường có biển này bị phạt 2–3 triệu đồng và trừ 2 điểm (điểm b khoản 6 Điều 7 NĐ 168/2024).'},
   {q:'Bạn sắp rẽ phải ở ngã tư. Việc đúng là gì?',
    a:['Bật xi-nhan phải trước khi rẽ và giữ đến khi rẽ xong','Rẽ trước, bật xi-nhan sau','Không cần xi-nhan nếu đường vắng'], why:'Khoản 2 Điều 15 Luật TTATGTĐB 2024: phải có tín hiệu báo hướng rẽ trước khi chuyển hướng và dùng liên tục suốt quá trình chuyển hướng. Không bật bị phạt 600–800 nghìn đồng (điểm a khoản 3 Điều 7 NĐ 168/2024).'},
+  {q:'Biển tròn, viền đỏ, nền trắng, ghi số 40 nghĩa là gì?',
+   a:['Tốc độ tối đa cho phép là 40 km/h','Phải chạy ít nhất 40 km/h','Đoạn đường dài 40 mét'], why:'Đó là biển P.127 "Tốc độ tối đa cho phép". Xe máy vượt từ 5 km/h trở lên là bị phạt (điểm b khoản 2 Điều 7 NĐ 168/2024).'},
+  {q:'Biển tam giác vàng, viền đỏ, hình hai em nhỏ báo hiệu điều gì?',
+   a:['Gần đoạn đường thường có trẻ em qua lại, phải đi chậm và thận trọng','Cấm trẻ em đi vào','Có trạm xe buýt dành cho học sinh'], why:'Đó là biển W.225 "Trẻ em", đặt gần trường học, vườn trẻ. Gặp biển này phải giảm tốc, chú ý trẻ em chạy ra bất ngờ.'},
+  {q:'Biển hạn chế tốc độ ghi 40. Bạn đi 52 km/h thì bị gì?',
+   a:['Phạt 800.000–1.000.000đ (vượt 10 đến 20 km/h)','Không sao vì chỉ vượt 12 km/h','Phạt 6–8 triệu đồng, trừ 4 điểm'], why:'Vượt từ 10 đến 20 km/h bị phạt 800.000–1.000.000đ (điểm a khoản 4 Điều 7 NĐ 168/2024). Chỉ vượt dưới 5 km/h mới không bị phạt; vượt trên 20 km/h bị phạt 6–8 triệu và trừ 4 điểm.'},
   {q:'Mỗi giấy phép lái xe có bao nhiêu điểm?',
    a:['12 điểm','10 điểm','20 điểm'], why:'Theo Luật Trật tự, an toàn giao thông đường bộ 2024, mỗi GPLX có 12 điểm.'}
 ];

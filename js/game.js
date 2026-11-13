@@ -19,7 +19,9 @@ const S = {
   sound: {on: true, fx: 0.7, voice: 0.9, npc: 0.8, bike: 'so'}, gear: 1,
   // xi-nhan: turn = -1 (trái), 0 (tắt), 1 (phải); không tự tắt. sigAcc: tổng góc đã quay; sigEp: đã xét lỗi lượt rẽ này
   turn: 0, sigInJ: false, blinkT: 0, sigOnT: -99, sigAcc: 0, sigStraightT: 0, sigEp: false, turnBegan: false, turnStartT: -99, sigRunT: 0, sigOffSaidT: -99, blinkOn: false,
-  pedEp: false, pedCool: -99
+  pedEp: false, pedCool: -99,
+  // tốc độ: spdSec = đoạn đường đang đi, spdFined = đoạn này đã bị phạt, spdT = thời gian đã chạy quá, spdMax = mức vượt lớn nhất, spdLimit = giới hạn hiện tại (km/h)
+  spdSec: '', spdFined: false, spdT: 0, spdMax: 0, spdLimit: 40
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -89,7 +91,7 @@ function save(){
 }
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
-  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0;
+  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.spdSec = ''; S.spdFined = false; S.spdT = 0;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
   newTrip();
 }
@@ -522,7 +524,7 @@ function updPed(p, dt){
    10. NGƯỜI CHƠI VÀ LUẬT
    ========================================================= */
 const keys = {up:false, down:false, brake:false, left:false, right:false};
-const VMAX = 115;
+const VMAX = 165;   // 55 km/h (km/h = vận tốc / 3)
 function laneAssist(c, dt){
   // Thả phím rẽ ra thì xe tự nắn thẳng theo làn bên phải của hướng đang đi
   const ca = Math.cos(player.a), sa = Math.sin(player.a);
@@ -557,7 +559,7 @@ function updPlayer(dt){
   const braking = keys.down || keys.brake;
   if (player.stun > 0) player.stun -= dt;
   else {
-    if (keys.up) player.v += 115 * dt;
+    if (keys.up) player.v += (player.v < 115 ? 115 : 70) * dt;   // quá 38 km/h thì tăng tốc chậm lại
     if (keys.brake){ const b = 330 * dt; player.v = Math.abs(player.v) <= b ? 0 : player.v - Math.sign(player.v) * b; }
     else if (keys.down) player.v -= (player.v > 0 ? 330 : 80) * dt;
   }
@@ -688,6 +690,24 @@ function checkRules(prev, prevC, dt){
   if (S.stopT > 4 && S.now - S.stopSaidT > 20){
     const blocked = npcs.find(n => !n.hidden && n.blockedBy === player && n.waitT > 1.5);
     if (blocked){ S.stopSaidT = S.now; say(blocked, fill(pick(LINES.stopping))); }
+  }
+
+  // 5b) Tốc độ. Vượt giới hạn dưới 5 km/h không phạt. Từ 5 km/h trở lên mà giữ liên tục 1 giây thì phạt,
+  //     mỗi đoạn đường chỉ phạt một lần, theo mức vượt lớn nhất trong lúc đó (5–<10, 10–20, >20 km/h).
+  { const si = speedInfo(c, player.x, player.y);
+    if (si){
+      if (si.id !== S.spdSec){ S.spdSec = si.id; S.spdFined = false; S.spdT = 0; S.spdMax = 0; }
+      S.spdLimit = si.limit;
+    }
+    const onRd = si || c.t === 'junction' || c.t === 'ring';
+    const over = sp / 3 - S.spdLimit;
+    if (onRd && over >= 5 && player.stun <= 0 && !S.spdFined){
+      S.spdT += dt; S.spdMax = Math.max(S.spdMax, over);
+      if (S.spdT >= 1){
+        S.spdFined = true;
+        violate(S.spdMax > 20 ? 'speed3' : S.spdMax >= 10 ? 'speed2' : 'speed1', S.spdSec === 'school' ? 'speedschool' : 'speed');
+      }
+    } else if (over < 5){ S.spdT = 0; S.spdMax = 0; }
   }
 
   // 6) Xi-nhan. Chỉ bắt khi RẼ Ở NGÃ TƯ (một lượt rẽ đi qua nút giao và quay xe quá khoảng 50 độ) hoặc QUAY ĐẦU (quá khoảng 137 độ).
@@ -1115,6 +1135,27 @@ function drawUprights(){
     banDisc(OW.x - 33, y, iconRider); banDisc(OW.x + 33, y, iconCar);
     label(OW.x, y + (y < 600 ? 22 : -22), 'PHỐ ĐI BỘ', {size: 12, bold: true, bg: '#1b6fb8', color: '#fff'});
   }
+  // biển hạn chế tốc độ P.127 và biển W.225 "Trẻ em"
+  for (const sp of SPEED_SIGNS){
+    if (tilted() && Math.hypot(sp.x - player.x, sp.y - player.y) > (S.view === 'bike' ? 420 : 560)) continue;
+    if (sp.kind === 'limit'){
+      signDisc(sp.x, sp.y, '#e5484d', () => {
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, -21, 5.6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#111'; ctx.font = '800 7.4px "Segoe UI", Roboto, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(sp.v), 0, -20.8);
+      });
+    } else {
+      up(sp.x, sp.y, () => {
+        ctx.fillStyle = '#555'; ctx.fillRect(-1, -14, 2, 14);
+        ctx.fillStyle = '#e5484d'; ctx.beginPath(); ctx.moveTo(0, -34); ctx.lineTo(10, -15); ctx.lineTo(-10, -15); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ffd43b'; ctx.beginPath(); ctx.moveTo(0, -31); ctx.lineTo(7.4, -17); ctx.lineTo(-7.4, -17); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#222';   // hai em nhỏ
+        for (const dx of [-2.6, 2.6]){
+          ctx.beginPath(); ctx.arc(dx, -23.2, 1.1, 0, Math.PI*2); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(dx, -22); ctx.lineTo(dx - 1.5, -18.4); ctx.lineTo(dx + 1.5, -18.4); ctx.closePath(); ctx.fill();
+        }
+      });
+    }
+  }
   // biển chỉ dẫn hướng đi trước các ngã tư
   drawSignboards();
   // biển vòng xuyến trước mỗi cửa vào
@@ -1245,7 +1286,9 @@ function updHUD(){
   const mc = 'chip' + (S.money < 0 ? ' neg' : ''); if (hudCache.mc !== mc){ hudCache.mc = mc; $('money').className = mc; }
   setHTML('pts', `🪪<span class="lbl"> Điểm GPLX</span> <b>${S.pts}/12</b>`);
   setHTML('streak', `⭐<span class="lbl"> Chuỗi sạch</span> <b>${S.streak}</b>`);
-  setHTML('speed', `🏍️ <b>${Math.round(Math.abs(player.v) / 3)}</b> km/h${S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1)}`);
+  const kmhF = Math.abs(player.v) / 3, over = kmhF - S.spdLimit;
+  setHTML('speed', `🏍️ <b>${Math.round(kmhF)}</b> km/h<span class="lim"> · tối đa ${S.spdLimit}</span>${S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1)}`);
+  { const sc = 'chip' + (over >= 5 ? ' over' : over > 0 ? ' near' : ''); if (hudCache.sc !== sc){ hudCache.sc = sc; $('speed').className = sc; } }
   // đèn xi-nhan trên thanh thông tin và trên ghi đông
   { const L = S.turn < 0 && S.blinkOn, R = S.turn > 0 && S.blinkOn, sk = (S.turn || 0) + '|' + (S.blinkOn ? 1 : 0);
     if (hudCache.sig !== sk){ hudCache.sig = sk;
@@ -1259,6 +1302,8 @@ function updHUD(){
     const la = playerLightAhead(230);
     if (la && la.state === 'red') w = '🔴 Đèn đỏ phía trước: dừng trước vạch dừng';
     else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc và dừng trước vạch dừng';
+    else if (over >= 5) w = '🚨 Quá tốc độ: ' + Math.round(kmhF) + ' km/h, biển cho phép tối đa ' + S.spdLimit + '. Nhả ga, giảm tốc ngay' + (S.spdLimit <= 30 ? ' (trước trường có trẻ em!)' : '');
+    else if (over > 0) w = '⚠️ Hơi quá giới hạn ' + S.spdLimit + ' km/h một chút, nhả ga nhé';
     else {   // sắp rẽ hoặc quay đầu mà chưa bật xi-nhan đúng bên: nhắc
       const i = S.route && S.route.instr;
       if (i && (i.type === 'left' || i.type === 'right' || i.type === 'uturn') && (i.type === 'uturn' || i.dist <= 240)){
@@ -1267,12 +1312,12 @@ function updHUD(){
       }
     }
   }
-  // đồng hồ trên ghi đông (góc nhìn sau tay lái): kim quay 0–60 km/h (xe trong game chạy tối đa khoảng 40 km/h)
+  // đồng hồ trên ghi đông (góc nhìn sau tay lái): kim quay 0–80 km/h (xe chạy tối đa 55 km/h); số chuyển đỏ khi chạy quá giới hạn
   if (S.view === 'bike'){
-    const kmh = Math.round(Math.abs(player.v) / 3), ck = kmh + '|' + (S.sound.bike === 'ga' ? '' : S.gear || 1);
+    const kmh = Math.round(Math.abs(player.v) / 3), ov = over >= 5 ? 2 : over > 0 ? 1 : 0, ck = kmh + '|' + (S.sound.bike === 'ga' ? '' : S.gear || 1) + '|' + ov + '|' + S.spdLimit;
     if (hudCache.ck !== ck){ hudCache.ck = ck;
-      $('needle').setAttribute('transform', 'rotate(' + (-128 + Math.min(kmh, 60) / 60 * 256).toFixed(1) + ' 200 74)');
-      $('ckSpeed').textContent = kmh;
+      $('needle').setAttribute('transform', 'rotate(' + (-128 + Math.min(kmh, 80) / 80 * 256).toFixed(1) + ' 200 74)');
+      $('ckSpeed').textContent = kmh; $('ckSpeed').setAttribute('fill', ov === 2 ? '#ff6b6b' : ov === 1 ? '#ffd666' : '#fffaf2');
       $('ckUnit').textContent = 'km/h' + (S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1));
     }
   }
@@ -1358,4 +1403,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS};
+window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};

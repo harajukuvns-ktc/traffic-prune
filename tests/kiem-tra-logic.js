@@ -5,7 +5,7 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
-  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
+  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdFined = false; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -278,15 +278,54 @@ S.pts = 12; S.suspended = false;
 
 // 11) Tiếng máy: xe số lên số khi tăng tốc, vòng tua tụt xuống mỗi lần lên số; xe tay ga không có số
 { const em = TP.SND.engineModel; let prev = em(0, true, 'so'), shifts = 0, drops = 0, maxR = 0, line = [];
-  for (let v = 0; v <= 115; v += 1){ const m = em(v, true, 'so');
+  for (let v = 0; v <= 165; v += 1){ const m = em(v, true, 'so');
     if (m.gear > prev.gear){ shifts++; if (m.rpm < prev.rpm) drops++; }
     maxR = Math.max(maxR, m.rpm); if (v % 10 === 0) line.push(`${v}:${m.gear}/${m.rpm.toFixed(2)}`); prev = m; }
   console.log('   tốc độ:số/vòng tua →', line.join(' '));
   ok(shifts === 3 && drops === 3 && maxR <= 1, `xe số lên 3 lần số, mỗi lần vòng tua tụt xuống (lên số ${shifts}, tụt ${drops})`);
-  let back = 0; for (let v = 115; v >= 0; v -= 1){ const m = em(v, false, 'so'); if (v === 0) back = m.gear; }
+  let back = 0; for (let v = 165; v >= 0; v -= 1){ const m = em(v, false, 'so'); if (v === 0) back = m.gear; }
   ok(back === 1, 'giảm tốc về 0 thì về số 1');
-  const g = [0, 40, 110].map(v => em(v, true, 'ga'));
+  const g = [0, 60, 160].map(v => em(v, true, 'ga'));
   ok(g.every(m => m.gear === 0) && g[1].rpm > g[0].rpm && g[2].rpm > g[1].rpm, 'xe tay ga: không có số, vòng tua tăng đều'); }
+
+// 13) Biển hạn chế tốc độ và lỗi chạy quá tốc độ
+{ const {SPEED_SIGNS, SCHOOL, LAW, speedInfo} = TP;
+  // chạy với tốc độ giữ nguyên (km/h) từ (x,y) theo hướng a trong sec giây, trả về số lỗi tốc độ đã bị bắt
+  const drive = (x, y, a, kmh, sec) => { reset(); clearNear(x, y, 600); player.x = x; player.y = y; player.a = a; player.v = 0; S.money = 5000000; S.spdSec = '';
+    for (let i = 0; i < sec/dt; i++){ player.v = kmh * 3; step(dt); }
+    return {s1: S.stats.speed1 || 0, s2: S.stats.speed2 || 0, s3: S.stats.speed3 || 0, pts: S.pts, money: S.money}; };
+  ok(SPEED_SIGNS.filter(b => b.kind === 'limit' && b.v === 30).length === 2 && SPEED_SIGNS.filter(b => b.kind === 'child').length === 2, 'trường mầm non có 2 biển 30 km/h và 2 biển "Trẻ em" (hai chiều)');
+  ok(SPEED_SIGNS.filter(b => b.v === 40).length >= 14, `đường thường có biển 40 km/h (${SPEED_SIGNS.filter(b => b.v === 40).length} biển)`);
+  ok(SPEED_SIGNS.every(b => classify(b.x, b.y).t === 'off'), 'mọi biển tốc độ đặt trên vỉa hè, không nằm giữa lòng đường');
+  ok(speedInfo({t:'h', Y:300}, 600, 300).limit === 40 && speedInfo({t:'v', X:400}, 400, 620).limit === 30 && speedInfo({t:'v', X:400}, 400, 400).limit === 40, 'giới hạn đúng: đường thường 40, trước trường 30');
+  // giữ ga hết cỡ thì tối đa 55 km/h
+  reset(); clearNear(500, 320, 700); player.x = 450; player.y = 320; player.a = 0; player.v = 0; keys.up = true; run(4); keys.up = false;
+  ok(player.v > 160 && player.v <= 165.5, `giữ ga thì tối đa 55 km/h (đạt ${(player.v/3).toFixed(1)} km/h)`);
+  let r = drive(450, 320, 0, 37, 3);
+  ok(r.s1 + r.s2 + r.s3 === 0, 'chạy 37 km/h ở đường 40 không bị phạt');
+  r = drive(450, 320, 0, 42.5, 3);
+  ok(r.s1 + r.s2 + r.s3 === 0, 'chạy vượt dưới 5 km/h (khoảng 42 km/h) không bị phạt');
+  r = drive(450, 320, 0, 48, 3);
+  ok(r.s1 === 1 && r.s2 === 0 && r.pts === 12 && r.money === 5000000 - LAW.speed1.fine, `vượt 5 đến dưới 10 km/h: phạt bậc 1, ${LAW.speed1.range}, không trừ điểm (s1=${r.s1}, điểm ${r.pts})`);
+  r = drive(450, 320, 0, 48, 5);
+  ok(r.s1 === 1, `ở cùng một đoạn đường chỉ bị phạt một lần (s1=${r.s1})`);
+  r = drive(450, 320, 0, 54, 3);
+  ok(r.s2 === 1 && r.s3 === 0 && r.pts === 12, `vượt 10 đến 20 km/h: phạt bậc 2, ${LAW.speed2.range}, không trừ điểm (s2=${r.s2})`);
+  r = drive(450, 320, 0, 54, 0.6);
+  ok(r.s1 + r.s2 === 0, 'vượt tốc độ chưa tới 1 giây thì chưa bị phạt');
+  // đoạn trường học: giới hạn 30, vượt trên 20 thì phạt nặng và trừ 4 điểm
+  r = drive(380, 523, Math.PI/2, 55, 1.2);
+  ok(r.s3 === 1 && r.pts === 8 && S.spdLimit === 30, `trước trường chạy 55 km/h (vượt 25): bậc 3, ${LAW.speed3.range}, trừ 4 điểm (s3=${r.s3}, điểm ${r.pts})`);
+  ok(S.bubble && /trường|bé|Trẻ em|cô giáo/i.test(S.bubble.text), `NPC nhắc bằng câu riêng cho cổng trường: "${S.bubble && S.bubble.text}"`);
+  r = drive(380, 523, Math.PI/2, 43, 1.5);
+  ok(r.s2 === 1 && r.pts === 12, `trước trường chạy 43 km/h (vượt 13): bậc 2 (s2=${r.s2})`);
+  r = drive(380, 523, Math.PI/2, 33, 2);
+  ok(r.s1 + r.s2 + r.s3 === 0, 'trước trường chạy 33 km/h (vượt 3) không bị phạt');
+  ok(LAW_ORDER_HAS(['speed1','speed2','speed3']), 'ba bậc phạt tốc độ có trong Sổ tay');
+  r = drive(450, 320, 0, 0, 2);
+  ok(r.s1 + r.s2 + r.s3 === 0, 'đứng yên không bị phạt tốc độ');
+}
+function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && TP.LAW[k].fine > 0); }
 
 // 12) Giọng NPC: chữ hiện dần, mỗi tiếng một tiếng bíp, cao độ theo dấu thanh, mỗi kiểu nhân vật một giọng
 { reset(); const text = 'Đèn đỏ là để dừng, anh ơi, không phải để thử.';

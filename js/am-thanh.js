@@ -178,19 +178,19 @@ const SND = (function(){
   // A. Mô hình vòng tua máy. Trả về {rpm: 0..1, gear}. Tách riêng để kiểm tra tự động được.
   //   Xe số: 4 số, vòng tua tăng trong từng số rồi tụt xuống khi lên số.
   //   Xe tay ga: hộp số vô cấp, vòng tua giữ gần như đều, cao hơn khi đang ga.
-  const GEARS = [[0, 24], [24, 50], [50, 80], [80, 999]];
+  const GEARS = [[0, 30], [30, 66], [66, 108], [108, 999]];   // vận tốc tới 165 (55 km/h)
   let gear = 1;
   function engineModel(sp, throttle, bike){
     if (bike === 'ga'){
       if (sp < 2 && !throttle) return {rpm: 0.16, gear: 0};
-      const r = throttle ? 0.5 + 0.38 * Math.min(1, sp / 110) : 0.22 + 0.28 * Math.min(1, sp / 110);
+      const r = throttle ? 0.5 + 0.38 * Math.min(1, sp / 165) : 0.22 + 0.28 * Math.min(1, sp / 165);
       return {rpm: r, gear: 0};
     }
     // lên số khi vượt ngưỡng trên, xuống số khi tụt dưới ngưỡng dưới trừ 5 (tránh nhảy số liên tục)
     while (gear < 4 && sp > GEARS[gear-1][1]) gear++;
     while (gear > 1 && sp < GEARS[gear-1][0] - 5) gear--;
     if (sp < 1.5) return {rpm: throttle ? 0.3 : 0.16, gear: 1};
-    const [lo, hi] = GEARS[gear-1], top = gear === 4 ? 120 : hi;
+    const [lo, hi] = GEARS[gear-1], top = gear === 4 ? 165 : hi;
     const f = clamp((sp - lo) / (top - lo), 0, 1);
     const base = gear === 1 ? 0.24 : 0.36;
     return {rpm: clamp(base + (0.92 - base) * f - (throttle ? 0 : 0.06), 0.16, 1), gear};
