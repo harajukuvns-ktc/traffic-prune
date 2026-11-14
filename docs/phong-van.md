@@ -125,6 +125,7 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Góp ý lúc 09:28 ngày 13/11/2026: "1. Mình thử trên PC, có vẻ mình đã nhầm. 2. Đồng ý. 3. Đồng ý. 4. ... Q xin nhan trái, E xin nhan phải." -> bản 0.9.1: thu vòng tròn quanh xe, người đi bộ chỉ làm xe chậm một lần, vạch vàng dừng ở vạch dừng. Q/E đã có từ bản 0.9.
 - Góp ý lúc 10:05 ngày 13/11/2026: "1. đồng ý. 2. đồng ý 3. đồng ý 4. đồng ý 5. Chia 3." -> chốt phần còn lại của giai đoạn 1 (ghi ở mục 10.2 của docs/THIET-KE.md): bản 0.10 biển tốc độ (xe tối đa khoảng 55 km/h, đường thường 40, trước trường 30); bản 0.11 mũ bảo hiểm (nút đội mũ đầu chuyến + chốt CSGT) và điện thoại reo; bản 1.0 thanh văn hóa 0–100, dùng tính tiền boa.
 - Góp ý lúc 10:17 ngày 13/11/2026: "đồng ý" (sau khi nghe báo cáo mức phạt tốc độ đã xác minh: ba bậc 400–600 nghìn / 800 nghìn–1 triệu / 6–8 triệu và trừ 4 điểm; vượt dưới 5 km/h không phạt) -> làm bản 0.10: mỗi đoạn đường phạt một lần theo bậc cao nhất lúc đó (trên đường 40 chỉ tới bậc 2; bậc 3 chỉ gặp ở đoạn trường học 30 km/h); số tiền phạt giữ đúng mức thật. Chờ người dùng chơi thử.
+- Góp ý lúc 10:10 ngày 14/11/2026: "Sửa luôn 2 điểm này, không cần hỏi lại: 1. Người đi bộ: chỉ cần cách khoảng 0,5 m là tính đụng thay vì 2,5 m. 2. Vượt từ 5km/h liên tục 3 giây mới phạt, mỗi đoạn đường một lần." -> bản 0.10.1. Trước đó người dùng nhận xét xe tăng tốc quá nhanh (đề xuất tăng tốc chậm lại và báo trước khi chạm giới hạn chưa được chốt). Hệ quả: đoạn trường học ngắn nên khó bị phạt, chờ chốt.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?

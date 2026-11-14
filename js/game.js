@@ -607,7 +607,7 @@ function updPlayer(dt){
   }
   // người đi bộ trên vỉa hè
   if (!S.inBay) for (const p of peds){
-    if (Math.hypot(p.x - player.x, p.y - player.y) < 10){
+    if (Math.hypot(p.x - player.x, p.y - player.y) < 2){   // 2 đơn vị = 0,5 m
       p.stopT = 1.2;
       if (S.now - S.sidewalkSaidT > 8){ S.sidewalkSaidT = S.now; say(p, fill(pick(LINES.sidewalk))); }
       if (!(p.slowT > S.now)){ player.v *= 0.6; p.slowT = S.now + 1.5; }   // chậm lại một lần mỗi lần gặp, để còn lách tránh được
@@ -692,7 +692,7 @@ function checkRules(prev, prevC, dt){
     if (blocked){ S.stopSaidT = S.now; say(blocked, fill(pick(LINES.stopping))); }
   }
 
-  // 5b) Tốc độ. Vượt giới hạn dưới 5 km/h không phạt. Từ 5 km/h trở lên mà giữ liên tục 1 giây thì phạt,
+  // 5b) Tốc độ. Vượt giới hạn dưới 5 km/h không phạt. Từ 5 km/h trở lên mà giữ liên tục 3 giây thì phạt,
   //     mỗi đoạn đường chỉ phạt một lần, theo mức vượt lớn nhất trong lúc đó (5–<10, 10–20, >20 km/h).
   { const si = speedInfo(c, player.x, player.y);
     if (si){
@@ -703,7 +703,7 @@ function checkRules(prev, prevC, dt){
     const over = sp / 3 - S.spdLimit;
     if (onRd && over >= 5 && player.stun <= 0 && !S.spdFined){
       S.spdT += dt; S.spdMax = Math.max(S.spdMax, over);
-      if (S.spdT >= 1){
+      if (S.spdT >= 3){
         S.spdFined = true;
         violate(S.spdMax > 20 ? 'speed3' : S.spdMax >= 10 ? 'speed2' : 'speed1', S.spdSec === 'school' ? 'speedschool' : 'speed');
       }
