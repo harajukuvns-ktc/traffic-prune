@@ -58,16 +58,25 @@ const LINES = {
     '{X} chạy xe giữa phố đi bộ à? Mấy bác đang dạo chợ nhìn {x} kìa.',
     'Gạch chéo đỏ nghĩa là xe máy đừng vào. {X} đọc biển chưa, hay biển tự đọc {x}?'
   ],
-  speed: [
-    'Ơ, {x} đi nhanh quá giới hạn trên biển rồi. Về sớm một phút mà mất cả buổi tiền công thì có lời không?',
-    'Biển ghi số mấy là tốc độ tối đa, không phải tốc độ tối thiểu đâu {x} ơi.',
-    '{X} chạy như đi thi ấy. Giới hạn là giới hạn, đồng hồ đổi màu rồi kìa.',
-    'Ở khu đông người, nhanh một chút cũng đủ làm người khác giật mình. Chậm lại {x} nhé.'
+  speedcam: [
+    'Tách! Camera ngã tư chụp {x} rồi. Biển ghi số mấy là tốc độ tối đa, không phải tốc độ tối thiểu đâu.',
+    '{X} qua vạch dừng mà đồng hồ vượt giới hạn. Camera ngã tư không chớp mắt đâu, thư phạt về tận nhà đó.',
+    'Ở ngã tư có camera, nhanh một chút là có ảnh làm kỷ niệm. Chậm lại trước vạch dừng nha {x}.',
+    'Đồng hồ đổi màu từ lâu mà {x} vẫn giữ ga. Tới ngã tư là camera ghi hết đó.'
   ],
-  speedschool: [
-    'Trước cổng trường mà chạy thế này thì các em nhỏ chạy ra sao kịp, {x} ơi!',
-    'Có biển "Trẻ em" đàng hoàng đó {x}. Cổng trường là chỗ để giảm ga, không phải để khoe ga.',
-    'Mấy bé mầm non đang xếp hàng ở cổng, {x} phóng vèo qua thế này thì cô giáo hết hồn.'
+  speedcamschool: [
+    'Khối phố có trường mầm non mà {x} phóng qua ngã tư thế này, camera chụp rồi đó. Các em nhỏ còn đi lại ở đây nữa.',
+    'Có biển "Trẻ em" đàng hoàng đó {x}. Cả đoạn phố này là khu giảm ga, camera ngã tư ghi lại hết.',
+    'Tách! Đoạn trường học giới hạn 30 mà {x}. Giảm ga từ lúc vào phố nhé, đừng chờ tới ngã tư.'
+  ],
+  speedwarn: [
+    'Ơ, {x} đi nhanh hơn biển rồi. Ngã tư phía trước có camera đó, nhả ga đi kẻo bị chụp.',
+    'Đồng hồ {x} đổi màu rồi kìa. Chậm lại trước ngã tư nhé, camera không biết nói chuyện đâu, chỉ biết chụp.',
+    '{X} chạy nhanh hơn giới hạn đó. Giữa đường tôi mới nhắc, tới ngã tư thì camera phạt luôn đó.'
+  ],
+  speedwarnschool: [
+    'Khối phố có trường mà {x} chạy nhanh vậy sao? Giảm xuống 30 đi, tới ngã tư camera chụp bây giờ.',
+    'Có biển "Trẻ em" mà {x} chưa giảm ga. Mấy bé hay chạy ra bất chợt đó, chậm lại nha.'
   ],
   signal: [
     'Rẽ mà không xi-nhan, người sau đoán ý {x} kiểu gì? Chưa ai có thần giao cách cảm đâu.',

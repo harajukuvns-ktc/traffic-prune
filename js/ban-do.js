@@ -110,22 +110,21 @@ for (const id of ['A','B','C','D','E']){
   }
 }
 
-// Giới hạn tốc độ (biển P.127 "Tốc độ tối đa cho phép"): đường thường 40 km/h, đoạn trước trường mầm non Sơn Ca 30 km/h
-// (kèm biển W.225 "Trẻ em"). Mỗi đoạn đường giữa hai nút giao là một "đoạn" để tính phạt một lần.
-const SPEED_LIMIT = 40, SCHOOL = {x: 400, y1: 520, y2: 720, limit: 30};
+// Giới hạn tốc độ (biển P.127 "Tốc độ tối đa cho phép"): đường thường 40 km/h; cả khối Phố Bánh Mì giữa hai ngã tư
+// (có trường mầm non Sơn Ca, khoảng 130 m) là 30 km/h, kèm biển W.225 "Trẻ em". Mỗi đoạn đường giữa hai nút giao là một "đoạn".
+// Từ bản 0.10.2: giữa đường chỉ nhắc nhở; camera phạt nguội ở vạch dừng các ngã tư có đèn mới là chỗ bị phạt (xem checkRules mục 1).
+const SPEED_LIMIT = 40, SCHOOL = {x: 400, y1: 300, y2: 900, limit: 30};
 function speedInfo(c, x, y){
   if (c.t === 'h'){ let k = 0; for (const v of VR) if (v.x < x) k++; return {id: 'h' + c.Y + '_' + k, limit: SPEED_LIMIT}; }
   if (c.t === 'v'){
     let k = 0; for (const h of HR) if (h.y < y) k++;
-    if (c.X === SCHOOL.x && k === 1){
-      if (y >= SCHOOL.y1 && y <= SCHOOL.y2) return {id: 'school', limit: SCHOOL.limit};
-      return {id: 'v' + c.X + '_1' + (y < SCHOOL.y1 ? 'a' : 'b'), limit: SPEED_LIMIT};
-    }
+    if (c.X === SCHOOL.x && k === 1) return {id: 'school', limit: SCHOOL.limit};
     return {id: 'v' + c.X + '_' + k, limit: SPEED_LIMIT};
   }
   return null;
 }
-// Vị trí các biển: bên phải theo chiều đi, ngay sau mỗi ngã tư (bỏ qua đầu mép bản đồ và vòng xuyến); biển 30 và biển "Trẻ em" ở hai đầu đoạn trường học
+// Vị trí các biển: bên phải theo chiều đi, ngay sau mỗi ngã tư (bỏ qua đầu mép bản đồ và vòng xuyến);
+// riêng khối Phố Bánh Mì thì đặt biển "Trẻ em" và biển 30 thay cho biển 40
 const SPEED_SIGNS = [];
 {
   const free = (q, r) => !P_SIGNS.some(o => Math.hypot(o.x - q.x, o.y - q.y) < r) && !SIGNBOARDS.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 60) && !SPEED_SIGNS.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 40);
@@ -138,15 +137,13 @@ const SPEED_SIGNS = [];
     }
     SPEED_SIGNS.push({kind, v, x: pos.x, y: pos.y});
   };
-  // biển trường học trước (ưu tiên chỗ đẹp), rồi tới biển 40 sau mỗi ngã tư
-  put('child', 0, SCHOOL.x, SCHOOL.y2, 0, -1, [-45, -70, -20]);          // xe đi lên (về phía bắc) vào đoạn trường học
-  put('limit', SCHOOL.limit, SCHOOL.x, SCHOOL.y2, 0, -1, [0, -25, 15]);
-  put('child', 0, SCHOOL.x, SCHOOL.y1, 0, 1, [-45, -70, -20]);           // xe đi xuống (về phía nam)
-  put('limit', SCHOOL.limit, SCHOOL.x, SCHOOL.y1, 0, 1, [0, -25, 15]);
   for (const sg of SEGS) for (const [from, to] of [[sg.a, sg.b], [sg.b, sg.a]]){
     if (DEAD[from] || from === 'F') continue;
     const a = N[from], b = N[to], l = Math.hypot(b.x - a.x, b.y - a.y), dx = (b.x - a.x) / l, dy = (b.y - a.y) / l;
-    put('limit', SPEED_LIMIT, a.x, a.y, dx, dy, [HALF + 70, HALF + 95, HALF + 120, HALF + 150]);
+    if (sg.a === 'A' && sg.b === 'D'){   // khối Phố Bánh Mì giữa hai ngã tư (đúng đoạn SCHOOL)
+      put('child', 0, a.x, a.y, dx, dy, [HALF + 45, HALF + 70, HALF + 20]);
+      put('limit', SCHOOL.limit, a.x, a.y, dx, dy, [HALF + 100, HALF + 125, HALF + 150, HALF + 80]);
+    } else put('limit', SPEED_LIMIT, a.x, a.y, dx, dy, [HALF + 70, HALF + 95, HALF + 120, HALF + 150]);
   }
 }
 

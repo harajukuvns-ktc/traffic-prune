@@ -20,8 +20,9 @@ const S = {
   // xi-nhan: turn = -1 (trái), 0 (tắt), 1 (phải); không tự tắt. sigAcc: tổng góc đã quay; sigEp: đã xét lỗi lượt rẽ này
   turn: 0, sigInJ: false, blinkT: 0, sigOnT: -99, sigAcc: 0, sigStraightT: 0, sigEp: false, turnBegan: false, turnStartT: -99, sigRunT: 0, sigOffSaidT: -99, blinkOn: false,
   pedEp: false, pedCool: -99,
-  // tốc độ: spdSec = đoạn đường đang đi, spdFined = đoạn này đã bị phạt, spdT = thời gian đã chạy quá, spdMax = mức vượt lớn nhất, spdLimit = giới hạn hiện tại (km/h)
-  spdSec: '', spdFined: false, spdT: 0, spdMax: 0, spdLimit: 40
+  // tốc độ: spdSec = đoạn đường đang đi, spdSaid = đoạn này đã nhắc nhở rồi, spdT = thời gian đã chạy quá, spdMax = mức vượt lớn nhất, spdLimit = giới hạn hiện tại (km/h)
+  // camCool = mốc thời gian chống bị camera chụp hai lần liền
+  spdSec: '', spdSaid: false, spdT: 0, spdMax: 0, spdLimit: 40, camCool: -99
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -91,7 +92,7 @@ function save(){
 }
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
-  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.spdSec = ''; S.spdFined = false; S.spdT = 0;
+  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
   newTrip();
 }
@@ -200,6 +201,8 @@ function remind(type, speaker){
     `<small>Chuyến này không còn được tính là chuyến sạch.</small>`);
   save();
 }
+// Lỗi do camera ngã tư chụp (phạt nguội): có tiếng máy ảnh và loé sáng
+const CAM_TYPES = {red: 1, speed1: 1, speed2: 1, speed3: 1};
 function violate(type, quipKey, speaker){
   const law = LAW[type];
   S.stats[type] = (S.stats[type] || 0) + 1;
@@ -207,7 +210,7 @@ function violate(type, quipKey, speaker){
   const hadPts = S.pts > 0;
   S.money -= law.fine; S.pts = Math.max(0, S.pts - law.pts);
   if (hadPts && S.pts === 0) suspendLicense();
-  SND.whistle(); if (type === 'red') SND.shutter();
+  SND.whistle(); if (CAM_TYPES[type]) SND.shutter();
   if (S.trip) S.trip.clean = false;
   S.streak = 0; S.epId++; S.epAffected = 0; S.epJamSaid = false;
   S.faultUntil = Math.max(S.faultUntil, S.now + 3);
@@ -220,7 +223,7 @@ function violate(type, quipKey, speaker){
     `<small>${law.ref}</small><br>💡 ${law.tip}<br>`+
     `<small>Trong game bị trừ ${fmt(law.fine)}, bằng khoảng ${trips} chuyến giao hàng.${S.pts === 0 ? ' Điểm GPLX đã về 0: không được lái xe nữa cho tới khi kiểm tra đạt và được phục hồi điểm.' : ''}</small>`);
   floatText(player.x, player.y, '−' + fmt(law.fine).replace('−',''), '#e5484d');
-  if (type === 'red') S.flash = 0.7;
+  if (CAM_TYPES[type]) S.flash = 0.7;
   save();
 }
 function compensate(n, amount, note){
@@ -632,7 +635,18 @@ function checkRules(prev, prevC, dt){
       if (lat >= HALF) continue;
       const sx = L.x - dx*(HALF + STOPG), sy = L.y - dy*(HALF + STOPG);
       const before = (pNose.x - sx)*dx + (pNose.y - sy)*dy, after = (nose.x - sx)*dx + (nose.y - sy)*dy;
-      if (before < 0 && after >= 0 && lightOf(L, dx ? 'EW' : 'NS', S.now) === 'red') violate('red');
+      if (before < 0 && after >= 0){
+        // camera chụp tốc độ đúng lúc đầu xe qua vạch dừng (cả đèn xanh lẫn đèn đỏ), so với giới hạn của đoạn đường vừa đi qua
+        const si = speedInfo(prevC, prev.x, prev.y);
+        if (si && S.now >= S.camCool){
+          const over = sp / 3 - si.limit;
+          if (over >= 5){
+            S.camCool = S.now + 3;
+            violate(over > 20 ? 'speed3' : over >= 10 ? 'speed2' : 'speed1', si.id === 'school' ? 'speedcamschool' : 'speedcam');
+          }
+        }
+        if (lightOf(L, dx ? 'EW' : 'NS', S.now) === 'red') violate('red');
+      }
     }
   }
 
@@ -692,20 +706,20 @@ function checkRules(prev, prevC, dt){
     if (blocked){ S.stopSaidT = S.now; say(blocked, fill(pick(LINES.stopping))); }
   }
 
-  // 5b) Tốc độ. Vượt giới hạn dưới 5 km/h không phạt. Từ 5 km/h trở lên mà giữ liên tục 3 giây thì phạt,
-  //     mỗi đoạn đường chỉ phạt một lần, theo mức vượt lớn nhất trong lúc đó (5–<10, 10–20, >20 km/h).
+  // 5b) Tốc độ giữa hai ngã tư: chỉ NHẮC NHỞ, không phạt và không làm mất "chuyến sạch" (quyết định ngày 14/11/2026).
+  //     Việc phạt nằm ở camera tại vạch dừng ngã tư có đèn (mục 1). Vượt từ 5 km/h trở lên liên tục 3 giây thì NPC nhắc một lần mỗi đoạn.
   { const si = speedInfo(c, player.x, player.y);
     if (si){
-      if (si.id !== S.spdSec){ S.spdSec = si.id; S.spdFined = false; S.spdT = 0; S.spdMax = 0; }
+      if (si.id !== S.spdSec){ S.spdSec = si.id; S.spdSaid = false; S.spdT = 0; S.spdMax = 0; }
       S.spdLimit = si.limit;
     }
     const onRd = si || c.t === 'junction' || c.t === 'ring';
     const over = sp / 3 - S.spdLimit;
-    if (onRd && over >= 5 && player.stun <= 0 && !S.spdFined){
+    if (onRd && over >= 5 && player.stun <= 0 && !S.spdSaid){
       S.spdT += dt; S.spdMax = Math.max(S.spdMax, over);
       if (S.spdT >= 3){
-        S.spdFined = true;
-        violate(S.spdMax > 20 ? 'speed3' : S.spdMax >= 10 ? 'speed2' : 'speed1', S.spdSec === 'school' ? 'speedschool' : 'speed');
+        S.spdSaid = true;
+        say(nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true}, fill(pick(S.spdSec === 'school' ? LINES.speedwarnschool : LINES.speedwarn)));
       }
     } else if (over < 5){ S.spdT = 0; S.spdMax = 0; }
   }
@@ -1105,6 +1119,9 @@ function drawUprights(){
       up(p.x, p.y, () => {
         ctx.fillStyle = '#555'; ctx.fillRect(-1, -14, 2, 14);
         ctx.fillStyle = '#2b2a33'; rr(ctx, -5, -40, 10, 27, 3); ctx.fill();
+        // camera phạt nguội gắn trên đỉnh cột đèn
+        ctx.fillStyle = '#3a4a5c'; rr(ctx, -6, -47, 12, 6, 2); ctx.fill();
+        ctx.fillStyle = '#9bd1ff'; ctx.beginPath(); ctx.arc(0, -44, 1.8, 0, Math.PI*2); ctx.fill();
         ['red','yellow','green'].forEach((c, i) => {
           const on = st === c, cy = -35 + i*8.2;
           if (on){ ctx.fillStyle = ({red:'rgba(255,77,79,.3)', yellow:'rgba(255,197,61,.3)', green:'rgba(82,196,26,.3)'})[c];
@@ -1302,7 +1319,7 @@ function updHUD(){
     const la = playerLightAhead(230);
     if (la && la.state === 'red') w = '🔴 Đèn đỏ phía trước: dừng trước vạch dừng';
     else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc và dừng trước vạch dừng';
-    else if (over >= 5) w = '🚨 Quá tốc độ: ' + Math.round(kmhF) + ' km/h, biển cho phép tối đa ' + S.spdLimit + '. Nhả ga, giảm tốc ngay' + (S.spdLimit <= 30 ? ' (trước trường có trẻ em!)' : '');
+    else if (over >= 5) w = '🚨 Quá tốc độ: ' + Math.round(kmhF) + ' km/h, biển cho phép tối đa ' + S.spdLimit + '. Nhả ga, giảm tốc trước ngã tư kẻo camera chụp' + (S.spdLimit <= 30 ? ' (khu trường có trẻ em!)' : '');
     else if (over > 0) w = '⚠️ Hơi quá giới hạn ' + S.spdLimit + ' km/h một chút, nhả ga nhé';
     else {   // sắp rẽ hoặc quay đầu mà chưa bật xi-nhan đúng bên: nhắc
       const i = S.route && S.route.instr;

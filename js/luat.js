@@ -50,11 +50,12 @@ const LAW = {
     tip: 'Trước khi rẽ hoặc quay đầu, bật xi-nhan bên sẽ rẽ (phím Q: trái, E: phải; trên điện thoại là hai nút nhỏ phía trên nút mũi tên) và giữ đến khi rẽ xong. Xi-nhan xong nhớ tắt đi.'
   },
   // Chạy quá tốc độ (xe mô tô, xe gắn máy). Chỉ phạt khi vượt từ 5 km/h trở lên; dưới 5 km/h không phạt.
+  // Từ bản 0.10.2 game phạt "nguội" bằng camera ở vạch dừng ngã tư có đèn (cách bắt lỗi là cách chơi, mức phạt không đổi).
   // Kiểm tra toàn văn NĐ 168/2024 và NĐ 238/2026 ngày 13/11/2026: NĐ 238 không đổi ba bậc này (docs/THIET-KE.md mục 8).
   speed1: {
     name: 'Chạy quá tốc độ từ 5 đến dưới 10 km/h', fine: 500000, range: '400.000–600.000đ', pts: 0,
     ref: 'NĐ 168/2024/NĐ-CP, Điều 7, điểm b khoản 2 (không trừ điểm GPLX)',
-    tip: 'Biển tròn viền đỏ ghi số (P.127) là tốc độ TỐI ĐA cho phép. Vượt từ 5 km/h trở lên là bị phạt. Nhìn đồng hồ, đổi màu là đang chạy quá.'
+    tip: 'Biển tròn viền đỏ ghi số (P.127) là tốc độ TỐI ĐA cho phép. Vượt từ 5 km/h trở lên là bị phạt. Nhìn đồng hồ, đổi màu là đang chạy quá. Camera ở ngã tư có đèn chụp tốc độ đúng lúc xe qua vạch dừng.'
   },
   speed2: {
     name: 'Chạy quá tốc độ từ 10 đến 20 km/h', fine: 900000, range: '800.000–1.000.000đ', pts: 0,

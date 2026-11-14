@@ -5,7 +5,7 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
-  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdFined = false; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
+  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -288,34 +288,63 @@ S.pts = 12; S.suspended = false;
   const g = [0, 60, 160].map(v => em(v, true, 'ga'));
   ok(g.every(m => m.gear === 0) && g[1].rpm > g[0].rpm && g[2].rpm > g[1].rpm, 'xe tay ga: không có số, vòng tua tăng đều'); }
 
-// 13) Biển hạn chế tốc độ và lỗi chạy quá tốc độ
+// 13) Biển hạn chế tốc độ; giữa đường chỉ nhắc, camera ở vạch dừng ngã tư có đèn mới phạt nguội (bản 0.10.2)
 { const {SPEED_SIGNS, SCHOOL, LAW, speedInfo} = TP;
-  // chạy với tốc độ giữ nguyên (km/h) từ (x,y) theo hướng a trong sec giây, trả về số lỗi tốc độ đã bị bắt
+  const cnt = () => ({s1: S.stats.speed1 || 0, s2: S.stats.speed2 || 0, s3: S.stats.speed3 || 0, red: S.stats.red || 0, pts: S.pts, money: S.money});
+  // chạy với tốc độ giữ nguyên (km/h) từ (x,y) theo hướng a trong sec giây
   const drive = (x, y, a, kmh, sec) => { reset(); clearNear(x, y, 600); player.x = x; player.y = y; player.a = a; player.v = 0; S.money = 5000000; S.spdSec = '';
     for (let i = 0; i < sec/dt; i++){ player.v = kmh * 3; step(dt); }
-    return {s1: S.stats.speed1 || 0, s2: S.stats.speed2 || 0, s3: S.stats.speed3 || 0, pts: S.pts, money: S.money}; };
-  ok(SPEED_SIGNS.filter(b => b.kind === 'limit' && b.v === 30).length === 2 && SPEED_SIGNS.filter(b => b.kind === 'child').length === 2, 'trường mầm non có 2 biển 30 km/h và 2 biển "Trẻ em" (hai chiều)');
-  ok(SPEED_SIGNS.filter(b => b.v === 40).length >= 14, `đường thường có biển 40 km/h (${SPEED_SIGNS.filter(b => b.v === 40).length} biển)`);
+    return cnt(); };
+  // như drive, nhưng đợi đèn của hướng đi (axis) ở nút giao L thành màu want rồi mới chạy
+  const cam = (x, y, a, kmh, sec, L, axis, want) => { reset(); clearNear(x, y, 600); player.x = x; player.y = y; player.a = a; player.v = 0; S.money = 5000000; S.spdSec = '';
+    while (!(lightOf(L, axis, S.now) === want && lightOf(L, axis, S.now + 4) === want)) run(0.1);
+    for (let i = 0; i < sec/dt; i++){ player.v = kmh * 3; step(dt); }
+    return cnt(); };
+  const A = LIGHTS[0];
+  ok(SPEED_SIGNS.filter(b => b.kind === 'limit' && b.v === 30).length === 2 && SPEED_SIGNS.filter(b => b.kind === 'child').length === 2, 'khối Phố Bánh Mì có 2 biển 30 km/h và 2 biển "Trẻ em" (một biển mỗi chiều, đặt ngay sau ngã tư)');
+  ok(SPEED_SIGNS.filter(b => b.v === 40).length >= 12, `đường thường có biển 40 km/h (${SPEED_SIGNS.filter(b => b.v === 40).length} biển)`);
   ok(SPEED_SIGNS.every(b => classify(b.x, b.y).t === 'off'), 'mọi biển tốc độ đặt trên vỉa hè, không nằm giữa lòng đường');
-  ok(speedInfo({t:'h', Y:300}, 600, 300).limit === 40 && speedInfo({t:'v', X:400}, 400, 620).limit === 30 && speedInfo({t:'v', X:400}, 400, 400).limit === 40, 'giới hạn đúng: đường thường 40, trước trường 30');
+  ok(speedInfo({t:'h', Y:300}, 600, 300).limit === 40 && speedInfo({t:'v', X:400}, 400, 620).limit === 30 && speedInfo({t:'v', X:400}, 400, 400).limit === 30 && speedInfo({t:'v', X:400}, 400, 880).limit === 30 && speedInfo({t:'v', X:400}, 400, 200).limit === 40,
+     'giới hạn đúng: đường thường 40, cả khối Phố Bánh Mì giữa hai ngã tư 30');
   // giữ ga hết cỡ thì tối đa 55 km/h
   reset(); clearNear(500, 320, 700); player.x = 450; player.y = 320; player.a = 0; player.v = 0; keys.up = true; run(4); keys.up = false;
   ok(player.v > 160 && player.v <= 165.5, `giữ ga thì tối đa 55 km/h (đạt ${(player.v/3).toFixed(1)} km/h)`);
-  let r = drive(450, 320, 0, 37, 3);
-  ok(r.s1 + r.s2 + r.s3 === 0, 'chạy 37 km/h ở đường 40 không bị phạt');
-  r = drive(450, 320, 0, 42.5, 3);
-  ok(r.s1 + r.s2 + r.s3 === 0, 'chạy vượt dưới 5 km/h (khoảng 42 km/h) không bị phạt');
-  r = drive(450, 320, 0, 48, 3.5);
-  ok(r.s1 === 1 && r.s2 === 0 && r.pts === 12 && r.money === 5000000 - LAW.speed1.fine, `vượt 5 đến dưới 10 km/h: phạt bậc 1, ${LAW.speed1.range}, không trừ điểm (s1=${r.s1}, điểm ${r.pts})`);
-  r = drive(450, 320, 0, 48, 4.8);
-  ok(r.s1 === 1, `ở cùng một đoạn đường chỉ bị phạt một lần (s1=${r.s1})`);
-  r = drive(450, 320, 0, 54, 3.5);
-  ok(r.s2 === 1 && r.s3 === 0 && r.pts === 12, `vượt 10 đến 20 km/h: phạt bậc 2, ${LAW.speed2.range}, không trừ điểm (s2=${r.s2})`);
-  r = drive(450, 320, 0, 54, 2.5);
-  ok(r.s1 + r.s2 === 0, 'vượt tốc độ chưa tới 3 giây thì chưa bị phạt');
-  // đoạn trường học: giới hạn 30. Đoạn chỉ dài 50 m nên chạy qua dưới 3 giây thì chưa bị phạt (ghi nhận ở THIET-KE mục 9)
-  r = drive(380, 523, Math.PI/2, 55, 1.2);
-  ok(S.spdLimit === 30 && r.s1 + r.s2 + r.s3 === 0, `trước trường giới hạn 30, chạy 55 km/h chưa tới 3 giây thì chưa phạt (giới hạn ${S.spdLimit})`);
+
+  // giữa hai ngã tư: chỉ nhắc, không phạt, không mất chuyến sạch
+  reset(); clearNear(450, 320, 700); player.x = 450; player.y = 320; player.a = 0; player.v = 0; S.money = 5000000; S.spdSec = ''; setTrip('Tiệm bánh mì'); S.trip.clean = true; S.bubble = null;
+  for (let i = 0; i < 3.5/dt; i++){ player.v = 55 * 3; step(dt); }
+  let r = cnt();
+  ok(r.s1 + r.s2 + r.s3 === 0 && r.money === 5000000 && r.pts === 12, 'chạy 55 km/h giữa hai ngã tư (đường 40) không bị phạt');
+  ok(S.trip.clean === true, 'chạy quá tốc độ giữa đường chỉ nhắc, chuyến vẫn là chuyến sạch');
+  ok(S.bubble && S.bubble.text, 'chạy quá giới hạn liên tục 3 giây giữa đường thì có người nhắc');
+  S.trip = null; S.route = null;
+  r = drive(600, 320, 0, 55, 2);
+  ok(r.s1 + r.s2 + r.s3 === 0, 'qua ngã tư không đèn (Phố Chợ) nhanh cũng không bị camera phạt');
+
+  // camera tại vạch dừng ngã tư có đèn (xe đi hướng đông qua vạch dừng phía tây ngã tư A, làn bên phải là nửa phía nam)
+  r = cam(250, 320, 0, 37, 1, A, 'EW', 'green');
+  ok(r.s1 + r.s2 + r.s3 === 0, 'qua vạch dừng lúc đèn xanh ở 37 km/h (giới hạn 40) không bị phạt');
+  r = cam(250, 320, 0, 42.5, 1, A, 'EW', 'green');
+  ok(r.s1 + r.s2 + r.s3 === 0, 'qua vạch dừng vượt dưới 5 km/h (khoảng 42 km/h) không bị phạt');
+  r = cam(250, 320, 0, 48, 1, A, 'EW', 'green');
+  ok(r.s1 === 1 && r.s2 === 0 && r.red === 0 && r.pts === 12 && r.money === 5000000 - LAW.speed1.fine, `đèn xanh, 48 km/h: camera phạt bậc 1, ${LAW.speed1.range}, không trừ điểm (s1=${r.s1})`);
+  r = cam(250, 320, 0, 54, 1, A, 'EW', 'green');
+  ok(r.s2 === 1 && r.s1 === 0 && r.s3 === 0 && r.pts === 12 && r.money === 5000000 - LAW.speed2.fine, `đèn xanh, 54 km/h: camera phạt bậc 2, ${LAW.speed2.range} (s2=${r.s2})`);
+  r = cam(250, 320, 0, 54, 4, A, 'EW', 'green');
+  ok(r.s1 + r.s2 + r.s3 === 1, `chạy qua vạch dừng chỉ bị chụp một lần (${r.s1 + r.s2 + r.s3} lần)`);
+  r = cam(250, 320, 0, 48, 1, A, 'EW', 'red');
+  ok(r.red === 1 && r.s1 === 1 && r.money === 5000000 - LAW.red.fine - LAW.speed1.fine, 'vừa vượt đèn đỏ vừa quá tốc độ: bị cả hai lỗi');
+  // khối Phố Bánh Mì (trường mầm non): giới hạn 30, xe đi hướng bắc (làn phía đông) vào ngã tư A
+  r = cam(420, 480, -Math.PI/2, 37, 1, A, 'NS', 'green');
+  ok(r.s1 === 1 && r.s2 === 0 && r.s3 === 0, `khối trường học giới hạn 30: 37 km/h (vốn là tốc độ hợp lệ ở đường thường) tới vạch dừng bị phạt bậc 1 (s1=${r.s1}, s2=${r.s2}, s3=${r.s3})`);
+  r = cam(420, 480, -Math.PI/2, 43, 1, A, 'NS', 'green');
+  ok(r.s2 === 1 && r.s1 === 0 && r.s3 === 0, `khối trường học, 43 km/h: vượt 10 đến 20 km/h bị phạt bậc 2 (s2=${r.s2})`);
+  r = cam(420, 480, -Math.PI/2, 55, 1, A, 'NS', 'green');
+  ok(r.s3 === 1 && r.pts === 12 - LAW.speed3.pts, `khối trường học, 55 km/h: vượt trên 20 km/h bị phạt bậc 3, trừ ${LAW.speed3.pts} điểm (s3=${r.s3}, điểm ${r.pts})`);
+  r = cam(420, 480, -Math.PI/2, 33, 1, A, 'NS', 'green');
+  ok(r.s1 + r.s2 + r.s3 === 0, 'khối trường học chạy 33 km/h tới vạch dừng (vượt dưới 5 km/h) không bị phạt');
+  r = cam(420, 480, -Math.PI/2, 28, 1, A, 'NS', 'green');
+  ok(r.s1 + r.s2 + r.s3 === 0, 'khối trường học chạy 28 km/h không bị phạt');
   ok(LAW_ORDER_HAS(['speed1','speed2','speed3']), 'ba bậc phạt tốc độ có trong Sổ tay');
   r = drive(450, 320, 0, 0, 2);
   ok(r.s1 + r.s2 + r.s3 === 0, 'đứng yên không bị phạt tốc độ');
