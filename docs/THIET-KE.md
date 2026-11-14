@@ -115,6 +115,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.10 | 13/11/2026 | Giai đoạn 1, đợt 2: xe tối đa 55 km/h; biển hạn chế tốc độ P.127 (40 km/h đường thường, 30 km/h trước trường kèm biển W.225 "Trẻ em"); lỗi chạy quá tốc độ ba bậc (`speed1`, `speed2`, `speed3`); ô tốc độ và đồng hồ đổi màu khi quá tốc độ, có dòng nhắc; 3 câu hỏi mới trong bài kiểm tra; tiếng máy và đồng hồ chỉnh theo tốc độ mới |
 | 0.10.1 | 14/11/2026 | Người dùng góp ý (không cần hỏi lại): người đi bộ chỉ tính đụng khi cách xe khoảng 0,5 m (2 đơn vị, trước là 2,5 m); phạt tốc độ khi vượt từ 5 km/h liên tục 3 giây (trước là 1 giây), mỗi đoạn một lần |
 | 0.10.2 | 14/11/2026 | Người dùng chốt: phạt tốc độ bằng camera phạt nguội tại vạch dừng ngã tư có đèn (cả đèn xanh), giữa hai ngã tư chỉ nhắc nhở và không mất chuyến sạch; cả khối Phố Bánh Mì giữa hai ngã tư giới hạn 30 km/h (biển 30 và "Trẻ em" sau mỗi ngã tư); camera vẽ trên cột đèn; lời thoại NPC mới (`speedcam`, `speedcamschool`, `speedwarn`, `speedwarnschool`) |
+| (tài liệu) | 14/11/2026 | Ghi dự án Saltline làm nguồn tham khảo cho đồ họa 3D (mục 10.1): học ý tưởng, không chép mã vì không có giấy phép; chưa làm 3D, giữ nguyên lộ trình |
 
 ## 8. Kiểm tra pháp lý
 
@@ -237,6 +238,13 @@ Nấc 3 chỉ tính đến khi dự án có thêm người hoặc đã có ngư�
 - Phần "bộ não" (`js/luat.js`, `js/ban-do.js`, phần bắt lỗi và chỉ đường trong `js/game.js`) giữ nguyên; chỉ phần vẽ ra màn hình viết lại. Bài kiểm tra tự động vẫn chạy được vì chỉ kiểm tra bộ não.
 - Thư viện vẽ 3D để ngay trong thư mục game, giữ được việc nháy đúp `index.html` là chạy.
 - Luôn giữ lại kiểu nhìn bản đồ nhẹ cho máy yếu.
+
+**Nguồn tham khảo: Saltline** (https://github.com/ngothanhtung/salt-line-game; người dùng gửi, Claude xem ngày 14/11/2026, người dùng đồng ý lúc 10:30). Game bắn súng góc nhìn thứ nhất, cả game trong một file `index.html` khoảng 1,6 MB, dùng Three.js, mọi hình khối, mặt đường và âm thanh do code tự tạo, không dùng file mô hình.
+
+- **Không chép mã:** dự án không ghi giấy phép, nên mặc định mọi quyền thuộc tác giả. Chỉ học ý tưởng; muốn dùng mã phải xin phép. Thư viện **Three.js** thì dùng tự do (giấy phép MIT): khi làm nấc 2 sẽ dùng thẳng thư viện này, để file trong thư mục game.
+- **Nên học:** 3D mà vẫn mở bằng nháy đúp `index.html`; dựng nhà, đường, xe bằng khối do code tạo (hợp nấc 2); vẽ hàng loạt vật giống nhau một lần cho nhẹ máy (cây, cột đèn, xe NPC); cho chỉnh độ nét trong cài đặt.
+- **Nên tránh:** bóng đổ mềm, mặt đường ướt, hiệu ứng phát sáng (nặng cho điện thoại); gom cả game vào một file lớn (giữ cách chia file theo mảng); điều khiển chuột ngắm tự do kiểu game bắn súng (game mình là lái xe theo làn).
+- **Cách bắt đầu khi đủ ba điều kiện:** làm thử một ngã tư 3D khối đơn giản, đo độ mượt trên iPhone của người dùng, rồi mới quyết định làm cả bản đồ.
 
 ### 10.2 Mở rộng bản đồ và nâng độ khó (ĐÃ CHỐT 13/11/2026)
 

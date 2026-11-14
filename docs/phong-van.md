@@ -129,6 +129,7 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Góp ý lúc 10:15 ngày 14/11/2026: "Thực tế các đường giao thông không ngắn như vậy và trong đô thị chỉ phạt nguội tại các đường giao nhau hoặc các đoạn đường dài hơn 100m." -> ghi nhận: đoạn trường học 50 m quá ngắn so với thực tế; ngoài đời phạt nguội ở giao lộ hoặc đoạn dài hơn 100 m.
 - Góp ý lúc 10:18 ngày 14/11/2026: "Trong trường hợp này chúng ta giải quyết như sau: nếu xe quá tốc độ ngay tại thời điểm vượt qua vạch dừng đèn đỏ thì phạt nguội. Còn giữa 2 ngã tư thì chỉ nhắc nhở (cảnh báo)." -> chốt: phạt nguội bằng camera tại vạch dừng ngã tư có đèn; giữa đường chỉ cảnh báo.
 - Góp ý lúc 10:19 ngày 14/11/2026: "1. Đồng ý 2. (a)" -> chốt: (1) cả khối Phố Bánh Mì giữa hai ngã tư giới hạn 30 km/h, biển 30 và "Trẻ em" sau mỗi ngã tư; (2) bị nhắc giữa đường thì chỉ cảnh báo, không mất chuyến sạch. Làm ở bản 0.10.2 (camera tính cả đèn xanh; vòng xuyến và ngã tư không đèn không có camera).
+- Góp ý lúc 10:27 ngày 14/11/2026: người dùng gửi dự án mã mở Saltline (https://github.com/ngothanhtung/salt-line-game, game 3D góc nhìn thứ nhất) và hỏi ý kiến áp dụng. Claude đề xuất: giữ nguyên lộ trình, chưa làm 3D; ghi làm nguồn tham khảo; không chép mã vì dự án không có giấy phép, khi làm 3D thì dùng thẳng Three.js (MIT) và thử một ngã tư trước. Lúc 10:30 người dùng trả lời "Đồng ý." -> đã ghi vào mục 10.1 của docs/THIET-KE.md.
 
 ## Các câu hỏi
 ### Câu 1 · Người chơi là ai?
