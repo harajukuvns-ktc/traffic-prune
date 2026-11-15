@@ -340,7 +340,7 @@ Người dùng yêu cầu lúc 10:57 ngày 12/11/2026 và chốt lúc 08:15 ngà
 | Chế độ ô tô, phần 2: vô lăng, đồng hồ, tiếng máy ô tô, nút số lùi | 1 | Xong (bản 0.12.3, chỉnh bố cục điện thoại ở 0.12.4, 15/11/2026), chờ người dùng chơi thử và nghe thử tiếng máy |
 | Hai thanh điểm: luật và văn hóa | 1 | **Xong ở bản 1.0** (chờ chơi thử; số điểm cộng/trừ người dùng chốt 16:37 ngày 15/11/2026) |
 | Mở rộng bản đồ **gấp 4** (đổi 16:56 ngày 15/11/2026), chia 4 khu | 2 | Chưa làm (bản 1.1 → 1.4, xem dưới) |
-| Bộ sinh lộ trình NPC tự động | 2 | Chưa làm |
+| Bộ sinh lộ trình NPC tự động | 2 | **Xong** ở bản 1.1 bước 4 (15/11/2026, nhánh `ban-1.1`, chưa gộp `main`) |
 | Giờ cao điểm, mưa, ban đêm, xe ưu tiên, NPC đi ẩu | 3 | Chưa làm |
 | Đồ họa 3D nấc 2 (mục 10.1) | Sau cùng | Chưa làm |
 
