@@ -530,5 +530,39 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(S.money - m0 === TP.farePay('bike', 2400).pay, `giao hàng nhận đúng tiền công theo quãng đường (+${S.money - m0}đ)`);
 }
 
+// 18) Bản 0.12.2: trợ lái ôm cua ở ngã tư, ô tô không kẹt ở đảo vòng xuyến
+{
+  // chỉ giữ ga và bật xi-nhan, không bấm nút rẽ: xe tự rẽ vào đúng làn, không bị phạt
+  const autoTurn = (veh, dir) => {
+    reset(); if (veh === 'car') TP.setVehicle('car'); S.assist = true; TP.putOnHelmet();
+    waitGreenA(); clearNear(400, 300, 500);
+    player.x = 250; player.y = 320; player.a = 0; player.v = 90; S.now += 0.1;
+    TP.setSignal(dir); const m0 = S.money;
+    keys.up = true; let maxOff = 0, was = false;
+    for (let i = 0; i < 7/dt; i++){ step(dt); if (S.ta) was = true; else if (was) keys.up = false;   // rẽ xong thì nhả ga
+      // lệch sang phần đường bên kia của đường mới (sau khi ra khỏi ngã tư)
+      if (dir > 0 && player.y > 345) maxOff = Math.max(maxOff, player.x - 400);
+      if (dir < 0 && player.y < 255) maxOff = Math.max(maxOff, 400 - player.x);
+    }
+    keys.up = false;
+    const sa = Math.sin(player.a), laneX = dir > 0 ? 380 : 420;
+    const goodDir = dir > 0 ? sa > 0.95 : sa < -0.95;
+    ok(goodDir && Math.abs(player.x - laneX) < 9 && maxOff <= 0 && m0 === S.money,
+      `${veh === 'car' ? 'ô tô' : 'xe máy'} rẽ ${dir > 0 ? 'phải' : 'trái'} chỉ bằng xi-nhan + ga: vào đúng làn (x ${player.x.toFixed(0)}, cần ${laneX}), không lấn sang bên kia, không bị phạt (${Object.keys(S.stats).join(',') || 'không lỗi'})`);
+  };
+  autoTurn('bike', 1); autoTurn('bike', -1); autoTurn('car', 1); autoTurn('car', -1);
+  // không bật xi-nhan thì không tự rẽ, đi thẳng qua ngã tư
+  reset(); S.assist = true; waitGreenA(); clearNear(400, 300, 500); player.x = 250; player.y = 320; player.a = 0; player.v = 90; keys.up = true; run(3); keys.up = false;
+  ok(Math.abs(Math.cos(player.a)) > 0.98 && player.x > 450, 'không bật xi-nhan thì xe đi thẳng qua ngã tư như cũ');
+  // ô tô lao vào đảo giữa vòng xuyến rồi vừa ga vừa đánh lái: không kẹt
+  reset(); TP.setVehicle('car'); clearNear(1200, 900, 400);
+  player.x = 1080; player.y = 900; player.a = 0; player.v = 60; keys.up = true; keys.right = true; run(1.5); keys.right = false;
+  const dIn = Math.hypot(player.x - RB.x, player.y - RB.y);
+  keys.left = true; run(0.6); keys.left = false; const p1 = {x: player.x, y: player.y}; run(3); keys.up = false;
+  const moved = Math.hypot(player.x - p1.x, player.y - p1.y);
+  ok(dIn >= RB.rIn && moved > 60, `ô tô đâm vào đảo vòng xuyến không lọt vào đảo (cách tâm ${dIn.toFixed(0)}) và đi tiếp được (${moved.toFixed(0)} đơn vị trong 3 giây)`);
+  TP.setVehicle('bike');
+}
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);

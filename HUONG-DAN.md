@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.12.1)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.12.2)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,7 +50,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.12.1)
+## Cách chơi (bản 0.12.2)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
 - **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
@@ -80,6 +80,14 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
 
+## Bản 0.12.2 đổi gì so với bản 0.12.1
+
+1. **Rẽ ở ngã tư dễ hơn:** bật xi-nhan trước ngã tư là xe tự ôm cua vào đúng làn của đường mới, tự giảm còn khoảng 15 km/h (ô tô 12 km/h). Bạn chỉ lo ga, phanh và đèn đỏ. Muốn tự lái thì bấm nút rẽ. Cần bật **trợ lái giữ làn** ở màn hình mở đầu (mặc định đã bật).
+2. **Ô tô không còn kẹt ở đảo giữa vòng xuyến:** chạm đảo thì xe trượt dọc theo mép đảo.
+3. **Nút rẽ trên điện thoại** không còn bị kẹt sang phải khi nhấc ngón.
+
+**Chưa có, sẽ làm ở bản 0.12.3:** vô lăng và đồng hồ ô tô, tiếng máy ô tô riêng, nút số lùi riêng trên điện thoại.
+
 ## Bản 0.12.1 đổi gì so với bản 0.12
 
 1. Nút **🔊/🔇** (phím M) tắt hoặc bật tiếng ngay; nút 🎚️ bên cạnh mở bảng chỉnh âm thanh.
@@ -90,8 +98,6 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 
 **Lưu ý:** mức phạt vẫn là mức phạt thật nên một lần vượt đèn đỏ bằng hàng trăm chuyến giao hàng. Đây là điều cần bàn lại về cân bằng của game.
 
-**Chưa có, sẽ làm ở bản 0.12.2:** vô lăng và đồng hồ ô tô ở góc nhìn sau vô lăng, tiếng máy ô tô riêng, nút số lùi riêng trên điện thoại.
-
 ## Bản 0.12 đổi gì so với bản 0.11
 
 1. Có thêm **ô tô**: chọn ở đầu màn hình mở đầu, đổi lúc nào cũng được ở nút ❔.
@@ -100,7 +106,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 4. Chỉ đường dẫn ô tô đi vòng thay vì quay đầu tại chỗ.
 5. Sổ tay và bài kiểm tra phục hồi điểm theo loại xe đang lái (thêm 5 câu hỏi cho ô tô).
 
-**Chưa có (nay dời sang bản 0.12.2):** vô lăng và đồng hồ ô tô ở góc nhìn sau vô lăng (bây giờ vẫn thấy chiếc ô tô từ phía sau), tiếng máy ô tô riêng, nút số lùi riêng trên điện thoại.
+**Chưa có (nay dời sang bản 0.12.3):** vô lăng và đồng hồ ô tô ở góc nhìn sau vô lăng (bây giờ vẫn thấy chiếc ô tô từ phía sau), tiếng máy ô tô riêng, nút số lùi riêng trên điện thoại.
 
 **Nhờ bạn chơi thử:** ô tô có dễ lái trên điện thoại không, nhất là khi rẽ ở ngã tư? Xe có to quá so với đường không? Bạn muốn chỉ đường dẫn đi vòng như bây giờ hay bảo quay đầu tại chỗ? Mức phạt ô tô rất cao so với tiền giao hàng, chơi có thấy nặng quá không?
 

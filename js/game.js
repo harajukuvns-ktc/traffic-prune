@@ -13,7 +13,7 @@ const S = {
   now: 0, paused: true, xungho: 'anh', view: 'nav', assist: true,
   money: 5000000, pts: 12, streak: 0, trips: 0, stats: {},
   faultUntil: -1, epId: 0, epAffected: 0, epJamSaid: false,
-  trip: null, route: null, routeT: 0, bubble: null, floats: [], flash: 0, lawT: 0, ut: null, warnT: 0, warnText: '',
+  trip: null, route: null, routeT: 0, bubble: null, floats: [], flash: 0, lawT: 0, ut: null, ta: null, warnT: 0, warnText: '',
   wrongT: 0, okT: 0, solidT: 0, sideEp: false, ringWrongT: 0, ringEp: false, wwEp: false,
   jamTick: 0, sidewalkSaidT: -99, crashCool: -1, inBay: false, stopT: 0, stopSaidT: -99, suspended: false,
   sound: {on: true, fx: 0.7, voice: 0.9, npc: 0.8, bike: 'so'}, gear: 1,
@@ -106,7 +106,7 @@ function save(){
 }
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
-  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.ut = null; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99; S.lastSteer = -99;
+  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.ut = null; S.ta = null; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99; S.lastSteer = -99;
   S.belt = false; S.ptsBy = {bike: 12, car: 12}; S.statsBy = {bike: {}, car: {}}; S.statsBy[S.veh] = S.stats;
   S.helmet = false; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callIn = 2; S.callAt = -1;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
@@ -209,6 +209,53 @@ function uTurn(){
 function endUTurn(){
   const u = S.ut; S.ut = null;
   if (u && u.sig && S.turn === -1) setSignal(-1);   // tắt xi-nhan do mình bật
+}
+// Trợ lái vào cua (bản 0.12.2): đã bật xi-nhan và sắp vào ngã tư (có trợ lái giữ làn) thì xe tự ôm cua theo
+// một đường cong vào đúng làn bên phải của đường mới; người chơi lo ga, phanh, đèn. Bấm nút rẽ là tự lái lại.
+const TURN_CAP = {bike: 45, car: 36};   // tốc độ tối đa khi đang ôm cua: xe máy 15 km/h, ô tô 12 km/h
+function turnPath(J, din, dir, veh){
+  const rn = d => ({x: -d.y, y: d.x});   // pháp tuyến bên phải theo chiều đi (trục y hướng xuống)
+  const dout = dir > 0 ? rn(din) : {x: din.y, y: -din.x};
+  const a = rn(din), b = rn(dout);
+  const C = {x: J.x + a.x*20 + b.x*20, y: J.y + a.y*20 + b.y*20};
+  const R = dir > 0 ? (veh === 'car' ? 36 : 20) : 40;
+  const E = {x: C.x - din.x*R, y: C.y - din.y*R}, X = {x: C.x + dout.x*R, y: C.y + dout.y*R};
+  const pts = [{x: E.x - din.x*90, y: E.y - din.y*90}];
+  for (let i = 0; i <= 12; i++){ const t = i / 12, u = 1 - t;
+    pts.push({x: u*u*E.x + 2*u*t*C.x + t*t*X.x, y: u*u*E.y + 2*u*t*C.y + t*t*X.y}); }
+  pts.push({x: X.x + dout.x*90, y: X.y + dout.y*90});
+  return {pts, dout, J, end: S.now + 9};
+}
+function turnAssistStart(){
+  if (S.ta || S.ut || !S.assist || !S.turn || phoneDriving() || player.v < 0) return;
+  const r = S.route && S.route.instr;
+  if (r && r.type === 'uturn' && r.dist < 120) return;   // định quay đầu thì không ôm cua
+  const ca = Math.cos(player.a), sa = Math.sin(player.a);
+  if (Math.max(Math.abs(ca), Math.abs(sa)) < 0.93) return;
+  const din = Math.abs(ca) > Math.abs(sa) ? {x: Math.sign(ca), y: 0} : {x: 0, y: Math.sign(sa)};
+  for (const v of VR) for (const h of HR){
+    if (Math.hypot(v.x - RB.x, h.y - RB.y) < 1) continue;   // đó là vòng xuyến
+    const fx = (v.x - player.x)*din.x + (h.y - player.y)*din.y, lat = Math.abs((v.x - player.x)*din.y - (h.y - player.y)*din.x);
+    if (fx > HALF - 4 && fx < HALF + STOPG + 50 && lat < HALF){ S.ta = turnPath({x: v.x, y: h.y}, din, S.turn, S.veh); return; }
+  }
+}
+function turnAssistSteer(dt, rate){
+  const T = S.ta, P = T.pts;
+  let bi = 0, bd = 1e9;
+  for (let i = 0; i < P.length - 1; i++){
+    const a = P[i], b = P[i+1], dx = b.x - a.x, dy = b.y - a.y, L = dx*dx + dy*dy;
+    const t = clamp(((player.x - a.x)*dx + (player.y - a.y)*dy) / L, 0, 1);
+    const d = Math.hypot(a.x + dx*t - player.x, a.y + dy*t - player.y);
+    if (d < bd){ bd = d; bi = i; }
+  }
+  const hdOut = Math.cos(player.a)*T.dout.x + Math.sin(player.a)*T.dout.y;
+  const past = (player.x - T.J.x)*T.dout.x + (player.y - T.J.y)*T.dout.y;
+  if (bd > 45 || S.now > T.end || (hdOut > 0.998 && past > HALF + 30) || past > HALF + 80){ S.ta = null; return; }
+  // nhìn trước khoảng 18 đơn vị dọc theo đường cong
+  let k = bi + 1, need = 18, q = P[k];
+  while (k < P.length - 1){ const sg = Math.hypot(P[k+1].x - P[k].x, P[k+1].y - P[k].y); if (sg >= need) { q = {x: P[k].x + (P[k+1].x - P[k].x)*need/sg, y: P[k].y + (P[k+1].y - P[k].y)*need/sg}; break; } need -= sg; k++; q = P[k]; }
+  const want = Math.atan2(q.y - player.y, q.x - player.x), diff = normA(want - player.a);
+  player.a = normA(player.a + clamp(diff, -rate*dt, rate*dt));
 }
 function floatText(x, y, text, color){ S.floats.push({x, y, text, color, t: 1.8}); }
 function showLaw(html, good){
@@ -664,7 +711,7 @@ function setVehicle(v){
   if (!VEH[v] || v === S.veh){ player.len = VEH[S.veh].len; player.w = VEH[S.veh].w; return; }
   S.ptsBy[S.veh] = S.pts; S.statsBy[S.veh] = S.stats;
   S.veh = v; S.pts = S.ptsBy[v]; S.stats = S.statsBy[v]; S.suspended = S.pts <= 0;
-  player.len = VEH[v].len; player.w = VEH[v].w; player.v = 0; S.turn = 0; S.ut = null; S.noHelmT = 0;
+  player.len = VEH[v].len; player.w = VEH[v].w; player.v = 0; S.turn = 0; S.ut = null; S.ta = null; S.noHelmT = 0;
   document.body.classList.toggle('car', v === 'car');
   hudCache = {}; S.route = computeRoute(); save(); resize();
 }
@@ -725,6 +772,17 @@ function updPlayer(dt){
     else if (player.v < V.crawl) player.v = Math.min(V.crawl, player.v + V.crawlAcc * dt);
     else if (player.v > V.crawl + 8) player.v -= V.brake * 0.6 * dt;
   }
+  turnAssistStart();
+  if (S.ta){
+    if (keys.left || keys.right) S.ta = null;   // người chơi tự lái
+    else {
+      const cap = TURN_CAP[S.veh];
+      if (player.v > cap) player.v = Math.max(cap, player.v - V.brake * 0.8 * dt);
+      // đã vào trong ngã tư thì giữ xe bò tiếp cho khỏi đứng giữa giao lộ (trước vạch dừng thì không tự chạy)
+      const inJ = Math.abs(player.x - S.ta.J.x) < HALF && Math.abs(player.y - S.ta.J.y) < HALF;
+      if (inJ && !braking && player.v < V.crawl) player.v = Math.min(V.crawl, player.v + V.crawlAcc * dt);
+    }
+  }
   const vmax = prevC.t === 'off' ? 45 : V.vmax;
   if (player.v > vmax) player.v = Math.max(vmax, player.v - 320 * dt);
   player.v = Math.max(player.v, -35);
@@ -735,17 +793,25 @@ function updPlayer(dt){
     // ô tô quay vòng rộng hơn nhiều (bán kính nhỏ nhất khoảng 5,5 m) và càng nhanh càng khó bẻ lái
     let rate = sv <= V.v1 ? Math.min(sv / V.turnR, V.rMax) : V.rMax - (V.rMax - V.rHi) * clamp((sv - V.v1) / (V.v2 - V.v1), 0, 1);
     if (phoneDriving()) rate *= 0.7;   // một tay cầm điện thoại: lái khó hơn
-    if (steer){ S.lastSteer = S.now; player.a = normA(player.a + steer * rate * dt * Math.sign(player.v || 1)); }
+    if (S.ta && !S.ut){ S.lastSteer = S.now; turnAssistSteer(dt, rate); }
+    else if (steer){ S.lastSteer = S.now; player.a = normA(player.a + steer * rate * dt * Math.sign(player.v || 1)); }
     // Trợ lái chờ 1 giây sau khi nhả phím rẽ; đang bật xi-nhan (6 giây đầu, ngoài ô đỗ) thì không giành lái vì có thể đang định rẽ hoặc quay đầu
     else if (S.assist && !phoneDriving() && player.v > 20 && S.now - S.lastSteer > 1 && !(S.turn !== 0 && S.now - S.sigOnT < 6 && prevC.t !== 'bay')) laneAssist(prevC, dt);
   }
   const nx = clamp(player.x + Math.cos(player.a) * player.v * dt, 8, W - 8);
   const ny = clamp(player.y + Math.sin(player.a) * player.v * dt, 8, H - 8);
-  const blocked = S.veh === 'car'
-    ? bodyPts(nx, ny, player.a).some(q => hitsHouse(q.x, q.y, V.w / 2) || classify(q.x, q.y).t === 'island')
-    : (hitsHouse(nx, ny, 7) || classify(nx, ny).t === 'island');
-  if (blocked){ player.v *= -0.25; }
+  // Va vào nhà: bật lại. Nếu xe đã lỡ chạm sẵn (ví dụ vừa xoay thân xe vào tường) thì vẫn cho đi để thoát ra, không kẹt.
+  const houseAt = (x, y, a) => S.veh === 'car' ? bodyPts(x, y, a).some(q => hitsHouse(q.x, q.y, V.w / 2)) : hitsHouse(x, y, 7);
+  if (houseAt(nx, ny, player.a) && !houseAt(player.x, player.y, player.a)){ player.v *= -0.25; }
   else { player.x = nx; player.y = ny; }
+  // Đảo giữa vòng xuyến: đẩy xe ra ngoài mép đảo và cho trượt dọc theo mép (trước đây xe bật lùi rồi kẹt cứng)
+  { const pad = S.veh === 'car' ? V.w / 2 : 3; let hit = false;
+    for (const q of bodyPts(player.x, player.y, player.a)){
+      const dx = q.x - RB.x, dy = q.y - RB.y, d = Math.hypot(dx, dy) || 1, need = RB.rIn + pad - d;
+      if (need > 0){ player.x += dx / d * need; player.y += dy / d * need; hit = true; }
+    }
+    if (hit && !S.islandHit){ player.v *= 0.5; SND.thud(); }
+    S.islandHit = hit; }
 
   // va chạm với NPC (xe đang đỗ trong ô P thì không tính)
   if (!S.inBay) for (const n of npcs){
@@ -1630,9 +1696,18 @@ function setupInput(){
     const setSide = e => { const r = steerBox.getBoundingClientRect(), left = e.clientX < r.left + r.width / 2;
       keys.left = left; keys.right = !left; bl.classList.toggle('on', left); br.classList.toggle('on', !left); };
     const release = e => { if (e.pointerId !== pid) return; pid = null; keys.left = keys.right = false; bl.classList.remove('on'); br.classList.remove('on'); e.preventDefault(); };
-    steerBox.addEventListener('pointerdown', e => { if (pid !== null) return; pid = e.pointerId; try { steerBox.setPointerCapture(pid); } catch(_){} setSide(e); e.preventDefault(); });
+    // ngón mới đặt vào luôn thay ngón cũ (nếu ngón cũ bị "kẹt" vì trình duyệt không báo lúc nhấc tay)
+    steerBox.addEventListener('pointerdown', e => { pid = e.pointerId; try { steerBox.setPointerCapture(pid); } catch(_){} setSide(e); e.preventDefault(); });
     steerBox.addEventListener('pointermove', e => { if (e.pointerId === pid) setSide(e); });
     steerBox.addEventListener('pointerup', release); steerBox.addEventListener('pointercancel', release);
+    steerBox.addEventListener('lostpointercapture', release);
+    window.addEventListener('pointerup', release, true); window.addEventListener('pointercancel', release, true);
+    // chốt chặn cuối: không còn ngón nào chạm vào vùng nút rẽ thì nhả lái
+    const touchCheck = e => { if (pid === null) return; const r = steerBox.getBoundingClientRect();
+      const still = [...e.touches].some(t => t.clientX >= r.left - 60 && t.clientX <= r.right + 60 && t.clientY >= r.top - 60 && t.clientY <= r.bottom + 60);
+      if (!still){ pid = null; keys.left = keys.right = false; bl.classList.remove('on'); br.classList.remove('on'); } };
+    window.addEventListener('touchend', touchCheck, true); window.addEventListener('touchcancel', touchCheck, true);
+    document.addEventListener('visibilitychange', () => { if (document.hidden){ pid = null; keys.left = keys.right = false; bl.classList.remove('on'); br.classList.remove('on'); } });
   }
   // hai nút xi-nhan nhỏ trên điện thoại: chạm một lần để bật, chạm lại để tắt
   document.querySelectorAll('.sbtn').forEach(b => {
@@ -1696,4 +1771,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {uTurn, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
