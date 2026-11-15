@@ -182,7 +182,14 @@ const SND = (function(){
   //   Xe tay ga: hộp số vô cấp, vòng tua giữ gần như đều, cao hơn khi đang ga.
   const GEARS = [[0, 30], [30, 66], [66, 108], [108, 999]];   // vận tốc tới 165 (55 km/h)
   let gear = 1;
+  // Ô tô (bản 0.12.3): hộp số tự động, vòng tua tăng mượt theo tốc độ, không nhảy số rõ; ô tô chạy tối đa vận tốc 210 (70 km/h)
   function engineModel(sp, throttle, bike){
+    if (bike === 'car'){
+      const f = Math.min(1, sp / 210);
+      if (sp < 2 && !throttle) return {rpm: 0.14, gear: 0};   // nổ không tải
+      const r = 0.2 + 0.5 * Math.sqrt(f) + (throttle ? 0.14 : 0);
+      return {rpm: clamp(r, 0.14, 1), gear: 0};
+    }
     if (bike === 'ga'){
       if (sp < 2 && !throttle) return {rpm: 0.16, gear: 0};
       const r = throttle ? 0.5 + 0.38 * Math.min(1, sp / 165) : 0.22 + 0.28 * Math.min(1, sp / 165);
@@ -201,25 +208,27 @@ const SND = (function(){
   function update(dt){
     if (!ac) return;
     const on = S.sound.on && !S.paused;
-    const sp = Math.abs(player.v), t = ac.currentTime, bike = S.veh === 'car' ? 'ga' : (S.sound.bike || 'so');   // ô tô tạm dùng tiếng đều kiểu số tự động (bản 0.12.1 làm tiếng riêng)
+    const sp = Math.abs(player.v), t = ac.currentTime, bike = S.veh === 'car' ? 'car' : (S.sound.bike || 'so');   // ô tô có tiếng máy riêng từ bản 0.12.3
     const m = engineModel(sp, keys.up, bike);
     S.gear = m.gear;
     // Xe số: nốt nền 34–92 Hz, có tiếng bành bạch của máy một xy-lanh.
     // Xe tay ga: cao hơn hẳn (khoảng 105–200 Hz), gần như không bành bạch, nghe "vù vù" đều kèm tiếng rít curoa.
-    const ga = bike === 'ga';
-    const f = ga ? 105 + m.rpm * 105 : 34 + m.rpm * 58;
-    const tc = ga ? 0.15 : 0.05;
+    const car = bike === 'car', ga = bike === 'ga';
+    // ô tô: nốt trầm 30–78 Hz, ít bành bạch, êm; lùi thì có tiếng rì nhỏ của hộp số
+    const f = car ? 30 + m.rpm * 48 : ga ? 105 + m.rpm * 105 : 34 + m.rpm * 58;
+    const tc = car ? 0.2 : ga ? 0.15 : 0.05;
     eng.o1.frequency.setTargetAtTime(f, t, tc);
     eng.o2.frequency.setTargetAtTime(f * 2, t, tc);
     eng.o3.frequency.setTargetAtTime(f, t, tc);
-    eng.g3.gain.setTargetAtTime(ga ? 0.03 : 0.12, t, 0.1);
-    eng.lg.gain.setTargetAtTime(ga ? 0.04 : 0.18, t, 0.1);
-    eng.wh.frequency.setTargetAtTime(f * 4.2, t, 0.15);
-    eng.gw.gain.setTargetAtTime(ga ? 0.06 + m.rpm * 0.1 : 0, t, 0.2);
-    eng.lfo.frequency.setTargetAtTime(ga ? f / 4 : f / 2, t, tc);
-    eng.lp.frequency.setTargetAtTime((ga ? 700 + m.rpm * 1100 : 260 + m.rpm * 700) + (keys.up ? 160 : 0), t, 0.08);
+    const rev = car && player.v < -1;
+    eng.g3.gain.setTargetAtTime(car ? 0.06 : ga ? 0.03 : 0.12, t, 0.1);
+    eng.lg.gain.setTargetAtTime(car ? 0.1 : ga ? 0.04 : 0.18, t, 0.1);
+    eng.wh.frequency.setTargetAtTime(rev ? 520 : f * 4.2, t, 0.15);
+    eng.gw.gain.setTargetAtTime(rev ? 0.07 : car ? 0 : ga ? 0.06 + m.rpm * 0.1 : 0, t, 0.2);
+    eng.lfo.frequency.setTargetAtTime(car ? f / 3 : ga ? f / 4 : f / 2, t, tc);
+    eng.lp.frequency.setTargetAtTime((car ? 240 + m.rpm * 520 : ga ? 700 + m.rpm * 1100 : 260 + m.rpm * 700) + (keys.up ? 160 : 0), t, 0.08);
     // lên số: hụt ga một nhịp ngắn rồi máy kéo lại ở vòng tua thấp hơn
-    if (bike !== 'ga' && m.gear > lastGear && on){
+    if (bike === 'so' && m.gear > lastGear && on){
       eng.shift.gain.cancelScheduledValues(t);
       eng.shift.gain.setValueAtTime(1, t); eng.shift.gain.linearRampToValueAtTime(0.35, t + 0.05);
       eng.shift.gain.linearRampToValueAtTime(1, t + 0.22);

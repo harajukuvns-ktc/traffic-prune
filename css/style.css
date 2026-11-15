@@ -47,6 +47,12 @@
   #cockpit svg{display:block;width:100%;height:auto}
   body.bike #cockpit{display:block}
   body.car #cockpit{display:none}
+  #cockpitCar{position:fixed;left:50%;bottom:0;width:min(560px,100vw);transform:translateX(-50%);display:none;pointer-events:none;z-index:2}
+  #cockpitCar svg{display:block;width:100%;height:auto}
+  body.bike.car #cockpitCar{display:block}
+  /* trên điện thoại bảng đồng hồ nằm phía trên hàng nút, phía dưới là nền tối cho dễ nhìn nút */
+  body.bike.car.touch #cockpitCar{bottom:0}
+  body.bike.car.touch #cockpitCar::after{content:'';display:block;height:92px;background:#26252d}
   #vehRow{background:#fff3e6;border-radius:12px;padding:8px 10px;font-weight:600}
   #vehRow select{font-size:16px;font-weight:600}   /* ô tô: bản 0.12.1 mới có vô lăng */
   /* trên điện thoại ghi đông nằm phía trên hàng nút; thân xe kéo dài xuống mép dưới màn hình */
@@ -67,7 +73,10 @@
   /* hai nút rẽ to, cạnh nhau; nút lùi nhỏ hơn nằm giữa bên dưới */
   .steer{display:flex;gap:10px;pointer-events:auto;touch-action:none}
   .steer .cbtn{width:76px;height:76px;font-size:28px}
-  .padcol .d-down{align-self:center;width:56px;height:56px;font-size:22px;pointer-events:auto}
+  .padcol .downrow{display:flex;gap:10px;justify-content:center}
+  .padcol .d-down,.padcol .d-rev{width:56px;height:56px;font-size:22px;pointer-events:auto}
+  .d-rev{display:none;font-size:20px}
+  body.car .d-rev{display:block}
   @media (min-width:1000px){
     #bubble{position:fixed;top:12px;left:440px;right:210px;margin:0 auto;max-width:470px}
     #law{position:fixed;left:10px;bottom:10px;width:400px}
@@ -84,7 +93,7 @@
     #law .lawin{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
     #law .lawx{display:block;font-size:10px;color:#8b8896;text-align:right;margin-top:1px}
   }
-  @media (max-width:600px){ .cbtn{width:70px;height:70px} .steer .cbtn{width:72px;height:72px} .padcol .d-down{width:56px;height:56px} #navMain{font-size:15.5px} #law{font-size:12.5px} .lbl{display:none} #chips{max-width:calc(100% - 185px)} }
+  @media (max-width:600px){ .cbtn{width:70px;height:70px} .steer .cbtn{width:72px;height:72px} .padcol .d-down,.padcol .d-rev{width:56px;height:56px} #navMain{font-size:15.5px} #law{font-size:12.5px} .lbl{display:none} #chips{max-width:calc(100% - 185px)} }
   /* điện thoại cầm ngang: màn hình thấp nên bỏ chữ nhãn trên các ô thông tin cho gọn, khỏi đè lên nút điều khiển */
   @media (max-height:450px){ .lbl{display:none} #chips{max-width:calc(100% - 185px)} }
   .overlay{position:fixed;inset:0;background:rgba(43,42,51,.45);display:flex;align-items:center;justify-content:center;padding:14px;z-index:10}

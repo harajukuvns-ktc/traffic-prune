@@ -694,7 +694,7 @@ function updPed(p, dt){
 /* =========================================================
    10. NGƯỜI CHƠI VÀ LUẬT
    ========================================================= */
-const keys = {up:false, down:false, brake:false, left:false, right:false};
+const keys = {up:false, down:false, brake:false, left:false, right:false, rev:false};   // rev: nút/phím R, số lùi (chỉ lùi khi xe đã dừng hẳn rồi nhấn lại)
 const VMAX = 165;   // 55 km/h (km/h = vận tốc / 3): tốc độ tối đa của xe máy
 // Thông số từng loại xe (4 đơn vị = 1 m; vận tốc 3 = 1 km/h)
 //   len, w: dài, rộng · vmax: tốc độ tối đa · accLo/accHi: tăng tốc dưới/trên vận tốc accSw · brake: phanh
@@ -751,12 +751,18 @@ function updPlayer(dt){
   const prevC = classify(prev.x, prev.y), V = VEH[S.veh];
   S.inBay = prevC.t === 'bay';
   // Space và nút PHANH: chỉ phanh, dừng hẳn thì đứng yên. Phím ↓ / S: phanh, dừng rồi giữ tiếp thì lùi chậm.
-  const braking = keys.down || keys.brake;
+  const braking = keys.down || keys.brake || keys.rev;
+  // R: đang chạy tới thì chỉ phanh (khoá lại tới khi nhả R), dừng hẳn rồi nhấn R lần nữa mới lùi
+  if (!keys.rev) S.revLock = false; else if (player.v > 0.5) S.revLock = true;
   if (player.stun > 0) player.stun -= dt;
   else {
     if (keys.up) player.v += (player.v < V.accSw ? V.accLo : V.accHi) * dt;   // xe máy: quá 38 km/h thì tăng tốc chậm lại
     if (keys.brake){ const b = V.brake * dt; player.v = Math.abs(player.v) <= b ? 0 : player.v - Math.sign(player.v) * b; }
     else if (keys.down) player.v -= (player.v > 0 ? V.brake : 80) * dt;
+    else if (keys.rev){
+      if (S.revLock || player.v > 0){ const b = V.brake * dt; player.v = Math.abs(player.v) <= b ? 0 : player.v - Math.sign(player.v) * b; }
+      else player.v -= 80 * dt;
+    }
   }
   if (S.suspended){ player.v = 0; }
   if ((!keys.up && !braking) || player.stun > 0){
@@ -813,6 +819,10 @@ function updPlayer(dt){
     if (hit && !S.islandHit){ player.v *= 0.5; SND.thud(); }
     S.islandHit = hit; }
 
+  // vô lăng ô tô xoay theo hướng lái: có bấm rẽ thì xoay hết cỡ, trợ lái tự đánh thì xoay theo tốc độ quay thực của xe
+  { const yaw = normA(player.a - prev.a) / Math.max(dt, 1e-4) * (player.v < 0 ? -1 : 1);
+    const tgt = keys.left || keys.right ? (keys.right ? 1 : 0) * 90 - (keys.left ? 1 : 0) * 90 : clamp(yaw / 2.4, -1, 1) * 90;
+    S.wheel = (S.wheel || 0) + (tgt - (S.wheel || 0)) * Math.min(1, dt * 9); }
   // va chạm với NPC (xe đang đỗ trong ô P thì không tính)
   if (!S.inBay) for (const n of npcs){
     if (n.hidden || n.ghostP > 0 || n.ghostT > 0) continue;
@@ -1339,7 +1349,7 @@ function drawAgents(){
     if (n.kind === 'bus') drawBus(n); else drawBike(n, n.color, n.helmet, false);
     ctx.globalAlpha = 1;
   }
-  if (S.veh === 'car'){ drawCar(player, true, S.turn); return; }   // ô tô: bản 0.12 chưa có vô lăng, nên góc sau tay lái vẫn vẽ xe
+  if (S.veh === 'car'){ if (S.view !== 'bike') drawCar(player, true, S.turn); return; }   // góc sau vô lăng: xe của mình là vô lăng và bảng đồng hồ ở mép dưới màn hình
   if (S.view === 'bike') return;   // góc nhìn sau tay lái: xe của mình là ghi đông ở mép dưới màn hình
   drawBike(player, '#ff8a3d', S.helmet ? '#ffffff' : '#3a2e2a', true, S.turn);   // đầu trần thì vẽ tóc sẫm thay vì mũ trắng
   ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.a); ctx.fillStyle = '#c0703a'; ctx.fillRect(-11, -4, 6, 8); ctx.restore();
@@ -1610,7 +1620,8 @@ function updHUD(){
     if (hudCache.sig !== sk){ hudCache.sig = sk;
       $('sigchip').style.display = S.turn ? 'inline-block' : 'none';
       $('sigL').style.opacity = L ? '1' : '.25'; $('sigR').style.opacity = R ? '1' : '.25';
-      $('sigCkL').setAttribute('opacity', L ? '1' : '0'); $('sigCkR').setAttribute('opacity', R ? '1' : '0'); } }
+      $('sigCkL').setAttribute('opacity', L ? '1' : '0'); $('sigCkR').setAttribute('opacity', R ? '1' : '0');
+      $('sigCkLCar').setAttribute('opacity', L ? '1' : '0'); $('sigCkRCar').setAttribute('opacity', R ? '1' : '0'); } }
   // mũ bảo hiểm và cuộc gọi: chip trên cùng và hai nút lớn (nút nằm cạnh bản đồ nhỏ)
   { const car = S.veh === 'car', hk = safetyOn() ? '' : car ? '💺 Chưa thắt dây an toàn' : '🪖 Chưa đội mũ';
     if (hudCache.helm !== hk){ hudCache.helm = hk; $('helmchip').style.display = hk ? 'inline-block' : 'none'; $('helmchip').textContent = hk; $('helmBtn').style.display = hk ? 'block' : 'none';
@@ -1655,6 +1666,17 @@ function updHUD(){
       $('ckUnit').textContent = 'km/h' + (S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1));
     }
   }
+  // bảng đồng hồ và vô lăng ô tô (góc sau vô lăng): kim 0–80 km/h, số D/R/P, vô lăng xoay theo hướng lái
+  if (S.view === 'bike' && S.veh === 'car'){
+    const kmh = Math.round(Math.abs(player.v) / 3), ov = over >= 5 ? 2 : over > 0 ? 1 : 0, g = player.v < -1 ? 'R' : Math.abs(player.v) < 1 ? 'P' : 'D',
+      wa = Math.round(S.wheel || 0), ck = kmh + '|' + g + '|' + ov + '|' + S.spdLimit + '|' + wa;
+    if (hudCache.ckc !== ck){ hudCache.ckc = ck;
+      $('needleCar').setAttribute('transform', 'rotate(' + (-128 + Math.min(kmh, 80) / 80 * 256).toFixed(1) + ' 200 112)');
+      $('ckSpeedCar').textContent = kmh; $('ckSpeedCar').setAttribute('fill', ov === 2 ? '#ff6b6b' : ov === 1 ? '#ffd666' : '#fffaf2');
+      $('gearCar').textContent = g; $('gearCar').setAttribute('fill', g === 'R' ? '#ff9f6b' : g === 'P' ? '#7ee0a1' : '#fffaf2');
+      $('wheelCar').setAttribute('transform', 'rotate(' + wa + ' 200 192)');
+    }
+  }
   if (hudCache.warn !== w){ hudCache.warn = w; warnEl.textContent = w; warnEl.style.display = w ? 'block' : 'none'; }
   const fo = S.flash > 0 ? String(Math.min(1, S.flash * 2).toFixed(2)) : '0';
   if (hudCache.flash !== fo){ hudCache.flash = fo; flashEl.style.opacity = fo; }
@@ -1671,7 +1693,7 @@ function openOverlay(id){ $(id).classList.remove('hidden'); S.paused = true; }
 function closeOverlay(id){ $(id).classList.add('hidden'); S.paused = false; if (S.suspended && id !== 'suspend') showSuspend(); }
 
 function setupInput(){
-  const map = {ArrowUp:'up', KeyW:'up', ArrowDown:'down', KeyS:'down', Space:'brake', ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right'};
+  const map = {ArrowUp:'up', KeyW:'up', ArrowDown:'down', KeyS:'down', KeyR:'rev', Space:'brake', ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right'};
   window.addEventListener('keydown', e => {
     const k = map[e.code]; if (k){ keys[k] = true; e.preventDefault(); }
     if (!e.repeat && !S.paused){ if (e.code === 'KeyQ') setSignal(-1); else if (e.code === 'KeyE') setSignal(1); else if (e.code === 'KeyH') putOnHelmet(); else if (e.code === 'KeyC') answerCall(); else if (e.code === 'KeyU') uTurn(); }   // Q: xi-nhan trái, E: xi-nhan phải

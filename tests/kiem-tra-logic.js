@@ -535,8 +535,10 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   // chỉ giữ ga và bật xi-nhan, không bấm nút rẽ: xe tự rẽ vào đúng làn, không bị phạt
   const autoTurn = (veh, dir) => {
     reset(); if (veh === 'car') TP.setVehicle('car'); S.assist = true; TP.putOnHelmet();
-    waitGreenA(); clearNear(400, 300, 500);
+    while (!(lightOf(LIGHTS[0], 'EW', S.now) === 'green' && lightOf(LIGHTS[0], 'EW', S.now + 7.5) === 'green')) run(0.1);   // đèn xanh đủ 7,5 giây để xe ô tô bò hết cua (trước đây chỉ chờ 5 giây nên thỉnh thoảng gặp đèn đỏ)
+    clearNear(400, 300, 500);
     player.x = 250; player.y = 320; player.a = 0; player.v = 90; S.now += 0.1;
+    S.trip = null; S.route = null; S.ut = null; S.ta = null;   // bỏ đơn giao ngẫu nhiên: chỉ đường có lúc bảo quay đầu thì xe không ôm cua
     TP.setSignal(dir); const m0 = S.money;
     keys.up = true; let maxOff = 0, was = false;
     for (let i = 0; i < 7/dt; i++){ step(dt); if (S.ta) was = true; else if (was) keys.up = false;   // rẽ xong thì nhả ga
@@ -561,6 +563,33 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   keys.left = true; run(0.6); keys.left = false; const p1 = {x: player.x, y: player.y}; run(3); keys.up = false;
   const moved = Math.hypot(player.x - p1.x, player.y - p1.y);
   ok(dIn >= RB.rIn && moved > 60, `ô tô đâm vào đảo vòng xuyến không lọt vào đảo (cách tâm ${dIn.toFixed(0)}) và đi tiếp được (${moved.toFixed(0)} đơn vị trong 3 giây)`);
+  TP.setVehicle('bike');
+}
+
+// ===== 19. Bản 0.12.3: tiếng máy ô tô, nút số lùi R, vô lăng =====
+{
+  console.log('\n== 19. Ô tô: tiếng máy, số lùi R, vô lăng ==');
+  const em = TP.SND.engineModel;
+  const c = [0, 60, 120, 210].map(v => em(v, true, 'car'));
+  ok(c.every(m => m.gear === 0) && c[1].rpm > c[0].rpm && c[2].rpm > c[1].rpm && c[3].rpm > c[2].rpm && c[3].rpm <= 1, 'tiếng máy ô tô: không có số, vòng tua tăng đều theo tốc độ');
+  let big = 0, pr = em(0, true, 'car').rpm; for (let v = 1; v <= 210; v++){ const r = em(v, true, 'car').rpm; big = Math.max(big, Math.abs(r - pr)); pr = r; }
+  ok(big < 0.1, `vòng tua ô tô tăng mượt, không nhảy (bước lớn nhất ${big.toFixed(3)})`);
+  ok(em(0, false, 'car').rpm < em(0, true, 'car').rpm, 'ô tô nổ không tải thấp hơn khi đạp ga');
+
+  // nút R: đang chạy tới thì chỉ phanh, dừng hẳn rồi nhấn lại mới lùi
+  reset(); TP.setVehicle('car'); clearNear(400, 600, 500);
+  player.x = 400; player.y = 600; player.a = Math.PI / 2; player.v = 60; S.now += 0.1;
+  keys.rev = true; run(4);
+  ok(player.v === 0, `giữ R khi đang chạy tới: chỉ phanh rồi đứng yên, không tự lùi (v=${player.v.toFixed(1)})`);
+  keys.rev = false; run(0.1); keys.rev = true; run(1.5);
+  ok(player.v < -10, `dừng hẳn rồi nhấn R lần nữa: xe lùi (v=${player.v.toFixed(1)})`);
+  keys.rev = false; run(1); keys.up = false;
+
+  // vô lăng: bấm rẽ phải thì xoay dương, rẽ trái thì xoay âm, thả ra thì về giữa
+  S.view = 'bike'; player.v = 40; keys.right = true; run(0.8); const wr = S.wheel; keys.right = false; run(1.2);
+  keys.left = true; run(0.8); const wl = S.wheel; keys.left = false; player.v = 0; run(1.5);
+  ok(wr > 60 && wl < -60 && Math.abs(S.wheel) < 10, `vô lăng xoay theo hướng lái (phải ${wr.toFixed(0)}°, trái ${wl.toFixed(0)}°, nhả ${S.wheel.toFixed(0)}°)`);
+  S.view = 'nav'; keys.left = keys.right = keys.up = keys.rev = false;
   TP.setVehicle('bike');
 }
 
