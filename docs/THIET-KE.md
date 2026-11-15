@@ -129,6 +129,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.12.4 | 15/11/2026 | Người dùng góp ý lúc 16:27: trên điện thoại vô lăng và đồng hồ che kín xe và một phần đường; chốt cách sửa lúc 16:31 ("1. Đồng ý"). Trên điện thoại bỏ nền tối dày, chỉ còn ô đồng hồ nhỏ và nửa vành vô lăng mờ đặt phía trên hàng nút (`#cockpitCar` bottom 200px, rộng 190px); xe của người chơi đặt cao hơn bảng này (`want = VH - 300` trong `resize`) để thấy làn phía trước. Máy tính giữ nguyên. Chưa vẽ mép nắp capo (để sau nếu cần) |
 | (tài liệu) | 15/11/2026 | Người dùng chốt lúc 16:34: dừng chỉnh góc nhìn sau tay lái / sau vô lăng, để làm lại ở nấc 3D số 2 (mục 10.1); góc dẫn đường vẫn mặc định |
 | 1.0 | 15/11/2026 | Người dùng chốt toàn bộ kế hoạch lúc 16:37 ("Đồng ý toàn bộ"). Hai thanh điểm: thêm điểm văn hóa 0–100 (bắt đầu 70, dùng chung hai xe, không phạt tiền, không tự hồi); trừ khi làm kẹt xe, leo vỉa hè, dừng chắn đường, bám đuôi, quên tắt xi-nhan, không nhường người qua vạch; cộng khi nhường người đi bộ, nghe máy trong ô P (thay tiền boa), chuyến không làm phiền ai; khách boa thêm/chấm sao theo văn hóa. Người đi bộ qua vạch ở hai đầu Phố Chợ, xe NPC dừng nhường; lỗi bám đuôi; test mục 20; sửa bài test mục 12 chập chờn. Tiền boa 5.000đ bỏ hẳn |
+| (tài liệu) | 15/11/2026 | Người dùng đổi giai đoạn 2 thành bản đồ gấp 4 (16:54) và chốt kế hoạch 4 bản 1.1–1.4, 4 khu (16:56); mục 10.2 |
 | (tài liệu) | 14/11/2026 | Ghi dự án Saltline làm nguồn tham khảo cho đồ họa 3D (mục 10.1): học ý tưởng, không chép mã vì không có giấy phép; chưa làm 3D, giữ nguyên lộ trình |
 
 ## 8. Kiểm tra pháp lý
@@ -333,7 +334,7 @@ Người dùng yêu cầu lúc 10:57 ngày 12/11/2026 và chốt lúc 08:15 ngà
 | Sửa theo góp ý 15:00 (ôm cua ở ngã tư, kẹt ở đảo vòng xuyến, kẹt nút rẽ) | 1 | **Xong ở bản 0.12.2** (chờ chơi thử) |
 | Chế độ ô tô, phần 2: vô lăng, đồng hồ, tiếng máy ô tô, nút số lùi | 1 | Xong (bản 0.12.3, chỉnh bố cục điện thoại ở 0.12.4, 15/11/2026), chờ người dùng chơi thử và nghe thử tiếng máy |
 | Hai thanh điểm: luật và văn hóa | 1 | **Xong ở bản 1.0** (chờ chơi thử; số điểm cộng/trừ người dùng chốt 16:37 ngày 15/11/2026) |
-| Mở rộng bản đồ gấp 2, chia theo khu | 2 | Chưa làm |
+| Mở rộng bản đồ **gấp 4** (đổi 16:56 ngày 15/11/2026), chia 4 khu | 2 | Chưa làm (bản 1.1 → 1.4, xem dưới) |
 | Bộ sinh lộ trình NPC tự động | 2 | Chưa làm |
 | Giờ cao điểm, mưa, ban đêm, xe ưu tiên, NPC đi ẩu | 3 | Chưa làm |
 | Đồ họa 3D nấc 2 (mục 10.1) | Sau cùng | Chưa làm |
@@ -361,7 +362,17 @@ Rồi mới tới (người dùng chốt lúc 10:05 ngày 13/11/2026, đồng ý
 
 **Không làm chế độ dễ riêng cho người mới** (người dùng chốt 13/11/2026). Độ khó đến từ giao thông và từ việc người chơi tự chọn hành trình.
 
-**Giai đoạn 2 (bản 1.x): mở rộng bản đồ gấp 2, chia theo khu, mỗi khu một nhóm tình huống**
+**Giai đoạn 2 (bản 1.x): mở rộng bản đồ gấp 4, chia theo khu, mỗi khu một nhóm tình huống**
+
+**Đã chốt lúc 16:56 ngày 15/11/2026** (người dùng: "Đồng ý với tất cả đề xuất của bạn", đổi từ gấp 2 sang gấp 4 lúc 16:54):
+- **Gấp 4 = diện tích gấp 4**, mỗi chiều gấp đôi: khoảng 3200 × 2400 đơn vị (ngoài đời khoảng 800 × 600 m).
+- **Bốn khu:** khu phố cũ (giữ nguyên khu hiện tại, góc trên bên trái); khu đại lộ (nhiều làn, giao lộ lớn, đèn mũi tên); khu chợ và hẻm (hẻm, hàng rong, phố một chiều); khu trường học và đường sắt (hạn chế tốc độ, trẻ em qua đường, đường ngang đường sắt, vòng xuyến lớn).
+- **Thứ tự bản:** 1.1 làm lại bộ máy bản đồ dạng dữ liệu (đường khai báo thành danh sách, ngã tư, vạch, đèn, biển, tuyến NPC tự sinh), bộ sinh lộ trình NPC, vẽ nền theo mảnh; dựng lại đúng khu hiện tại, bộ kiểm tra cũ phải đạt hết → 1.2 bản đồ gấp 4, 4 khu, thêm điểm giao, bản đồ nhỏ thu phóng (đường vẫn một làn mỗi chiều) → 1.3 đại lộ nhiều làn (làn ô tô / xe máy, dải phân cách, điểm mở quay đầu, làn rẽ trái riêng, đèn mũi tên, mũi tên mặt đường) → 1.4 hẻm, hàng rong, phố một chiều, đường sắt, vòng xuyến lớn.
+- **Sau 1.1 và 1.2 người dùng thử trên iPhone** xem có giật không trước khi làm tiếp.
+- Luật mới (sai làn xe máy/ô tô, đường sắt, nhường khi từ hẻm ra) phải tra và cho agent độc lập đối chiếu (mục 8).
+- Mô hình: 1.1 dùng Opus (sửa nhiều file); 1.2 trở đi dùng Sonnet.
+
+(Kế hoạch cũ gấp 2 bên dưới giữ để tham khảo.)
 
 - Đại lộ có phân làn ô tô / xe máy, dải phân cách, điểm mở để quay đầu.
 - Giao lộ lớn: đèn mũi tên rẽ trái riêng, nhiều biển chỉ dẫn, làn rẽ riêng.
@@ -370,7 +381,7 @@ Rồi mới tới (người dùng chốt lúc 10:05 ngày 13/11/2026, đồng ý
 - Đường sắt cắt ngang có biển và chuông.
 - Vòng xuyến lớn nhiều lối ra.
 
-Bản đồ gấp 2 nghĩa là khoảng 3200×1200 hoặc 1600×2400 đơn vị; chọn hướng nào tùy bố cục khu, quyết định khi bắt tay làm giai đoạn 2.
+(Đã thay bằng gấp 4: khoảng 3200 × 2400 đơn vị, chốt 16:56 ngày 15/11/2026.)
 
 Việc kỹ thuật bắt buộc kèm theo: viết bộ sinh lộ trình NPC tự động. Hiện `ROUTES` trong `js/ban-do.js` viết tay từng tuyến, bản đồ to gấp đôi thì không quản nổi.
 
