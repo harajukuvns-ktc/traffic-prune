@@ -27,6 +27,8 @@
   #law{display:none;background:rgba(255,250,242,.97);border-left:6px solid var(--bad);border-radius:14px;padding:9px 13px;font-size:13.5px;line-height:1.42;
     box-shadow:0 4px 14px rgba(0,0,0,.18)}
   #law.good{border-left-color:var(--good)}
+  #law .lawx{display:none}
+  #law{pointer-events:auto}
   #law small{color:#6b6875}
   #right{position:fixed;right:10px;top:10px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;z-index:3}
   #topbtns{display:flex;gap:6px}
@@ -75,6 +77,12 @@
     #mini{display:none}
     #chips{max-width:calc(100% - 150px)}
     .btn{padding:6px 9px;font-size:13px}
+  }
+  /* điện thoại: bảng phạt chỉ chiếm vài dòng, chạm vào là ẩn; chi tiết xem ở 📘 Sổ tay */
+  @media (max-width:999px){
+    #law{padding:6px 10px;font-size:12px;line-height:1.3;background:rgba(255,250,242,.9)}
+    #law .lawin{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+    #law .lawx{display:block;font-size:10px;color:#8b8896;text-align:right;margin-top:1px}
   }
   @media (max-width:600px){ .cbtn{width:70px;height:70px} .steer .cbtn{width:72px;height:72px} .padcol .d-down{width:56px;height:56px} #navMain{font-size:15.5px} #law{font-size:12.5px} .lbl{display:none} #chips{max-width:calc(100% - 185px)} }
   /* điện thoại cầm ngang: màn hình thấp nên bỏ chữ nhãn trên các ô thông tin cho gọn, khỏi đè lên nút điều khiển */

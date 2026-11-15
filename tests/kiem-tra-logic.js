@@ -435,7 +435,7 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   reset(); const bay = BAYS[9]; clearNear(bay.cx, bay.cy, 400); player.x = bay.cx; player.y = bay.cy; player.a = Math.atan2(bay.dir.y, bay.dir.x); player.v = 0; S.money = 5000000;
   S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
   let everDriving = false; for (let i = 0; i < 9/dt; i++){ step(dt); if (phoneDriving()) everDriving = true; }
-  ok(S.call === null && !everDriving && S.stats.callOk === 1 && S.money === 5020000 && S.pts === 12, `nghe máy khi đỗ trong ô P: được boa 20.000đ (tiền ${S.money})`);
+  ok(S.call === null && !everDriving && S.stats.callOk === 1 && S.money === 5005000 && S.pts === 12, `nghe máy khi đỗ trong ô P: được boa 5.000đ (tiền ${S.money})`);
   // h) cầm điện thoại khi chạy qua chốt: phạt 900.000đ, trừ 4 điểm, chỉ một lần mỗi cuộc gọi
   reset(); S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
   go(940, 320, 0, 20, 1.2); ok(phoneDriving() && S.stats.phone === 1 && S.pts === 8 && 5000000 - S.money === 900000, `vừa lái vừa nghe qua chốt: phạt 900.000đ, trừ 4 điểm (điểm ${S.pts}, tiền ${S.money})`);
@@ -503,6 +503,31 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   reset(); setVehicle('car'); { const d = S.trip.dest, b = d.bay; clearNear(b.cx, b.cy, 300); const trips = S.trips; player.x = b.cx; player.y = b.cy; player.a = Math.atan2(b.dir.y, b.dir.x); player.v = 0; run(0.3);
     ok(S.trips === trips + 1, 'ô tô đỗ đúng ô P của điểm giao: giao hàng thành công'); }
   setVehicle('bike');
+}
+
+// 17) Bản 0.12.1: quay đầu tự động, cước theo quãng đường, tiền boa thật, nút tắt tiếng
+{
+  const {uTurn, FARE_T} = TP;
+  // a) xe máy trên Me Chua (y=900), đi hướng đông ở làn phải, bấm quay đầu: quay ngược hướng, ở lại trên đường, xi-nhan tự tắt
+  for (const veh of ['bike', 'car']){
+    reset(); if (veh === 'car') TP.setVehicle('car'); clearNear(600, 900, 400);
+    player.x = 600; player.y = 920; player.a = 0; player.v = 60; keys.up = false;
+    uTurn(); run(0.1); const sigOn = S.turn === -1;
+    run(5);
+    const heading = Math.cos(player.a), onRoad = Math.abs(player.y - 900) < 40;
+    ok(sigOn && !S.ut && heading < -0.9 && onRoad && S.turn === 0, `${veh === 'car' ? 'ô tô' : 'xe máy'} quay đầu tự động: xi-nhan tự bật rồi tắt, quay ngược hướng (cos ${heading.toFixed(2)}), vẫn trong lòng đường (y ${player.y.toFixed(0)})`);
+  }
+  // b) bấm phanh giữa chừng thì hủy
+  reset(); clearNear(600, 900, 400); player.x = 600; player.y = 920; player.a = 0; player.v = 40; uTurn(); run(0.3); keys.brake = true; run(0.1); keys.brake = false;
+  ok(!S.ut && S.turn === 0, 'bấm phanh thì hủy quay đầu và tắt xi-nhan do máy bật');
+  // c) cước theo quãng đường: xa hơn thì nhiều hơn; ô tô cao hơn xe máy; không còn kiểu 30.000đ cố định
+  const f1 = TP.farePay('bike', 400), f2 = TP.farePay('bike', 1400), f3 = TP.farePay('car', 1400);
+  ok(f1.pay >= 11500 && f2.pay > f1.pay && f2.pay < 40000 && f3.pay > f2.pay, `cước: 100 m bản đồ ${f1.pay}đ, 350 m ${f2.pay}đ (xe máy), ${f3.pay}đ (ô tô)`);
+  // d) giao hàng thật: tiền công đúng bảng cước (chuyến không sạch, nên không có thưởng)
+  reset(); const d = dest('Chợ'); const bay = d.bay; player.x = bay.cx; player.y = bay.cy; player.a = Math.atan2(bay.dir.y, bay.dir.x); player.v = 0;
+  S.trip = {dest: d, fx: bay.cx - 600, fy: bay.cy, len: 2400, clean: false, t0: S.now}; S.route = computeRoute(); const m0 = S.money;
+  run(2);
+  ok(S.money - m0 === TP.farePay('bike', 2400).pay, `giao hàng nhận đúng tiền công theo quãng đường (+${S.money - m0}đ)`);
 }
 
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');

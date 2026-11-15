@@ -220,3 +220,23 @@ const QUIZ = [
    a:['12 điểm','10 điểm','20 điểm'], why:'Theo Luật Trật tự, an toàn giao thông đường bộ 2024, mỗi GPLX có 12 điểm.'}
 ];
 const QUIZ_N = 5, QUIZ_PASS = 4;
+
+/* =========================================================
+   CƯỚC GIAO HÀNG (đối chiếu giá thực tế, không phải luật)
+   Nguồn tham khảo: bảng cước đối tác Grab Việt Nam (trang grab.com/vn/blog/driver, mục GrabExpress và GrabCar Mini, tra tháng 11/2026):
+   - Giao hàng bằng xe máy, Hà Nội và TP.HCM: 11.636đ cho 2 km đầu, mỗi km tiếp theo 4.000đ.
+   - Ô tô (lấy mức GrabCar Mini làm chuẩn): 17.673đ cho 2 km đầu, mỗi km tiếp theo 7.855đ.
+   Đây là số tham khảo của một hãng, chưa đối chiếu hãng khác; mỗi nơi, mỗi giờ một khác.
+   Phố trong game chỉ rộng khoảng 400 × 300 m nên mỗi chuyến chỉ dài 100–450 m. Để cước còn phụ thuộc quãng đường,
+   mỗi mét đường đi trên bản đồ được tính như SCALE mét ngoài đời (phố thu nhỏ).
+   ========================================================= */
+const FARE = {
+  SCALE: 10,
+  bike: {minKm: 2, minPay: 11636, perKm: 4000},
+  car:  {minKm: 2, minPay: 17673, perKm: 7855}
+};
+// Tiền công một chuyến theo quãng đường đi thật trên bản đồ (đơn vị bản đồ; 4 đơn vị = 1 m), làm tròn 500đ
+function farePay(veh, units){
+  const f = FARE[veh], km = units / 4 * FARE.SCALE / 1000;
+  return {km, pay: Math.round((f.minPay + Math.max(0, km - f.minKm) * f.perKm) / 500) * 500};
+}
