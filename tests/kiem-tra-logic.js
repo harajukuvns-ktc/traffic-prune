@@ -803,5 +803,60 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   setVehicle(saved.veh); player.x = saved.x; player.y = saved.y; player.a = saved.a; S.trip = saved.trip; S.route = computeRoute();
 }
 
+// ===== 24. Bản 1.1 bước 4: bộ sinh lộ trình NPC =====
+{
+  const {MAP, NPC_GEN, npcNewRoute, npcLoopRoute, BUS_LOOPS, dungBanDo} = TP;
+  TP.makeNPCs();   // các mục trên có gán tuyến tay cho vài xe; dựng lại đàn xe như lúc vào game
+  ok(NPC_GEN.on && npcs.length === 29 && npcs.every(n => n.route.gen) && npcs.filter(n => n.kind === 'bus').length === 2,
+     `NPC chạy tuyến tự sinh: ${npcs.length} xe, ${npcs.filter(n => n.kind === 'bus').length} xe buýt chạy vòng`);
+  // 300 tuyến ngẫu nhiên: nằm trên mặt đường (bỏ qua phần ngoài mép bản đồ), không qua phố đi bộ, đúng làn bên phải
+  const trenDuong = (M, r) => { let off = 0, ped = 0, trai = 0;
+    for (let j = 1; j < r.pts.length; j++){ const a = r.pts[j-1], b = r.pts[j], L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      if (!r.loop && (j === 1 || j === r.pts.length - 1)) continue;   // đoạn vào/ra ở ngoài mép bản đồ
+      for (let k = 0; k <= 6; k++){ const x = a.x + (b.x - a.x)*k/6, y = a.y + (b.y - a.y)*k/6;
+        const c = M.classify(x, y);
+        if (c.t === 'off' || c.t === 'island') off++; if (c.t === 'ped') ped++;
+        // trên đoạn đường (ngoài nút giao): xe phải ở nửa bên phải theo chiều đi
+        if (c.road && c.dir){ const fw = ((b.x - a.x)*c.dir.x + (b.y - a.y)*c.dir.y) / L; if (Math.abs(fw) > 0.9 && c.lat * fw < 2) trai++; } }
+      // không có chỗ đi giật lùi (hai đoạn liền nhau ngược hướng)
+      if (j >= 2){ const z = r.pts[j-2], u = {x: a.x - z.x, y: a.y - z.y}; if (u.x*(b.x - a.x) + u.y*(b.y - a.y) < 0 && Math.hypot(u.x, u.y) > 0.5) off++; } }
+    return {off, ped, trai}; };
+  let off = 0, ped = 0, trai = 0, thang = 0, vong = 0, re = 0;
+  for (let i = 0; i < 300; i++){ const r = npcNewRoute(MAP, 'bike'), t = trenDuong(MAP, r); off += t.off; ped += t.ped; trai += t.trai;
+    if (r.straight) thang++; if (r.nodes.includes('F')) vong++; else if (!r.straight) re++; }
+  ok(off === 0 && ped === 0 && trai === 0, `300 tuyến tự sinh nằm trên mặt đường, đúng làn bên phải, không qua phố đi bộ (ngoài đường ${off}, phố đi bộ ${ped}, sai làn ${trai})`);
+  ok(thang > 110 && thang < 190 && vong > 30 && re > 30, `khoảng một nửa đi thẳng một mạch (${thang}/300), có xe rẽ (${re}) và qua vòng xuyến (${vong})`);
+  ok(BUS_LOOPS.every(ids => { const r = npcLoopRoute(MAP, ids, 'bus'), t = trenDuong(MAP, r); return r.loop && t.off === 0 && t.trai === 0; }), 'tuyến xe buýt chạy vòng nằm trên mặt đường, đúng làn');
+  const r0 = npcNewRoute(MAP, 'bike');
+  ok(MAP.lights.every(L => { for (let i = 0; i < 200; i++){ const r = npcNewRoute(MAP, 'bike'); if (r.pts.some(p => p.stop && p.stop.L === L)) return true; } return false; }),
+     'tuyến đi qua ngã tư có đèn mang mốc vạch dừng của đúng đèn đó');
+  // bản đồ thử: ngã năm có đèn, đại lộ chéo, vòng xuyến 3 lối, đường cong; một xe NPC chạy hết tuyến không kẹt
+  const RD = (id, a, b, name, more) => Object.assign({id, a, b, name, cap:'normal', half:40, lanes:1, limit:40}, more || {});
+  const T = dungBanDo([
+    {id:'O', x:1000, y:1000, kind:'light', light:{off:0}}, {id:'W', x:200, y:1000, kind:'end'}, {id:'S', x:1000, y:1800, kind:'end'},
+    {id:'N', x:1000, y:200, kind:'end'}, {id:'NE', x:1500, y:600, kind:'end'}, {id:'R', x:1800, y:1000, kind:'ring', ring:{rOut:100, rIn:48, rLane:76}},
+    {id:'RE', x:2400, y:1000, kind:'end'}, {id:'RS', x:1800, y:1600, kind:'end'}
+  ], [
+    RD('ow','W','O','Đường Tây'), RD('os','O','S','Đường Nam'), RD('on','O','N','Đường Bắc'), RD('cheo','O','NE','Đại lộ Chéo'), RD('oe','O','R','Đường Đông'),
+    RD('re','R','RE','Đường Xa'), RD('cong','R','RS','Đường Cong', {via:{x:2100, y:1400}})
+  ], {bays: []});
+  let toff = 0, ttrai = 0, cheo = 0, cong = 0;
+  for (let i = 0; i < 200; i++){ const r = npcNewRoute(T, 'bike'), t = trenDuong(T, r); toff += t.off; ttrai += t.trai;
+    if (r.nodes.includes('NE')) cheo++; if (r.nodes.includes('RS')) cong++; }
+  ok(toff === 0 && ttrai === 0 && cheo > 10 && cong > 10, `bản đồ thử: 200 tuyến trên mặt đường, đúng làn, có đi đại lộ chéo (${cheo}) và đường cong (${cong}) (ngoài đường ${toff}, sai làn ${ttrai})`);
+  reset(); for (const q of npcs){ q.hidden = true; q.respawnT = 999; }
+  const sv = {x: player.x, y: player.y}; player.x = -5000; player.y = -5000;
+  let chay = 0, xong = 0;
+  for (let i = 0; i < 6; i++){
+    const rt = npcNewRoute(T, 'bike'), q = npcs[i], p0 = rt.pts[0];
+    Object.assign(q, {route: rt, idx: 1, x: p0.x, y: p0.y, v: 60, hidden: false, respawnT: 0, ghostT: 0, ghostP: 0, waitT: 0, blockedBy: null});
+    q.a = Math.atan2(rt.pts[1].y - p0.y, rt.pts[1].x - p0.x);
+    for (let k = 0; k < 90/dt && !q.hidden; k++) step(dt);
+    chay++; if (q.hidden) xong++; q.respawnT = 999; q.hidden = true;
+  }
+  ok(xong === chay, `bản đồ thử: xe NPC chạy hết tuyến (qua đèn, ngã năm, vòng xuyến, đường cong) trong 90 giây (${xong}/${chay})`);
+  player.x = sv.x; player.y = sv.y; reset();
+}
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);

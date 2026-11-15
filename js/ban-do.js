@@ -372,6 +372,9 @@ function dungBanDo(nodeList, roadList, opt){
     for (let i = 0; i + 1 < r.pts.length; i++){ const p = r.pts[i], q = r.pts[i+1], l = Math.hypot(q.x - p.x, q.y - p.y);
       r.seg.push({p, s0: L, l, d: unit(q.x - p.x, q.y - p.y)}); L += l; }
     r.len = L;
+    // đường cong: ở mép ngoài chỗ hai đoạn gấp khúc nối nhau có khe hẹp; cho phép chiếu lố đầu đoạn một chút (tol) để khỏi sót
+    let turn = 0; for (let i = 1; i < r.seg.length; i++) turn = Math.max(turn, Math.abs(Math.atan2(crossU(r.seg[i-1].d, r.seg[i].d), r.seg[i-1].d.x*r.seg[i].d.x + r.seg[i-1].d.y*r.seg[i].d.y)));
+    r.tol = r.seg.length > 1 ? r.half * Math.tan(turn / 2) + 0.5 : 0;
     const n = r.pts.length;
     r.dirA = unit(r.pts[1].x - r.pts[0].x, r.pts[1].y - r.pts[0].y);        // hướng ra khỏi nút a
     r.dirB = unit(r.pts[n-2].x - r.pts[n-1].x, r.pts[n-2].y - r.pts[n-1].y); // hướng ra khỏi nút b
@@ -398,9 +401,9 @@ function dungBanDo(nodeList, roadList, opt){
     const out = [];
     for (const r of M.roads){
       let best = null;
-      for (const g of r.seg){
+      for (let i = 0; i < r.seg.length; i++){ const g = r.seg[i];
         const t = (x - g.p.x)*g.d.x + (y - g.p.y)*g.d.y;
-        if (t < -1e-9 || t > g.l + 1e-9) continue;
+        if (t < -1e-9 - (i > 0 ? r.tol : 0) || t > g.l + 1e-9 + (i < r.seg.length - 1 ? r.tol : 0)) continue;
         const lat = -(x - g.p.x)*g.d.y + (y - g.p.y)*g.d.x;
         if (Math.abs(lat) <= r.half + 1e-9 && (!best || Math.abs(lat) < Math.abs(best.lat))) best = {road: r, s: g.s0 + t, lat, dir: g.d};
       }

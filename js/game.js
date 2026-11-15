@@ -38,7 +38,160 @@ const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlaye
 const npcs = [], peds = [];
 let uid = 0;
 
+/* ---------------------------------------------------------
+   Bộ sinh lộ trình NPC (bản 1.1, bước 4): tuyến tự sinh từ MAP thay cho ROUTES viết tay.
+   Xe máy vào từ một đầu đường ở mép bản đồ, đi tới một đầu đường khác theo đường ngắn nhất; khoảng một nửa số tuyến
+   là "đi thẳng một mạch" (ở mỗi nút chọn nhánh gần hướng thẳng nhất), còn lại chọn ngẫu nhiên điểm ra (người dùng chốt 19:36 ngày 15/11/2026).
+   Xe buýt chạy vòng cố định khai báo bằng danh sách nút (BUS_LOOPS). Mỗi tuyến mang sẵn các mốc: vạch dừng ở ngã tư có đèn
+   (stop: đèn và pha của nhánh), chỗ nhường ở cửa vòng xuyến (yieldAt). NPC_GEN.on = false thì quay về ROUTES cũ (xoá ở bước 7).
+   --------------------------------------------------------- */
+const NPC_GEN = {on: true, seed: 20261115, straightShare: 0.5};
+const BUS_LOOPS = [['A','C','F','D'], ['C','A','D','F']];
+function npcRand(){ NPC_GEN.seed = (NPC_GEN.seed * 16807) % 2147483647; return (NPC_GEN.seed - 1) / 2147483646; }
+const npcRoadOk = (r, kind) => r.veh && !(kind === 'bus' ? r.noCar : r.noBike);
+// đường ngắn nhất giữa hai nút trên MAP cho loại xe kind: trả về [{id, rin}] (rin: đường đi vào nút)
+function npcNodePath(M, from, to, kind){
+  const cost = {[from]: 0}, prv = {}, done = {};
+  for (;;){
+    let u = null; for (const id in cost) if (!done[id] && (u === null || cost[id] < cost[u])) u = id;
+    if (u === null || u === to) break; done[u] = true;
+    for (const arm of M.nodes[u].arms){ const r = arm.road; if (!npcRoadOk(r, kind) || (r.oneway && r.b === u)) continue;
+      const v = r.a === u ? r.b : r.a, c = cost[u] + r.len;
+      if (M.nodes[v].kind === 'end' && v !== to) continue;   // không đi xuyên qua mép bản đồ
+      if (!(v in cost) || c < cost[v]){ cost[v] = c; prv[v] = {u, r}; } }
+  }
+  if (!(to in cost)) return null;
+  const out = []; let id = to;
+  while (id !== from){ out.unshift({id, rin: prv[id].r}); id = prv[id].u; }
+  out.unshift({id: from, rin: null});
+  return out;
+}
+// đi thẳng một mạch từ đầu đường `from`: ở mỗi nút chọn nhánh lệch ít nhất (dưới 30°; vòng xuyến: nhánh đối diện)
+function npcStraightPath(M, from, kind){
+  const out = [{id: from, rin: null}]; let cur = from, rin = null;
+  for (let k = 0; k < 40; k++){
+    const nd = M.nodes[cur];
+    const opts = nd.arms.filter(a => a.road !== rin && npcRoadOk(a.road, kind) && !(a.road.oneway && a.road.b === cur));
+    if (!opts.length) return null;
+    let pick;
+    if (!rin) pick = opts[0];
+    else { const o = armOut(rin, cur), din = {x: -o.x, y: -o.y};
+      const angOf = a => Math.abs(Math.atan2(din.x*a.out.y - din.y*a.out.x, din.x*a.out.x + din.y*a.out.y));
+      pick = opts.reduce((p, q) => angOf(q) < angOf(p) ? q : p);
+      if (nd.kind !== 'ring' && angOf(pick) > NAV_ANG.straight) return null; }
+    const r = pick.road, nx = r.a === cur ? r.b : r.a;
+    out.push({id: nx, rin: r}); cur = nx; rin = r;
+    if (M.nodes[nx].kind === 'end') return out;
+  }
+  return null;
+}
+// trải chuỗi nút thành các điểm theo làn bên phải; loop: tuyến vòng (nút đầu = nút cuối nối lại)
+function npcBuildPts(M, chain, loop){
+  const pts = [];
+  const n = chain.length;
+  // đường ra khỏi nút thứ k
+  const rOut = k => loop ? chain[(k + 1) % n].rin : (k + 1 < n ? chain[k + 1].rin : null);
+  const rIn = k => loop ? chain[k].rin : chain[k].rin;
+  for (let k = 0; k < n; k++){
+    const nd = M.nodes[chain[k].id], ri = rIn(k), ro = rOut(k);
+    if (nd.kind === 'end'){
+      const r = ri || ro, o = armOut(r, nd.id);
+      if (!ri){ const d = o; pts.push(lanePt(along(nd, d, -40), d, laneOff(r))); }          // vào từ ngoài mép bản đồ
+      else { const prevId = chain[k - 1].id, d = {x: -o.x, y: -o.y};
+        pts.push(...bendPts(ri, ri.a === prevId ? 0 : ri.len, ri.a === nd.id ? 0 : ri.len, npcMargin(M, prevId), 0));
+        pts.push(lanePt(along(nd, d, 40), d, laneOff(r))); }   // ra ngoài mép
+      continue;
+    }
+    // các điểm uốn của đường cong dẫn tới nút này
+    if (ri){ const prevId = chain[(k - 1 + n) % n].id; pts.push(...bendPts(ri, ri.a === prevId ? 0 : ri.len, ri.a === nd.id ? 0 : ri.len, npcMargin(M, prevId), npcMargin(M, nd.id))); }
+    const oi = armOut(ri, nd.id), din = {x: -oi.x, y: -oi.y}, dout = armOut(ro, nd.id), tr = mapTrim(nd);
+    if (nd.kind === 'ring'){
+      const R = nd.ring.rOut + 4, a0 = ringAng(nd, oi, true), a1 = ringAng(nd, dout, false);
+      pts.push(Object.assign(lanePt(along(nd, din, -R), din, laneOff(ri)), {yieldAt: a0, ring: {x: nd.x, y: nd.y, rIn: nd.ring.rIn, rOut: nd.ring.rOut}}));
+      pts.push(...ringArcAt(nd, a0, a1));
+      pts.push(lanePt(along(nd, dout, R), dout, laneOff(ro)));
+      continue;
+    }
+    if (nd.kind === 'light'){
+      const arm = nd.arms.find(a => a.road === ri), gap = ri.a === nd.id ? ri.gapA.gap : ri.gapB.gap;
+      const L = M.lights.find(q => q.node === nd.id);
+      pts.push(Object.assign(lanePt(along(nd, din, -(gap + STOPG)), din, laneOff(ri)), {stop: {L, phase: M.armPhase(arm.out)}}));
+    }
+    const E = lanePt(along(nd, din, -tr), din, laneOff(ri)), X = lanePt(along(nd, dout, tr), dout, laneOff(ro));
+    const cr = din.x*dout.y - din.y*dout.x;
+    if (Math.abs(cr) < 0.1){ pts.push(E, X); continue; }       // đi thẳng
+    // chỗ rẽ: đường cong Bézier bậc ba, ra khỏi E theo hướng vào và tới X theo hướng ra (kể cả chỗ rẽ gắt ở ngã năm vẫn không vòng ngược)
+    const kk = dist(E, X) * 0.5, C1 = along(E, din, kk), C2 = along(X, dout, -kk);
+    pts.push(E);
+    for (let i = 1; i <= 8; i++){ const q = i / 8, u = 1 - q, a = u*u*u, b = 3*u*u*q, c = 3*u*q*q, d = q*q*q;
+      pts.push({x: a*E.x + b*C1.x + c*C2.x + d*X.x, y: a*E.y + b*C1.y + c*C2.y + d*X.y}); }
+  }
+  return pts;
+}
+// đoạn đầu/cuối đường nằm trong nút (tới chỗ xe vào/ra nút): không lấy điểm uốn ở đó
+function npcMargin(M, id){ const nd = M.nodes[id]; return nd.kind === 'ring' ? nd.ring.rOut + 4 : nd.kind === 'light' ? mapTrim(nd) + STOPG : mapTrim(nd); }
+function npcEnds(M, kind){ return Object.keys(M.nodes).filter(id => M.nodes[id].kind === 'end' && M.nodes[id].arms.some(a => npcRoadOk(a.road, kind))); }
+// một tuyến mới ngẫu nhiên cho xe máy NPC
+function npcNewRoute(M, kind){
+  M = M || MAP; kind = kind || 'bike';
+  const ends = npcEnds(M, kind);
+  for (let tries = 0; tries < 20; tries++){
+    const from = ends[Math.floor(npcRand() * ends.length)];
+    let chain = null, straight = npcRand() < NPC_GEN.straightShare;
+    if (straight) chain = npcStraightPath(M, from, kind);
+    if (!chain){ const to = ends[Math.floor(npcRand() * ends.length)]; if (to === from) continue; chain = npcNodePath(M, from, to, kind); straight = false; }
+    if (!chain || chain.length < 2) continue;
+    return {loop: false, gen: true, map: M, straight, nodes: chain.map(c => c.id), pts: npcBuildPts(M, chain, false)};
+  }
+  return null;
+}
+// tuyến vòng của xe buýt qua các nút ids (giữa hai nút liên tiếp đi đường ngắn nhất)
+function npcLoopRoute(M, ids, kind){
+  M = M || MAP; const chain = [];
+  for (let i = 0; i < ids.length; i++){
+    const seg = npcNodePath(M, ids[i], ids[(i + 1) % ids.length], kind || 'bus'); if (!seg) return null;
+    chain.push(...seg.slice(1));
+  }
+  // chain[k].rin là đường vào nút; nút đầu của vòng nằm ở cuối chuỗi, đưa lên đầu cho dễ đọc
+  chain.unshift(chain.pop());
+  return {loop: true, gen: true, nodes: chain.map(c => c.id), pts: npcBuildPts(M, chain, true)};
+}
+
+function npcObj(route, isBus, p){
+  const n = {
+    id: ++uid, route, idx: p.idx, x: p.x, y: p.y, a: 0, v: 0,
+    kind: isBus ? 'bus' : 'bike', len: isBus ? 46 : 18, w: isBus ? 16 : 8,
+    vmax: isBus ? 72 : 90 + rnd()*35, acc: isBus ? 60 : 110,
+    color: isBus ? '#f2c94c' : ['#4a90e2','#7b61ff','#2bb3a3','#e86a92','#6c7a89','#59a14f','#b07aa1'][Math.floor(rnd()*7)],
+    helmet: ['#ffffff','#ff5a5f','#ffd166','#06d6a0','#118ab2','#222'][Math.floor(rnd()*6)],
+    name: isBus ? 'Bác tài xe buýt' : NPC_NAMES[Math.floor(rnd()*NPC_NAMES.length)],
+    blockedBy: null, waitT: 0, ghostT: 0, ghostP: 0, hitT: 0, yieldWait: 0, hidden: false, respawnT: 0,
+    affEp: -1, hitCool: 0
+  };
+  const t = route.pts[n.idx]; n.a = Math.atan2(t.y - n.y, t.x - n.x);
+  return n;
+}
+// Tạo NPC theo tuyến tự sinh: 2 xe buýt chạy vòng cố định, 27 xe máy tuyến ngẫu nhiên (tổng 29 xe như cũ)
+function makeNPCsGen(){
+  npcs.length = 0;
+  const near = p => Math.hypot(p.x - START.x, p.y - START.y) < 70 || npcs.some(o => Math.hypot(o.x - p.x, o.y - p.y) < 36);
+  for (const ids of BUS_LOOPS){
+    const route = npcLoopRoute(MAP, ids, 'bus'); let p = pointAt(route, 0);
+    for (let j = 0; j < 20 && near(p); j++) p = pointAt(route, 40 * (j + 1));
+    npcs.push(npcObj(route, true, p));
+  }
+  while (npcs.length < 29){
+    const route = npcNewRoute(MAP, 'bike'); if (!route) break;
+    const {L} = pathLen(route.pts, false);
+    let p = null;
+    for (let j = 0; j < 20; j++){ const q = pointAt(route, L * (0.08 + 0.8 * npcRand())); if (!near(q)){ p = q; break; } }
+    if (p) npcs.push(npcObj(route, false, p));
+  }
+  makePeds();
+}
 function makeNPCs(){
+  if (NPC_GEN.on) return makeNPCsGen();
+
   npcs.length = 0;
   ROUTES.forEach(route => {
     const {L} = pathLen(route.pts, route.loop);
@@ -62,6 +215,9 @@ function makeNPCs(){
       npcs.push(n);
     }
   });
+  makePeds();
+}
+function makePeds(){
   // Người đi bộ trên vỉa hè (đi vòng quanh khối phố, phía trong các ô đỗ xe)
   peds.length = 0;
   const pb = [BLOCKS[1], BLOCKS[3], BLOCKS[4], BLOCKS[0], BLOCKS[7]];
@@ -143,14 +299,15 @@ function chainRoot(n){
   while (c && c.blockedBy && k < 10){ c = c.blockedBy; k++; if (c === player) return player; }
   return c;
 }
-function ringBusy(theta, self, minV){
+function ringBusy(theta, self, minV, rg){
+  rg = rg || RB;   // vòng xuyến nào (mặc định vòng xuyến của khu cũ); tuyến tự sinh truyền nút vòng xuyến của MAP
   for (const o of vehicles()){
     if (o === self) continue;
     if (o === player && S.inBay) continue;
     if (minV && Math.abs(o.v) < minV) continue;
-    const r = Math.hypot(o.x - RB.x, o.y - RB.y);
-    if (r < RB.rIn - 6 || r > RB.rOut + 2) continue;
-    const d = normA(Math.atan2(o.y - RB.y, o.x - RB.x) - theta);
+    const r = Math.hypot(o.x - rg.x, o.y - rg.y);
+    if (r < rg.rIn - 6 || r > rg.rOut + 2) continue;
+    const d = normA(Math.atan2(o.y - rg.y, o.x - rg.x) - theta);
     if (d > -0.15 && d < 1.15) return o;
   }
   return null;
@@ -671,10 +828,12 @@ function projAllowed(p, M){
   return best;
 }
 // các điểm uốn của đường cong nằm giữa quãng s0 và s1 (theo chiều đi), đã dời sang làn bên phải
-function bendPts(r, s0, s1){
+// m0, m1: bỏ các điểm uốn nằm trong khoảng m0 tính từ đầu đi, m1 tính từ đầu đến (phần nằm trong nút giao, vòng xuyến)
+function bendPts(r, s0, s1, m0, m1){
   const out = [], sg = s1 >= s0 ? 1 : -1;
+  m0 = m0 || 0; m1 = m1 || 0;
   for (let i = 1; i < r.seg.length; i++){ const g = r.seg[i];
-    if ((g.s0 - s0) * sg > 1e-6 && (s1 - g.s0) * sg > 1e-6){
+    if ((g.s0 - s0) * sg > m0 + 1e-6 && (s1 - g.s0) * sg > m1 + 1e-6){
       const pa = r.seg[i-1].d, pb = g.d, dd = unit({x: 0, y: 0}, {x: (pa.x + pb.x)*sg, y: (pa.y + pb.y)*sg});
       out.push(lanePt(g.p, dd, laneOff(r))); } }
   return sg > 0 ? out : out.reverse();
@@ -780,12 +939,12 @@ function computeRouteMap(M){
     if (!atNode){
       const r = info.road, sR = sTo(r, root), sg = sR > st.s ? 1 : -1, d = {x: st.dir.x*sg, y: st.dir.y*sg};
       pts.push(lanePt(along(st.pt, d, Math.min(25, Math.abs(sR - st.s))), d, laneOff(r)));
-      pts.push(...bendPts(r, st.s + sg*25, sR));
+      pts.push(...bendPts(r, st.s + sg*25, sR, 0, mapTrim(NODE[root])));
     }
     for (let k = 0; k < chain.length; k++){
       const cur = chain[k].id, nd = NODE[cur], rin = chain[k].rin, rout = k + 1 < chain.length ? chain[k+1].rin : cand.road;
       const hasIn = rin && !(atNode && k === 0), tr = mapTrim(nd);
-      if (hasIn){ if (k > 0) pts.push(...bendPts(rin, sTo(rin, chain[k-1].id), sTo(rin, cur)));
+      if (hasIn){ if (k > 0) pts.push(...bendPts(rin, sTo(rin, chain[k-1].id), sTo(rin, cur), mapTrim(NODE[chain[k-1].id]), tr));
         const din = armOut(rin, cur), d = {x: -din.x, y: -din.y};
         pts.push(lanePt(along(nd, d, -tr), d, laneOff(rin))); }
       const d2 = armOut(rout, cur);
@@ -795,7 +954,7 @@ function computeRouteMap(M){
       }
       pts.push(lanePt(along(nd, d2, tr), d2, laneOff(rout)));
       if (k === chain.length - 1){
-        pts.push(...bendPts(rout, sTo(rout, cur), dS));
+        pts.push(...bendPts(rout, sTo(rout, cur), dS, tr, 0));
         const dd = M.pointAt(rout, dS).dir, sg = rout.a === cur ? 1 : -1; travel = {x: dd.x*sg, y: dd.y*sg};
         pts.push(lanePt(dp, travel, laneOff(rout))); pts.push(bayC);
       }
@@ -858,9 +1017,26 @@ function lightLimit(n, ux, uy){
   }
   return lim;
 }
+// Tuyến tự sinh: nhìn trước dọc theo tuyến tới 210 đơn vị, gặp mốc vạch dừng thì xét đèn của đúng nhánh đó
+function routeLightLimit(n){
+  const pts = n.route.pts, m = pts.length; let lim = Infinity, acc = 0, prev = n;
+  for (let k = 0; k < m && acc <= 210; k++){
+    const j = n.route.loop ? (n.idx + k) % m : n.idx + k; if (j >= m) break;
+    const q = pts[j]; acc += Math.hypot(q.x - prev.x, q.y - prev.y); prev = q;
+    if (!q.stop) continue;
+    const L = q.stop.L, ph = q.stop.phase, front = acc - n.len/2;
+    if (front < -1 || acc > 210) continue;
+    const st = lightOf(L, ph, S.now);
+    const c = ((S.now + L.off) % CYCLE + CYCLE) % CYCLE, remain = (ph === 'NS' ? 10 : 21) - c;
+    const makeIt = front <= 1 || (front + 2) / Math.max(n.v, 5) < remain - 0.05;
+    if (st === 'red' || (st === 'yellow' && !makeIt)) lim = Math.min(lim, stopLimit(front - 3));
+  }
+  return lim;
+}
 function updNPC(n, dt){
   if (n.hidden){
     n.respawnT -= dt;
+    if (n.route.gen && !n.route.loop && n.route.done){ const nr = npcNewRoute(n.route.map || MAP, n.kind); if (nr) n.route = nr; }   // tuyến tự sinh: nhận tuyến mới
     const p0 = n.route.pts[0];
     if (n.respawnT <= 0 && !vehicles().some(o => Math.hypot(o.x - p0.x, o.y - p0.y) < 45)){
       n.hidden = false; n.x = p0.x; n.y = p0.y; n.idx = 1; n.v = n.vmax * 0.6;
@@ -873,17 +1049,17 @@ function updNPC(n, dt){
     n.idx++;
     if (n.idx >= n.route.pts.length){
       if (n.route.loop) n.idx = 0;
-      else { n.hidden = true; n.respawnT = 1 + Math.random()*4; n.blockedBy = null; return; }
+      else { n.hidden = true; n.respawnT = 1 + Math.random()*4; n.blockedBy = null; n.route.done = true; return; }
     }
     tgt = n.route.pts[n.idx]; dx = tgt.x - n.x; dy = tgt.y - n.y; d = Math.hypot(dx, dy) || 1;
   }
   const ux = dx / d, uy = dy / d;
   let allowed = n.vmax, blocker = null;
 
-  allowed = Math.min(allowed, lightLimit(n, ux, uy));
+  allowed = Math.min(allowed, n.route.gen ? routeLightLimit(n) : lightLimit(n, ux, uy));
 
   if (tgt.yieldAt !== undefined && d < 45){
-    if (n.yieldWait < 5 && ringBusy(tgt.yieldAt, n)){ allowed = Math.min(allowed, stopLimit(d - 2)); n.yieldWait += dt; }
+    if (n.yieldWait < 5 && ringBusy(tgt.yieldAt, n, 0, tgt.ring)){ allowed = Math.min(allowed, stopLimit(d - 2)); n.yieldWait += dt; }
   } else n.yieldWait = 0;
 
   for (const o of vehicles()){
@@ -2111,4 +2287,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
