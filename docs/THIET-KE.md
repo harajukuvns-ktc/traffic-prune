@@ -125,6 +125,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.12.1 | 15/11/2026 | Sửa theo 5 góp ý lúc 14:39: nút loa tắt tiếng (phím M); biển chỉ đường nhỏ và mờ khi gần; bảng phạt gọn 3 dòng trên điện thoại, chạm để ẩn; nút quay đầu tự động ↩️ (phím U); tiền công giao hàng theo quãng đường theo bảng cước thực tế (`FARE`), tiền boa hạ còn 5.000đ; test mục 17 |
 | 0.12.2 | 15/11/2026 | Sửa theo 3 góp ý lúc 15:00, người dùng chốt 15:17 (lỗi 1 ô tô va đảo vòng xuyến bị kẹt, lỗi 2 kẹt phím phải trên điện thoại, lỗi 3 chọn cách 1): trợ lái ôm cua ở ngã tư khi bật xi-nhan; đảo vòng xuyến đẩy xe ra thay vì bật lùi; nút rẽ cảm ứng tự nhả; test mục 18 |
 | 0.12.3 | 15/11/2026 | Người dùng đồng ý kế hoạch lúc 16:07: vô lăng xoay và bảng đồng hồ ô tô (D/R/P, xi-nhan) ở góc nhìn sau vô lăng; tiếng máy ô tô riêng; nút số lùi R (chỉ lùi khi đã dừng hẳn rồi nhấn lại); sửa bài test ôm cua ở ngã tư chập chờn do đơn giao ngẫu nhiên (đơn bảo quay đầu thì xe không ôm cua); test mục 19 |
+| 0.12.4 | 15/11/2026 | Người dùng góp ý lúc 16:27: trên điện thoại vô lăng và đồng hồ che kín xe và một phần đường; chốt cách sửa lúc 16:31 ("1. Đồng ý"). Trên điện thoại bỏ nền tối dày, chỉ còn ô đồng hồ nhỏ và nửa vành vô lăng mờ đặt phía trên hàng nút (`#cockpitCar` bottom 200px, rộng 190px); xe của người chơi đặt cao hơn bảng này (`want = VH - 300` trong `resize`) để thấy làn phía trước. Máy tính giữ nguyên. Chưa vẽ mép nắp capo (để sau nếu cần) |
 | (tài liệu) | 14/11/2026 | Ghi dự án Saltline làm nguồn tham khảo cho đồ họa 3D (mục 10.1): học ý tưởng, không chép mã vì không có giấy phép; chưa làm 3D, giữ nguyên lộ trình |
 
 ## 8. Kiểm tra pháp lý
@@ -262,13 +263,15 @@ Hai lượt: (1) một agent Sonnet độc lập đọc bản toàn văn NĐ 168
 - Thu xe, đổi xe cũ khi không đủ tiền đền; mua xe; nhiều loại xe và vai (xe đạp, đi bộ, ô tô).
 - Bản 0.12.2 (chờ chơi thử): trợ lái ôm cua có làm việc rẽ quá dễ, mất ý nghĩa tập lái không; đường cong rẽ có tự nhiên không; nút rẽ trên iPhone còn kẹt không (chưa thử được trên máy thật); ô tô ở vòng xuyến còn kẹt không (chưa tái hiện được đúng tình huống của người dùng, đã sửa theo nguyên nhân khả dĩ nhất).
 - Bản 0.12.1 (chờ chơi thử): nút ↩️ quay đầu tự động có dễ dùng không và có làm mất ý nghĩa tập quay đầu không (xe vẫn bị phạt nếu đè vạch liền); biển chỉ đường nhỏ lại có còn đọc được trên điện thoại không; bảng phạt 3 dòng có đủ thông tin không. **Kinh tế game cần bàn:** cước thật chỉ 11–22 nghìn một chuyến nhưng phạt thật từ 0,8 triệu (xe máy) đến 20 triệu (ô tô vượt đèn đỏ), nên một lỗi nặng bằng hàng trăm đến cả nghìn chuyến; có thể cần giảm vốn/phạt cho game hoặc thêm cơ chế khác -> người dùng quyết.
-- Bản 0.12 (chờ người dùng chơi thử): ô tô có dễ lái trên điện thoại không (phải giảm còn 10–15 km/h khi rẽ ở ngã tư); xe có quá to so với làn không; chỉ đường dẫn ô tô đi vòng có hợp lý không hay muốn được bảo quay đầu; mức phạt ô tô rất cao so với tiền công giao hàng (vượt đèn đỏ khoảng 200 chuyến) có làm game quá nặng không. Số khoản/điểm luật ô tô chưa đối chiếu PDF chính thức (mục 8). Bản 0.12.3 (chờ chơi thử): vô lăng và đồng hồ ô tô có dễ nhìn và không che đường/nút trên điện thoại không; tiếng máy ô tô nghe có hợp không (mới kiểm tra bằng mô hình số, chưa nghe bằng tai); nút R có dễ dùng không.
+- Bản 0.12 (chờ người dùng chơi thử): ô tô có dễ lái trên điện thoại không (phải giảm còn 10–15 km/h khi rẽ ở ngã tư); xe có quá to so với làn không; chỉ đường dẫn ô tô đi vòng có hợp lý không hay muốn được bảo quay đầu; mức phạt ô tô rất cao so với tiền công giao hàng (vượt đèn đỏ khoảng 200 chuyến) có làm game quá nặng không. Số khoản/điểm luật ô tô chưa đối chiếu PDF chính thức (mục 8). Bản 0.12.4 (chờ chơi thử): bảng đồng hồ nhỏ trên điện thoại có đủ rõ và hết che đường chưa. Bản 0.12.3: vô lăng và đồng hồ ô tô có dễ nhìn không; tiếng máy ô tô nghe có hợp không (mới kiểm tra bằng mô hình số, chưa nghe bằng tai); nút R có dễ dùng không.
 - Bản 0.11 (chờ người dùng chơi thử): nút 🪖 và 📞 ở góc phải dưới bản đồ nhỏ có dễ bấm trên iPhone không (nút 📞 nhấp nháy to dần); chuông điện thoại và còi CSGT có khó chịu không; hai chốt CSGT có dễ thấy từ xa không và việc bị giữ xe 2 giây có hợp lý không; cứ 2–3 chuyến mới có một cuộc gọi, có quá ít hay quá nhiều không; tiền boa tạm thời (5.000đ), sẽ đổi thành điểm văn hóa ở bản 1.0. Số khoản/điểm của hai lỗi mới chưa đối chiếu toàn văn (mục 8).
 - Thêm lỗi: dừng đỗ sai chỗ, đi vào làn cấm. (Không đội mũ bảo hiểm và dùng điện thoại khi lái đã làm ở bản 0.11.)
 - Âm thanh nhóm C (tiếng phố, chợ) và G (nhạc nền).
 - Nhiều người chơi thật, phòng, giảm NPC khi người chơi tăng.
 - Đo chỉ số thành công khi có người chơi thật.
 - Các câu hỏi mở khác: xem mục "Việc còn bỏ ngỏ" trong `phong-van.md`.
+
+- **Giọng đọc thật (người dùng chốt 16:31 ngày 15/11/2026, làm SAU bản 1.0, một bản riêng):** thu âm sẵn bằng **KorvaTTS** (mã và mô hình đều Apache-2.0, 10 giọng có sẵn, chạy được không cần GPU), game chỉ phát lại file nhỏ nên vẫn mở được bằng nháy đúp. Làm trước phần giọng chỉ đường (ghép từ đoạn ngắn: số mét, tên đường), rồi thử vài câu "đinh" của NPC; tiếng bíp vẫn giữ cho các câu còn lại. Các kho đã xem ngày 15/11: VietVoice TTS (mã MIT nhưng mô hình chưa ghi giấy phép), VieNeu-TTS (mã Apache-2.0, mô hình chưa ghi giấy phép, bản mạnh v4 chỉ qua dịch vụ), Valtec TTS (CC BY-NC, cấm thương mại), VietTTS (mô hình CC BY-NC, cần card NVIDIA, Linux): không dùng. Chỉ clone giọng người đã đồng ý. Cần bật quyền cài gói trong cài đặt mạng của tài khoản để Claude tạo file âm thanh.
 
 *Các việc về đồ họa 3D, mở rộng bản đồ và nâng độ khó đã được xếp vào lộ trình ở mục 10.*
 
@@ -323,7 +326,7 @@ Người dùng yêu cầu lúc 10:57 ngày 12/11/2026 và chốt lúc 08:15 ngà
 | Chế độ ô tô, phần 1: lái được, luật ô tô, dây an toàn, bằng B riêng (chèn thêm theo yêu cầu 15/11/2026) | 1 | **Xong ở bản 0.12** (chờ chơi thử) |
 | Sửa theo góp ý 15/11 (tắt tiếng, biển nhỏ, bảng phạt gọn, quay đầu tự động, cước thực tế) | 1 | **Xong ở bản 0.12.1** (chờ chơi thử) |
 | Sửa theo góp ý 15:00 (ôm cua ở ngã tư, kẹt ở đảo vòng xuyến, kẹt nút rẽ) | 1 | **Xong ở bản 0.12.2** (chờ chơi thử) |
-| Chế độ ô tô, phần 2: vô lăng, đồng hồ, tiếng máy ô tô, nút số lùi | 1 | Xong (bản 0.12.3, 15/11/2026), chờ người dùng chơi thử và nghe thử tiếng máy |
+| Chế độ ô tô, phần 2: vô lăng, đồng hồ, tiếng máy ô tô, nút số lùi | 1 | Xong (bản 0.12.3, chỉnh bố cục điện thoại ở 0.12.4, 15/11/2026), chờ người dùng chơi thử và nghe thử tiếng máy |
 | Hai thanh điểm: luật và văn hóa | 1 | Chưa làm (sau 0.12.3, áp dụng cho cả hai loại xe) |
 | Mở rộng bản đồ gấp 2, chia theo khu | 2 | Chưa làm |
 | Bộ sinh lộ trình NPC tự động | 2 | Chưa làm |

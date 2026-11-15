@@ -51,8 +51,10 @@
   #cockpitCar svg{display:block;width:100%;height:auto}
   body.bike.car #cockpitCar{display:block}
   /* trên điện thoại bảng đồng hồ nằm phía trên hàng nút, phía dưới là nền tối cho dễ nhìn nút */
-  body.bike.car.touch #cockpitCar{bottom:0}
-  body.bike.car.touch #cockpitCar::after{content:'';display:block;height:92px;background:#26252d}
+  /* bản 0.12.4: trên điện thoại chỉ giữ ô đồng hồ nhỏ và nửa vành vô lăng mờ, đặt phía trên hàng nút, không còn nền tối che đường */
+  body.bike.car.touch #cockpitCar{bottom:200px;width:190px}
+  body.bike.car.touch #dashCar{display:none}
+  body.bike.car.touch #wheelCar{opacity:.55}
   #vehRow{background:#fff3e6;border-radius:12px;padding:8px 10px;font-weight:600}
   #vehRow select{font-size:16px;font-weight:600}   /* ô tô: bản 0.12.1 mới có vô lăng */
   /* trên điện thoại ghi đông nằm phía trên hàng nút; thân xe kéo dài xuống mép dưới màn hình */

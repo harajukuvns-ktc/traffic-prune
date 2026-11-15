@@ -1103,7 +1103,8 @@ function resize(){
     ancX = CW / 2; ancY = CH - VH * (isTouch ? 0.33 : 0.2);
     if (bike){
       // đặt xe của người chơi đúng dưới đồng hồ trên ghi đông: tìm khoảng cách d trên canvas sao cho điểm đó chiếu lên màn hình ở độ cao mong muốn
-      const want = VH - (isTouch ? 92 : 0) - Math.min(560, VW) * 0.14;
+      // ô tô trên điện thoại: bảng đồng hồ nhỏ nằm phía TRÊN hàng nút nên xe đặt cao hơn nó, để thấy làn phía trước (bản 0.12.4)
+      const want = isTouch && S.veh === 'car' ? VH - 300 : VH - (isTouch ? 92 : 0) - Math.min(560, VW) * 0.14;
       const th = tilt * Math.PI / 180, oy = VH * originY;
       const scr = d => oy + (VH - d * Math.cos(th) - oy) * persp / (persp + d * Math.sin(th));
       let lo = 0, hi = CH;

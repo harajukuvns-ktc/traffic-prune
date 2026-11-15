@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Traffic Prune · bản chơi thử 0.12.3</title>
+<title>Traffic Prune · bản chơi thử 0.12.4</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%B5%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -74,7 +74,7 @@
 <!-- Góc nhìn "sau vô lăng" của ô tô (bản 0.12.3): bảng đồng hồ, vô lăng xoay theo hướng lái, đèn xi-nhan, chữ số D/R/P -->
 <div id="cockpitCar" aria-hidden="true">
   <svg viewBox="0 0 400 215" preserveAspectRatio="xMidYMax meet">
-    <path d="M0 215 L0 154 C80 142 140 139 200 139 C260 139 320 142 400 154 L400 215 Z" fill="#26252d"/>
+    <path id="dashCar" d="M0 215 L0 154 C80 142 140 139 200 139 C260 139 320 142 400 154 L400 215 Z" fill="#26252d"/>
     <circle cx="200" cy="112" r="36" fill="#1b1a21" stroke="#fffaf2" stroke-width="3.5"/>
     <path d="M176.4 130.5 A30 30 0 1 1 223.6 130.5" fill="none" stroke="#6b6875" stroke-width="3" stroke-linecap="round"/>
     <path d="M227 98.9 A30 30 0 0 1 223.6 130.5" fill="none" stroke="#e5484d" stroke-width="3" stroke-linecap="round"/>
@@ -118,7 +118,7 @@
 <div class="overlay" id="start">
   <div class="card">
     <h1>Traffic Prune</h1>
-    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.12.3)</p>
+    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.12.4)</p>
     <div class="row" id="vehRow">
       <label for="veh">Bạn lái:</label>
       <select id="veh">
