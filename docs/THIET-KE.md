@@ -126,6 +126,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.12.2 | 15/11/2026 | Sửa theo 3 góp ý lúc 15:00, người dùng chốt 15:17 (lỗi 1 ô tô va đảo vòng xuyến bị kẹt, lỗi 2 kẹt phím phải trên điện thoại, lỗi 3 chọn cách 1): trợ lái ôm cua ở ngã tư khi bật xi-nhan; đảo vòng xuyến đẩy xe ra thay vì bật lùi; nút rẽ cảm ứng tự nhả; test mục 18 |
 | 0.12.3 | 15/11/2026 | Người dùng đồng ý kế hoạch lúc 16:07: vô lăng xoay và bảng đồng hồ ô tô (D/R/P, xi-nhan) ở góc nhìn sau vô lăng; tiếng máy ô tô riêng; nút số lùi R (chỉ lùi khi đã dừng hẳn rồi nhấn lại); sửa bài test ôm cua ở ngã tư chập chờn do đơn giao ngẫu nhiên (đơn bảo quay đầu thì xe không ôm cua); test mục 19 |
 | 0.12.4 | 15/11/2026 | Người dùng góp ý lúc 16:27: trên điện thoại vô lăng và đồng hồ che kín xe và một phần đường; chốt cách sửa lúc 16:31 ("1. Đồng ý"). Trên điện thoại bỏ nền tối dày, chỉ còn ô đồng hồ nhỏ và nửa vành vô lăng mờ đặt phía trên hàng nút (`#cockpitCar` bottom 200px, rộng 190px); xe của người chơi đặt cao hơn bảng này (`want = VH - 300` trong `resize`) để thấy làn phía trước. Máy tính giữ nguyên. Chưa vẽ mép nắp capo (để sau nếu cần) |
+| (tài liệu) | 15/11/2026 | Người dùng chốt lúc 16:34: dừng chỉnh góc nhìn sau tay lái / sau vô lăng, để làm lại ở nấc 3D số 2 (mục 10.1); góc dẫn đường vẫn mặc định |
 | (tài liệu) | 14/11/2026 | Ghi dự án Saltline làm nguồn tham khảo cho đồ họa 3D (mục 10.1): học ý tưởng, không chép mã vì không có giấy phép; chưa làm 3D, giữ nguyên lộ trình |
 
 ## 8. Kiểm tra pháp lý
@@ -294,6 +295,8 @@ Ba nấc đồ họa:
 3. Đã chốt có đổi sang bản đồ thành phố thật hay không. Nếu có thì làm 3D cùng lúc với việc đổi bản đồ, tránh làm lại hai lần.
 
 Dấu hiệu thêm: nếu người dùng chơi kiểu nhìn "sau tay lái" (cách A, bản 0.8) mà thấy chưa đủ cảm giác thì đó là lúc nên nâng.
+
+**Góc nhìn sau tay lái / sau vô lăng để cho nấc 2** (người dùng chốt lúc 16:34 ngày 15/11/2026): ở nấc 1 (bản đồ phẳng nghiêng) góc nhìn này khó lái, vì vật ở gần bị kéo méo và không thấy thân xe mình trong làn. Dừng chỉnh, giữ nguyên như bản 0.12.4 làm lựa chọn phụ; góc **dẫn đường** vẫn là mặc định. Khi làm nấc 2, làm lại góc này là **việc chính**: máy quay đặt trong cabin, nhìn qua kính trước, thấy nắp capo (ô tô) hoặc đầu xe (xe máy); dùng lại vô lăng, đồng hồ, chữ D/R/P, tiếng máy đã có. Góp ý đã nhận: trên điện thoại bảng đồng hồ không được che xe và làn phía trước (16:27 ngày 15/11/2026).
 
 Nấc 3 chỉ tính đến khi dự án có thêm người hoặc đã có người chơi thật.
 
