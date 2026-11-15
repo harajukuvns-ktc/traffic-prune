@@ -942,5 +942,95 @@ console.log('\n== 25. Bắt lỗi theo hướng đường (bản đồ thử) ==
   ok(getMap() === M0 && TP.classify(400, 300).t === 'junction' && TP.classify(3600, 1000).t === 'off', 'trả lại bản đồ chơi sau bài test');
 }
 
+// 26) Bản 1.1 bước 6: trợ lái giữ làn, ôm cua, quay đầu tự động và đảo vòng xuyến theo hướng đường (bản đồ thử)
+{
+  console.log('\n== 26. Trợ lái theo hướng đường (bản đồ thử) ==');
+  const {dungBanDo, useMap, getMap, setVehicle, setSignal, uTurn, laneFrame} = TP;
+  const RD = (id, a, b, name, more) => Object.assign({id, a, b, name, cap:'normal', half:40, lanes:1, limit:40}, more || {});
+  // ngã năm có đèn (đại lộ chéo 45°), đường cong, vòng xuyến thứ hai, phố một chiều; đặt xa khu phố cũ (x từ 3000)
+  const T = dungBanDo([
+    {id:'O', x:3600, y:1000, kind:'light', light:{off:0}},
+    {id:'W', x:3000, y:1000, kind:'end'}, {id:'E', x:4400, y:1000, kind:'end'}, {id:'N', x:3600, y:400, kind:'end'}, {id:'NE', x:4000, y:600, kind:'end'},
+    {id:'S', x:3600, y:1600, kind:'plain'}, {id:'R', x:3600, y:2200, kind:'ring', ring:{rOut:100, rIn:48, rLane:76}},
+    {id:'RW', x:3000, y:2200, kind:'end'}, {id:'C2', x:4400, y:2900, kind:'end'},
+    {id:'K', x:3000, y:2800, kind:'end'}, {id:'L', x:3400, y:2800, kind:'end'}
+  ], [
+    RD('ow','W','O','Đường Tây'), RD('oe','O','E','Đường Đông'), RD('on','O','N','Đường Bắc'), RD('cheo','O','NE','Đại lộ Chéo'),
+    RD('os','O','S','Đường Nam'), RD('os2','S','R','Đường Nam'), RD('rw','R','RW','Đường Vòng'),
+    RD('cong','R','C2','Đường Cong', {via:{x:4300, y:2200}}), RD('mot','K','L','Phố Một Chiều', {oneway:true})
+  ], {bays: [], W: 5000, H: 3200});
+  const lane = (id, s, fwd, off) => { const r = T.road(id), p = T.pointAt(r, s), d = fwd ? p.dir : {x: -p.dir.x, y: -p.dir.y}, k = off == null ? 20 : off;
+    return {x: p.x - d.y*k, y: p.y + d.x*k, a: Math.atan2(d.y, d.x)}; };
+  const dat = p => { player.x = p.x; player.y = p.y; player.a = p.a; };
+  const khung = () => { const c = T.classify(player.x, player.y); return {c, f: laneFrame(c, player.a)}; };
+  const s0 = {x: player.x, y: player.y, a: player.a}, M0 = useMap(T);
+  const rs = veh => { reset(); setVehicle(veh || 'bike'); S.assist = true; TP.putOnHelmet(); S.belt = true;
+    S.trip = null; S.route = null; S.ut = null; S.ta = null; for (const q of npcs){ q.hidden = true; q.respawnT = 999; } };
+
+  // a) giữ làn trên đại lộ chéo: xe lệch sát mép phải, trợ lái đưa về tâm làn và xe chạy dọc theo đường
+  const deu = (v, sec) => { for (let i = 0; i < sec/dt; i++){ player.v = v; step(dt); } };   // giữ tốc độ đều 30 km/h, không chạy quá hết đoạn đường thử
+  rs(); dat(lane('cheo', 140, true, 34)); player.a += 0.12; deu(90, 3);
+  { const {c, f} = khung(); ok(c.road && c.road.id === 'cheo' && f && f.fwd && f.dot > 0.995 && Math.abs(f.lat - 20) < 4,
+      `giữ làn trên đường chéo: về tâm làn phải (lệch ${f && f.lat.toFixed(1)}, cần 20), thẳng theo đường (${f && f.dot.toFixed(3)})`); }
+  // b) giữ làn trên đường cong: xe tự bám theo khúc cong, không trôi ra mép hay lấn làn
+  rs(); dat(lane('cong', 60, true)); player.v = 90; { let maxE = 0, off = false;
+    keys.up = true; for (let i = 0; i < 5/dt; i++){ step(dt); const {c, f} = khung();
+      if (!c.road || c.road.id !== 'cong'){ if (T.classify(player.x, player.y).t !== 'ring') off = c.t === 'off'; continue; }
+      if (i*dt > 1) maxE = Math.max(maxE, Math.abs(f.lat - 20)); } keys.up = false;
+    const {c} = khung();
+    ok(!off && c.road && c.road.id === 'cong' && maxE < 8 && T.classify(player.x, player.y).lat > 0,
+      `giữ làn trên đường cong: bám làn phải suốt khúc cong (lệch tối đa ${maxE.toFixed(1)} đơn vị so với tâm làn), đi được ${c.s ? c.s.toFixed(0) : '?'} đơn vị`); }
+  // c) giữ làn ở phố một chiều: vẫn nửa bên phải
+  rs(); dat(lane('mot', 60, true, -15)); deu(90, 3);
+  { const {f} = khung(); ok(f && Math.abs(f.lat - 20) < 4, `giữ làn ở phố một chiều: về nửa bên phải (lệch ${f && f.lat.toFixed(1)})`); }
+
+  // d) ôm cua ở ngã năm chỉ bằng xi-nhan + ga (không bấm nút rẽ)
+  const choXanh = id => { const sl = T.stopLines.find(q => q.road.id === id);
+    while (!(lightOf(sl.L, sl.phase, S.now) === 'green' && lightOf(sl.L, sl.phase, S.now + 7) === 'green')) run(0.1); };
+  const omCua = (veh, from, sFrom, fwd, dir, route) => {
+    rs(veh); choXanh(from); dat(lane(from, sFrom, fwd)); player.v = 90; S.now += 0.1;
+    if (route) S.route = {instr: route, pts: [], remain: 500};
+    setSignal(dir); const m0 = S.money; let was = false, maxOpp = 0;
+    keys.up = true;
+    for (let i = 0; i < 8/dt; i++){ step(dt); if (S.ta) was = true; else if (was) keys.up = false;
+      const {c, f} = khung(); if (was && !S.ta && f && c.road.id !== from) maxOpp = Math.max(maxOpp, -f.lat); }
+    keys.up = false;
+    const {c, f} = khung();
+    return {was, road: c.road && c.road.id, f, maxOpp, clean: S.money === m0 && !Object.keys(S.stats).length, stats: Object.keys(S.stats).join(',') || 'không lỗi'};
+  };
+  const tot = (o, road) => o.was && o.road === road && o.f && o.f.dot > 0.97 && Math.abs(o.f.lat - 20) < 9 && o.maxOpp <= 0 && o.clean;
+  const ghi = o => `(đường ${o.road}, lệch ${o.f ? o.f.lat.toFixed(1) : '?'}, thẳng ${o.f ? o.f.dot.toFixed(3) : '?'}, ${o.stats})`;
+  let o = omCua('bike', 'ow', 470, true, 1);
+  ok(tot(o, 'os'), `ngã năm: xe máy rẽ phải từ Đường Tây sang Đường Nam bằng xi-nhan + ga ${ghi(o)}`);
+  o = omCua('bike', 'ow', 470, true, -1);
+  ok(tot(o, 'on'), `ngã năm: rẽ trái không có chỉ đường thì vào nhánh gần rẽ vuông nhất (Đường Bắc, không phải đại lộ chéo) ${ghi(o)}`);
+  o = omCua('bike', 'ow', 470, true, -1, {type: 'bearleft', dist: 120, street: 'Đại lộ Chéo'});
+  ok(tot(o, 'cheo'), `ngã năm: chỉ đường bảo đi chếch trái vào đại lộ chéo thì xe ôm vào nhánh chéo (lệch 45°) ${ghi(o)}`);
+  o = omCua('car', 'ow', 470, true, 1);
+  ok(tot(o, 'os'), `ngã năm: ô tô rẽ phải sang Đường Nam ${ghi(o)}`);
+  o = omCua('car', 'ow', 470, true, -1);
+  ok(tot(o, 'on'), `ngã năm: ô tô rẽ trái sang Đường Bắc ${ghi(o)}`);
+  // đi từ đại lộ chéo vào ngã năm: rẽ trái 45° sang Đường Nam (nhánh lệch đều 45° và 135° thì chọn nhánh rẽ nhẹ)
+  { const len = T.road('cheo').len; o = omCua('bike', 'cheo', len - 470, false, -1);
+    ok(tot(o, 'os'), `ngã năm: từ đại lộ chéo rẽ trái 45° vào Đường Nam ${ghi(o)}`); }
+  // xi-nhan về phía không có nhánh nào hợp lệ thì không tự lái (đã có test cũ: không xi-nhan thì đi thẳng)
+  // e) quay đầu tự động trên đại lộ chéo: quay ngược đúng hướng đường, vẫn trên mặt đường
+  for (const veh of ['bike', 'car']){
+    rs(veh); dat(lane('cheo', 260, true)); player.v = 60; uTurn(); let ra = false;
+    for (let i = 0; i < 6/dt; i++){ step(dt); if (T.classify(player.x, player.y).t === 'off') ra = true; }
+    const {c, f} = khung();
+    ok(!S.ut && c.road && c.road.id === 'cheo' && f && !f.fwd && f.dot > 0.97 && !ra && S.turn === 0,
+      `${veh === 'car' ? 'ô tô' : 'xe máy'} quay đầu tự động trên đường chéo: ngược hướng đường (thẳng ${f && f.dot.toFixed(3)}), không ra khỏi mặt đường`);
+  }
+  // f) đảo vòng xuyến thứ hai (không phải vòng xuyến của khu cũ): ô tô lao vào đảo thì bị đẩy ra, không xuyên qua, không kẹt
+  rs('car'); player.x = 3600; player.y = 2200 - 76; player.a = Math.PI/2 - 0.3; player.v = 60; { let minD = 1e9, x0 = player.x, y0 = player.y, moved = 0;
+    keys.up = true; keys.right = true;
+    for (let i = 0; i < 3/dt; i++){ const px = player.x, py = player.y; step(dt); moved += Math.hypot(player.x - px, player.y - py); minD = Math.min(minD, Math.hypot(player.x - 3600, player.y - 2200)); }
+    keys.up = false; keys.right = false;
+    ok(minD >= 48 && moved > 60, `ô tô chạm đảo vòng xuyến thứ hai: bị đẩy ra (gần tâm nhất ${minD.toFixed(1)}, đảo bán kính 48), vẫn đi tiếp được (${moved.toFixed(0)} đơn vị)`); }
+  useMap(M0); player.x = s0.x; player.y = s0.y; player.a = s0.a; reset();
+  ok(getMap() === M0, 'trả lại bản đồ chơi sau bài test');
+}
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);

@@ -375,13 +375,26 @@ function setSignal(dir){
   S.sigOnT = S.now; S.sigRunT = 0; S.blinkT = 0; S.blinkOn = S.turn !== 0;
   if (S.turn) SND.tick(true);
 }
+// Khung làn tại chỗ xe (bản 1.1 bước 6): hướng làn xe đang đi theo con đường (đi xuôi a→b hay ngược lại),
+// lệch ngang so với tim đường tính theo chiều đó (dương là bên phải), độ thẳng hàng giữa xe và đường (dot, 0–1).
+function laneFrame(c, a){
+  if (!c || !c.road || !c.dir) return null;
+  const dot = Math.cos(a)*c.dir.x + Math.sin(a)*c.dir.y, f = dot >= 0 ? 1 : -1;
+  return {d: {x: c.dir.x*f, y: c.dir.y*f}, lat: c.lat*f, dot: Math.abs(dot), fwd: f > 0, road: c.road};
+}
+// Tâm làn bên phải mà trợ lái giữ xe (khoảng cách tới tim đường): đường một làn mỗi chiều là nửa của nửa bề rộng (khu cũ: 20).
+// Phố một chiều cũng giữ nửa bên phải (người dùng chốt 20:22 ngày 15/11/2026), khác laneOff của chỉ đường / NPC (đi giữa phố).
+const assistOff = r => r.half * (1 - 1 / (2 * Math.max(1, r.lanes || 1)));
 // Quay đầu tự động (phím U / nút ↩): xe tự bật xi-nhan trái, giảm tốc đến mức bò rồi bẻ lái trái một nửa vòng cho tới khi quay ngược hướng.
 // Người chơi vẫn chịu luật: đè vạch liền, đi ngược chiều, va chạm… vẫn bị phạt như thường. Bấm phanh, bấm lái hoặc bấm U lần nữa thì hủy.
+// Từ bản 1.1 bước 6: quay ngược đúng theo hướng con đường đang đi (kể cả đường chéo, đường cong); ngoài đường thì làm tròn như cũ.
 function uTurn(){
   if (S.ut){ endUTurn(); return; }
-  if (S.suspended || S.paused || player.stun > 0 || classify(player.x, player.y).t === 'bay') return;
-  const q = Math.PI / 2;
-  S.ut = {target: normA(Math.round(player.a / q) * q + Math.PI), end: S.now + 7, sig: S.turn !== -1};
+  const c = classify(player.x, player.y);
+  if (S.suspended || S.paused || player.stun > 0 || c.t === 'bay') return;
+  const f = laneFrame(c, player.a), q = Math.PI / 2;
+  const target = f ? Math.atan2(-f.d.y, -f.d.x) : normA(Math.round(player.a / q) * q + Math.PI);
+  S.ut = {target, end: S.now + 7, sig: S.turn !== -1};
   if (S.turn !== -1) setSignal(-1);
 }
 function endUTurn(){
@@ -390,32 +403,66 @@ function endUTurn(){
 }
 // Trợ lái vào cua (bản 0.12.2): đã bật xi-nhan và sắp vào ngã tư (có trợ lái giữ làn) thì xe tự ôm cua theo
 // một đường cong vào đúng làn bên phải của đường mới; người chơi lo ga, phanh, đèn. Bấm nút rẽ là tự lái lại.
+// Từ bản 1.1 bước 6: chạy ở mọi nút giao của MAP (không phải vòng xuyến), nhánh vào và nhánh ra theo góc bất kỳ.
 const TURN_CAP = {bike: 45, car: 36};   // tốc độ tối đa khi đang ôm cua: xe máy 15 km/h, ô tô 12 km/h
-function turnPath(J, din, dir, veh){
+const TURN_ANG = {min: 30 * Math.PI / 180, max: 150 * Math.PI / 180};   // nhánh lệch 30°–150° về phía xi-nhan mới ôm cua
+// J: tâm nút; din: hướng xe đi vào; dout: hướng nhánh ra; dir: 1 phải, -1 trái; opt: {offIn, offOut (tâm làn), gapOut, node}
+function turnPath(J, din, dir, veh, dout, opt){
+  opt = opt || {};
   const rn = d => ({x: -d.y, y: d.x});   // pháp tuyến bên phải theo chiều đi (trục y hướng xuống)
-  const dout = dir > 0 ? rn(din) : {x: din.y, y: -din.x};
-  const a = rn(din), b = rn(dout);
-  const C = {x: J.x + a.x*20 + b.x*20, y: J.y + a.y*20 + b.y*20};
-  const R = dir > 0 ? (veh === 'car' ? 36 : 20) : 40;
+  if (!dout) dout = dir > 0 ? rn(din) : {x: din.y, y: -din.x};
+  const a = rn(din), b = rn(dout), oi = opt.offIn == null ? 20 : opt.offIn, oo = opt.offOut == null ? 20 : opt.offOut;
+  // góc C: giao điểm của tim làn vào và tim làn ra (ngã tư vuông khu cũ: J + 20 bên phải mỗi nhánh, như trước)
+  const cr = (u, v) => u.x*v.y - u.y*v.x;
+  const wx = b.x*oo - a.x*oi, wy = b.y*oo - a.y*oi, t = cr({x: wx, y: wy}, dout) / cr(din, dout);
+  const C = {x: J.x + a.x*oi + din.x*t, y: J.y + a.y*oi + din.y*t};
+  // bán kính cua (đo ở ngã tư vuông); góc rẽ khác 90° thì đoạn tiếp tuyến = bán kính × tan(nửa góc rẽ)
+  const R0 = dir > 0 ? (veh === 'car' ? 36 : 20) : 40;
+  const th = Math.abs(Math.atan2(cr(din, dout), din.x*dout.x + din.y*dout.y));
+  const R = Math.min(90, R0 * Math.tan(th / 2));
   const E = {x: C.x - din.x*R, y: C.y - din.y*R}, X = {x: C.x + dout.x*R, y: C.y + dout.y*R};
   const pts = [{x: E.x - din.x*90, y: E.y - din.y*90}];
   for (let i = 0; i <= 12; i++){ const t = i / 12, u = 1 - t;
     pts.push({x: u*u*E.x + 2*u*t*C.x + t*t*X.x, y: u*u*E.y + 2*u*t*C.y + t*t*X.y}); }
   pts.push({x: X.x + dout.x*90, y: X.y + dout.y*90});
-  return {pts, dout, J, end: S.now + 9};
+  return {pts, dout, J, node: opt.node, gapOut: opt.gapOut == null ? HALF : opt.gapOut, end: S.now + 9};
+}
+// Chọn nhánh ra cho trợ lái ôm cua tại nút nd khi xe vào từ nhánh `inArm`: các nhánh cho xe, đi được theo loại xe và chiều phố một chiều,
+// lệch 30°–150° về phía xi-nhan. Chỉ đường đang dẫn rẽ về phía đó thì chọn nhánh mang tên đường của chỉ dẫn; không thì nhánh gần rẽ vuông nhất.
+function turnArmChoice(nd, inArm, dir, instr){
+  const din = {x: -inArm.out.x, y: -inArm.out.y}, cand = [];
+  for (const arm of nd.arms){
+    const r = arm.road;
+    if (arm === inArm || !r.veh) continue;
+    if (r.oneway && arm.end !== 'a') continue;                    // phố một chiều chỉ đi được từ a sang b
+    if (S.veh === 'car' ? r.noCar : r.noBike) continue;
+    const ang = Math.atan2(din.x*arm.out.y - din.y*arm.out.x, din.x*arm.out.x + din.y*arm.out.y);   // dương là rẽ phải
+    if (Math.sign(ang) !== dir || Math.abs(ang) < TURN_ANG.min || Math.abs(ang) > TURN_ANG.max) continue;
+    cand.push({arm, ang});
+  }
+  if (!cand.length) return null;
+  const sideOk = instr && (dir > 0 ? /right$/ : /left$/).test(instr.type || '');
+  const byName = sideOk ? cand.find(q => q.arm.road.name === instr.street) : null;
+  // gần rẽ vuông nhất; hai nhánh lệch đều nhau (ví dụ 45° và 135°) thì chọn nhánh rẽ nhẹ hơn
+  const lech = q => Math.abs(Math.abs(q.ang) - Math.PI/2);
+  return byName || cand.reduce((p, q) => lech(q) < lech(p) - 0.02 || (Math.abs(lech(q) - lech(p)) <= 0.02 && Math.abs(q.ang) < Math.abs(p.ang)) ? q : p);
 }
 function turnAssistStart(){
   if (S.ta || S.ut || !S.assist || !S.turn || phoneDriving() || player.v < 0) return;
   const r = S.route && S.route.instr;
   if (r && r.type === 'uturn' && r.dist < 120) return;   // định quay đầu thì không ôm cua
-  const ca = Math.cos(player.a), sa = Math.sin(player.a);
-  if (Math.max(Math.abs(ca), Math.abs(sa)) < 0.93) return;
-  const din = Math.abs(ca) > Math.abs(sa) ? {x: Math.sign(ca), y: 0} : {x: 0, y: Math.sign(sa)};
-  for (const v of VR) for (const h of HR){
-    if (Math.hypot(v.x - RB.x, h.y - RB.y) < 1) continue;   // đó là vòng xuyến
-    const fx = (v.x - player.x)*din.x + (h.y - player.y)*din.y, lat = Math.abs((v.x - player.x)*din.y - (h.y - player.y)*din.x);
-    if (fx > HALF - 4 && fx < HALF + STOPG + 50 && lat < HALF){ S.ta = turnPath({x: v.x, y: h.y}, din, S.turn, S.veh); return; }
-  }
+  const c = classify(player.x, player.y), f = laneFrame(c, player.a);
+  if (!f || !f.road.veh || f.dot < 0.93) return;          // phải đang trên đường, đi gần thẳng theo đường
+  const end = f.fwd ? 'b' : 'a', nd = MAP.nodes[f.fwd ? f.road.b : f.road.a];
+  if (!nd.junction) return;                                 // vòng xuyến, mép bản đồ, đầu phố đi bộ: không ôm cua
+  const inArm = nd.arms.find(q => q.road === f.road && q.end === end);
+  const left = f.fwd ? f.road.len - c.s : c.s, gapIn = (end === 'a' ? f.road.gapA : f.road.gapB).gap;
+  if (!(left > gapIn - 4 && left < gapIn + STOPG + 50)) return;
+  const ch = turnArmChoice(nd, inArm, S.turn, r && r.dist < left + 80 ? r : null);
+  if (!ch) return;
+  const ro = ch.arm.road;
+  S.ta = turnPath({x: nd.x, y: nd.y}, {x: -inArm.out.x, y: -inArm.out.y}, S.turn, S.veh, ch.arm.out,
+    {offIn: assistOff(f.road), offOut: assistOff(ro), gapOut: (ch.arm.end === 'a' ? ro.gapA : ro.gapB).gap, node: nd.id});
 }
 function turnAssistSteer(dt, rate){
   const T = S.ta, P = T.pts;
@@ -428,7 +475,7 @@ function turnAssistSteer(dt, rate){
   }
   const hdOut = Math.cos(player.a)*T.dout.x + Math.sin(player.a)*T.dout.y;
   const past = (player.x - T.J.x)*T.dout.x + (player.y - T.J.y)*T.dout.y;
-  if (bd > 45 || S.now > T.end || (hdOut > 0.998 && past > HALF + 30) || past > HALF + 80){ S.ta = null; return; }
+  if (bd > 45 || S.now > T.end || (hdOut > 0.998 && past > T.gapOut + 30) || past > T.gapOut + 80){ S.ta = null; return; }
   // nhìn trước khoảng 18 đơn vị dọc theo đường cong
   let k = bi + 1, need = 18, q = P[k];
   while (k < P.length - 1){ const sg = Math.hypot(P[k+1].x - P[k].x, P[k+1].y - P[k].y); if (sg >= need) { q = {x: P[k].x + (P[k+1].x - P[k].x)*need/sg, y: P[k].y + (P[k+1].y - P[k].y)*need/sg}; break; } need -= sg; k++; q = P[k]; }
@@ -1166,8 +1213,11 @@ function laneAssist(c, dt){
     if (ca*d.x + sa*d.y < 0.8) return;
     base = Math.atan2(d.y, d.x); e = (player.x - b.cx) * -d.y + (player.y - b.cy) * d.x; k = 28;
   }
-  if (c.t === 'h' && Math.abs(ca) > 0.8){ const dx = ca >= 0 ? 1 : -1; base = dx > 0 ? 0 : Math.PI; e = (player.y - (c.Y + 20*dx)) * dx; }
-  else if (c.t === 'v' && Math.abs(sa) > 0.8){ const dy = sa >= 0 ? 1 : -1; base = dy > 0 ? Math.PI/2 : -Math.PI/2; e = (player.x - (c.X - 20*dy)) * -dy; }
+  // trên đường (ngang, dọc, chéo hay cong): nắn theo hướng đường tại chỗ xe, về tâm làn bên phải (bản 1.1 bước 6)
+  else if (c.road && c.road.veh && c.dir){
+    const f = laneFrame(c, player.a);
+    if (f.dot > 0.8){ base = Math.atan2(f.d.y, f.d.x); e = f.lat - assistOff(f.road); }
+  }
   if (base === null) return;
   const target = base - clamp(e / k, -lim, lim);
   player.a = normA(player.a + normA(target - player.a) * Math.min(1, dt * 3.5));
@@ -1222,7 +1272,7 @@ function updPlayer(dt){
       const cap = TURN_CAP[S.veh];
       if (player.v > cap) player.v = Math.max(cap, player.v - V.brake * 0.8 * dt);
       // đã vào trong ngã tư thì giữ xe bò tiếp cho khỏi đứng giữa giao lộ (trước vạch dừng thì không tự chạy)
-      const inJ = Math.abs(player.x - S.ta.J.x) < HALF && Math.abs(player.y - S.ta.J.y) < HALF;
+      const inJ = prevC.t === 'junction' && prevC.node === S.ta.node;
       if (inJ && !braking && player.v < V.crawl) player.v = Math.min(V.crawl, player.v + V.crawlAcc * dt);
     }
   }
@@ -1248,9 +1298,10 @@ function updPlayer(dt){
   if (houseAt(nx, ny, player.a) && !houseAt(player.x, player.y, player.a)){ player.v *= -0.25; }
   else { player.x = nx; player.y = ny; }
   // Đảo giữa vòng xuyến: đẩy xe ra ngoài mép đảo và cho trượt dọc theo mép (trước đây xe bật lùi rồi kẹt cứng)
+  // (bản 1.1 bước 6: áp dụng cho mọi vòng xuyến của MAP)
   { const pad = S.veh === 'car' ? V.w / 2 : 3; let hit = false;
-    for (const q of bodyPts(player.x, player.y, player.a)){
-      const dx = q.x - RB.x, dy = q.y - RB.y, d = Math.hypot(dx, dy) || 1, need = RB.rIn + pad - d;
+    for (const g of MAP.rings) for (const q of bodyPts(player.x, player.y, player.a)){
+      const dx = q.x - g.x, dy = q.y - g.y, d = Math.hypot(dx, dy) || 1, need = g.rIn + pad - d;
       if (need > 0){ player.x += dx / d * need; player.y += dy / d * need; hit = true; }
     }
     if (hit && !S.islandHit){ player.v *= 0.5; SND.thud(); }
@@ -2324,4 +2375,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {useMap, getMap: () => MAP, classifyOld, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {useMap, getMap: () => MAP, classifyOld, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, turnArmChoice, laneFrame, assistOff, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
