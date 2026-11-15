@@ -5,7 +5,8 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
-  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.lastSteer = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
+  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.lastSteer = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null;
+  S.helmet = true; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callAt = -1; S.callIn = 99; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -399,6 +400,62 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(tm === 'sac,huyen,hoi,nga,nang,ngang', 'nhận đúng 6 dấu thanh: ' + tm);
   ok(TP.voiceOf('Bác tài xe buýt').cao < TP.voiceOf('Bác xe ôm').cao && TP.voiceOf('Bác xe ôm').cao < TP.voiceOf('Cô bán xôi').cao,
      'giọng xe buýt trầm nhất, bác xe ôm trầm hơn cô bán xôi'); }
+
+// 15) Mũ bảo hiểm, chốt CSGT và cuộc gọi của khách (bản 0.11)
+{ const {CSGT, putOnHelmet, answerCall, phoneDriving, LAW, QUIZ} = TP;
+  const snap = () => ({h: S.stats.helmet || 0, p: S.stats.phone || 0, pts: S.pts, money: S.money});
+  // đặt xe ở (x,y) hướng a, giữ tốc độ kmh trong sec giây (xe vẫn chạy bình thường nếu bị chốt dừng lại)
+  const go = (x, y, a, kmh, sec) => { clearNear(x, y, 500); player.x = x; player.y = y; player.a = a; player.v = kmh * 3; S.money = 5000000;
+    for (let i = 0; i < sec/dt; i++){ if (player.stun <= 0) player.v = kmh * 3; step(dt); } };
+  ok(LAW.helmet.fine === 500000 && LAW.helmet.pts === 0 && LAW.phone.fine === 900000 && LAW.phone.pts === 4, 'mức phạt mũ 500.000đ không trừ điểm, điện thoại 900.000đ trừ 4 điểm');
+  ok(QUIZ.some(q => /mũ bảo hiểm/.test(q.q)) && QUIZ.some(q => /gọi điện/.test(q.q)), 'bài kiểm tra có câu về mũ bảo hiểm và điện thoại');
+  ok(CSGT.length === 2, 'có hai chốt CSGT');
+
+  // a) đầu trần qua chốt Đường Hoa Sữa: phạt, còi, dừng xe
+  reset(); S.helmet = false; let b = snap(); go(940, 320, 0, 20, 1.2);
+  let d = snap();
+  ok(d.h === 1 && d.pts === b.pts && 5000000 - S.money === 500000, `đầu trần qua chốt: bị phạt 500.000đ, không trừ điểm (mắc ${d.h} lần, tiền ${S.money})`);
+  ok(player.stun > 0 && Math.abs(player.v) < 1, 'bị CSGT dừng xe khoảng 2 giây');
+  // b) đang bị dừng rồi chạy lại qua chốt thì chưa phạt lại trong 8 giây
+  go(940, 320, 0, 20, 1.2); ok((S.stats.helmet || 0) === 1, 'qua lại chốt trong 8 giây không bị phạt lần hai');
+  // c) đội mũ rồi thì qua chốt bình thường
+  reset(); S.helmet = false; putOnHelmet(); ok(S.helmet, 'bấm Đội mũ thì đã đội mũ');
+  go(940, 320, 0, 20, 1.2); ok(!(S.stats.helmet) && S.money === 5000000 && player.stun <= 0, 'đã đội mũ qua chốt: không bị phạt, không bị dừng');
+  // d) chiều ngược lại và chốt thứ hai (Đường Cầu Vồng)
+  reset(); S.helmet = false; go(1040, 280, Math.PI, 20, 1.5); ok(S.stats.helmet === 1, 'đầu trần chạy ngược chiều qua chốt Hoa Sữa cũng bị phạt');
+  reset(); S.helmet = false; go(1180, 650, Math.PI/2, 20, 1.5); ok(S.stats.helmet === 1, 'đầu trần qua chốt Đường Cầu Vồng bị phạt');
+  // e) xe đứng yên ở sát chốt không bị tính
+  reset(); S.helmet = false; go(1000, 320, 0, 0, 1); ok(!(S.stats.helmet), 'đứng yên ngay chốt không bị phạt (chỉ tính khi chạy qua)');
+
+  // f) cuộc gọi: bỏ lỡ thì không mất gì
+  reset(); clearNear(450, 960, 400); player.x = 450; player.y = 960; player.v = 0; S.money = 5000000;
+  S.callAt = S.now + 1; run(2); ok(S.call && S.call.state === 'ring', 'đến giờ thì điện thoại đổ chuông');
+  run(13); ok(!S.call && S.stats.callMiss === 1 && S.money === 5000000 && S.pts === 12, 'không nghe máy: cuộc gọi tự tắt, không mất tiền hay điểm');
+  // g) nghe máy khi đỗ trong ô P: không vi phạm, được boa
+  reset(); const bay = BAYS[9]; clearNear(bay.cx, bay.cy, 400); player.x = bay.cx; player.y = bay.cy; player.a = Math.atan2(bay.dir.y, bay.dir.x); player.v = 0; S.money = 5000000;
+  S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
+  let everDriving = false; for (let i = 0; i < 9/dt; i++){ step(dt); if (phoneDriving()) everDriving = true; }
+  ok(S.call === null && !everDriving && S.stats.callOk === 1 && S.money === 5020000 && S.pts === 12, `nghe máy khi đỗ trong ô P: được boa 20.000đ (tiền ${S.money})`);
+  // h) cầm điện thoại khi chạy qua chốt: phạt 900.000đ, trừ 4 điểm, chỉ một lần mỗi cuộc gọi
+  reset(); S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
+  go(940, 320, 0, 20, 1.2); ok(phoneDriving() && S.stats.phone === 1 && S.pts === 8 && 5000000 - S.money === 900000, `vừa lái vừa nghe qua chốt: phạt 900.000đ, trừ 4 điểm (điểm ${S.pts}, tiền ${S.money})`);
+  go(1040, 280, Math.PI, 20, 1.5); ok(S.stats.phone === 1, 'cùng một cuộc gọi chỉ bị phạt một lần');
+  // i) camera ngã tư cũng chụp người cầm điện thoại
+  reset(); S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
+  go(420, 440, -Math.PI/2, 20, 1.2); ok(S.stats.phone === 1 && S.pts <= 8, 'cầm điện thoại qua vạch dừng ngã tư có camera: bị chụp và phạt lỗi điện thoại (nếu gặp đèn đỏ thì còn lỗi đèn đỏ riêng)');
+  // j) nghe máy khi đứng giữa đường (đèn đỏ) vẫn là đang lái
+  reset(); S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
+  clearNear(450, 960, 400); player.x = 700; player.y = 320; player.v = 0; ok(phoneDriving(), 'đứng giữa lòng đường mà đang nghe máy vẫn tính là đang lái');
+  // k) một tay cầm máy: lái khó hơn và trợ lái tắt
+  const turn = hold => { reset(); clearNear(450, 320, 400); player.x = 450; player.y = 320; player.a = 0; player.v = 40 * 3; S.lastSteer = -99;
+    if (hold){ S.call = {state: 'talk', t: 8, drove: false, fined: false, warned: true, dT: 0}; } keys.right = true;
+    for (let i = 0; i < 0.5/dt; i++){ player.v = 120; step(dt); } keys.right = false; return player.a; };
+  const aFree = turn(false), aPhone = turn(true);
+  ok(aPhone < aFree * 0.85 && aPhone > 0, `cầm điện thoại thì rẽ chậm hơn (${aPhone.toFixed(2)} so với ${aFree.toFixed(2)} rad)`);
+  // l) người đi đường nhắc khi đầu trần chạy lâu
+  reset(); S.helmet = false; const nb = npcs[0]; nb.hidden = false; nb.v = 0; S.noHelmT = 7.9; S.helmSaidT = -99; player.x = nb.x + 100; player.y = nb.y; player.v = 60; step(dt); player.x = nb.x + 100; player.y = nb.y; player.v = 60; run(0.5);
+  ok(S.helmSaidT > -99 && !(S.stats.helmet), 'đầu trần chạy lâu: người đi đường nhắc, chưa phạt');
+}
 
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);

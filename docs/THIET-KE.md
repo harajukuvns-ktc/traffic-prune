@@ -31,7 +31,7 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 - **Quyền riêng tư.** Chỉ lưu thông tin người chơi tự khai báo và cách họ chơi; bản thử nghiệm chỉ lưu trên máy người chơi.
 - **Ưu tiên điện thoại, chơi được trên máy tính**, chạy ngay trên trình duyệt, không cần cài.
 
-## 3. Đã có trong bản 0.10
+## 3. Đã có trong bản 0.11
 
 | Mảng | Nội dung |
 |---|---|
@@ -42,11 +42,12 @@ Dự án cá nhân, phục vụ cộng đồng. Một người phụ trách, kh�
 | Góc nhìn | Ba kiểu, đổi vòng bằng một nút: **dẫn đường** (mặc định, nghiêng 57°, xoay theo hướng xe) → **sau tay lái** (`S.view = 'bike'`: máy quay thấp và sát xe, nghiêng 75°, không vẽ xe người chơi mà hiện ghi đông + đồng hồ tốc độ ở mép dưới) → **bản đồ** nhìn từ trên xuống. Kiểu sau tay lái vẫn là tấm bản đồ phẳng nghiêng đi (cách A), nhà chưa có tường; góc nhìn thứ nhất 3D thật (cách B) để sau |
 | Chỉ đường | Vạch chấm xanh mảnh + bảng chỉ dẫn rẽ; không bao giờ dẫn qua Phố Chợ (phố đi bộ), không bảo quay đầu ở đoạn vạch liền; luôn dẫn vào ô đỗ theo đúng chiều của ô (ô ở lề bên kia thì bảo quay đầu); giọng đọc tiếng Việt của trình duyệt |
 | Điều khiển | Ga, phanh (Space: chỉ phanh), rẽ; trợ lái giữ làn và giữ xe thẳng trong ô đỗ (tắt được); trên điện thoại: bên trái hai nút rẽ **◀ ▶ to (72–76 điểm ảnh) nằm cạnh nhau** và nút ▼ (phanh rồi lùi) nhỏ hơn nằm giữa bên dưới (bỏ nút ▲ vì đã có GA), PHANH và GA bên phải; đặt ngón vào ◀ ▶ là giữ, trượt sang nút kia hay lệch ra ngoài mép vẫn tính là đang giữ, chỉ nhấc ngón lên mới nhả (`.steer` trong `index.html`). **Cua chậm (từ bản 0.10.3):** giữ phím rẽ mà không bấm ga thì xe tự giữ khoảng 11 km/h (không áp dụng khi đang phanh hoặc lùi); đi chậm thì quay vòng hẹp, bán kính khoảng 2,5 m (tốc độ góc = vận tốc/10, tối đa 3,3 rad/giây, giảm dần về 2,4 từ 13 đến 27 km/h, trên đó giữ 2,4 như cũ); trợ lái chờ 1 giây sau khi nhả phím rẽ mới nắn xe, và không nắn trong 6 giây đầu sau khi bật xi-nhan (ngoài ô đỗ). **Xi-nhan:** phím Q (trái), E (phải); trên điện thoại hai nút nhỏ "◀ xi-nhan" và "xi-nhan ▶" ngay phía trên chữ thập; bấm lại đúng bên để tắt, không tự tắt. Đèn nháy 0,7 giây một nhịp trên thanh thông tin, ghi đông (góc sau tay lái) và trên xe, có tiếng tích/tắc; bảng cảnh báo nhắc "bật xi-nhan" khi còn ≤ 60 m tới chỗ rẽ, và khi cần quay đầu |
-| Lỗi bắt được | Vượt đèn đỏ (đầu xe qua vạch dừng), **đi vào phố đi bộ có biển cấm xe máy** (2–3 triệu, trừ 2 điểm; mỗi lần vào chỉ phạt một lần, nghỉ 4 giây mới xét lại), **rẽ ở ngã tư hoặc quay đầu không bật xi-nhan đúng bên, đúng lúc** (600–800 nghìn, không trừ điểm; phải bật trước khi bắt đầu rẽ, cho trễ 0,25 giây; không bắt khi cắt vạch đứt để vượt), đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến, đi ngược chiều trong vòng xuyến, gây va chạm khi đang vi phạm. **Chỉ nhắc nhở** (không phạt tiền, không trừ điểm, chuyến không tính sạch): đỗ trong ô P mà đầu xe ngược chiều đi. NPC cũng nhắc (không phạt) khi quên tắt xi-nhan, đi thẳng hơn 10 giây. Lỗi "đi ngược chiều phố một chiều" (`wrongway`) vẫn còn trong `js/luat.js` nhưng tạm không có trong Sổ tay vì bản đồ hiện chưa còn phố một chiều; sẽ có lại ở bản đồ mở rộng (giai đoạn 2) |
+| Lỗi bắt được | Vượt đèn đỏ (đầu xe qua vạch dừng), **đi vào phố đi bộ có biển cấm xe máy** (2–3 triệu, trừ 2 điểm; mỗi lần vào chỉ phạt một lần, nghỉ 4 giây mới xét lại), **rẽ ở ngã tư hoặc quay đầu không bật xi-nhan đúng bên, đúng lúc** (600–800 nghìn, không trừ điểm; phải bật trước khi bắt đầu rẽ, cho trễ 0,25 giây; không bắt khi cắt vạch đứt để vượt), đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến, đi ngược chiều trong vòng xuyến, gây va chạm khi đang vi phạm. **không đội mũ bảo hiểm khi qua chốt CSGT** (500.000đ) và **cầm điện thoại khi lái qua chốt hoặc camera** (900.000đ, trừ 4 điểm) (bản 0.11). **Chỉ nhắc nhở** (không phạt tiền, không trừ điểm, chuyến không tính sạch): đỗ trong ô P mà đầu xe ngược chiều đi. NPC cũng nhắc (không phạt) khi quên tắt xi-nhan, đi thẳng hơn 10 giây. Lỗi "đi ngược chiều phố một chiều" (`wrongway`) vẫn còn trong `js/luat.js` nhưng tạm không có trong Sổ tay vì bản đồ hiện chưa còn phố một chiều; sẽ có lại ở bản đồ mở rộng (giai đoạn 2) |
+| Mũ, điện thoại, chốt CSGT (từ bản 0.11) | **Mũ bảo hiểm:** mỗi buổi chơi bắt đầu đầu trần (chip đỏ "🪖 Chưa đội mũ", dòng nhắc 💡), bấm nút lớn **🪖 Đội mũ** (phím H) là đội một lần cho cả buổi (không lưu khi tải lại trang; "Chơi lại từ đầu" thì bỏ mũ). **Chốt CSGT:** hai chốt cố định (`CSGT` trong `js/ban-do.js`): Đường Hoa Sữa tại x = 990 (giữa Phố Chợ và Đường Cầu Vồng) và Đường Cầu Vồng tại y = 700 (giữa hai ngã tư), vẽ chòi, chú CSGT áo vàng, cọc tiêu và vạch đứt cam ngang đường. Xe chạy qua vạch kiểm tra (từ 5 km/h, cả hai chiều, nghỉ 8 giây giữa hai lần) mà **đầu trần** thì CSGT thổi còi, xe bị giữ lại khoảng 2 giây, phạt 500.000đ (400–600 nghìn, không trừ điểm); đã đội mũ thì hiện "đủ mũ, mời đi". NPC nhắc (không phạt) khi thấy đầu trần chạy hơn 8 giây, mỗi 45 giây một lần. **Điện thoại:** cứ 2–3 chuyến thì khách gọi (đổ chuông 12 giây, nút **📞 Nghe máy** hoặc phím C; không nghe thì nhỡ máy, không mất gì). Nghe máy **khi đỗ trong ô P** (dừng dưới 12 km/h) thì không vi phạm; hết 8 giây khách boa **20.000đ** (tạm, bản 1.0 đổi thành điểm văn hóa). Nghe máy **khi chạy, đứng giữa đường hay dừng đèn đỏ** là đang vừa lái vừa cầm điện thoại: trợ lái tắt, rẽ chậm hơn 30%, và nếu qua chốt CSGT hoặc qua vạch dừng có camera trong lúc đó thì phạt 900.000đ (800.000–1 triệu) và trừ 4 điểm (mỗi cuộc gọi phạt một lần); không gặp chốt hay camera thì chỉ bị NPC nhắc sau 3 giây. Điện thoại gắn trên xe để xem bản đồ (màn hình dẫn đường của game) không bị coi là vi phạm. Mã: `putOnHelmet`, `phoneDriving`, `answerCall`, `updCall`, `csgtCheck` ở mục 6b của `js/game.js` |
 | Hậu quả | Phạt tiền + trừ điểm GPLX; đền 50.000đ mỗi xe bị làm kẹt (xe buýt 100.000đ), 1.500.000đ khi va chạm có lỗi; NPC nói câu nhắc; hết điểm thì dừng xe, làm bài kiểm tra 5 câu (đúng ≥ 4) để phục hồi |
 | Văn hóa (mới có một phần) | Nhắc khi dừng giữa đường, khi leo vỉa hè gặp người đi bộ, khi bám đuôi; NPC bấm còi khi bị chặn |
 | Kinh tế | Tiền công theo quãng đường; thưởng đi sạch tăng theo chuỗi; 5 chuyến sạch liên tiếp hồi 1 điểm GPLX |
-| Âm thanh | Tiếng máy (xe số 4 số; xe tay ga tiếng cao, đều, có tiếng rít curoa; chọn trong bảng 🔊), đèn vàng/xanh, còi CSGT, máy ảnh phạt nguội, còi NPC, nhạc thưởng, giọng chỉ đường (Web Audio, không file). Trên iPhone, âm thanh được mở khóa lúc nhấc tay khỏi màn hình; bảng 🔊 báo âm thanh đang chạy hay bị chặn |
+| Âm thanh | Tiếng máy (xe số 4 số; xe tay ga tiếng cao, đều, có tiếng rít curoa; chọn trong bảng 🔊), đèn vàng/xanh, còi CSGT, máy ảnh phạt nguội, chuông điện thoại, còi NPC, nhạc thưởng, giọng chỉ đường (Web Audio, không file). Trên iPhone, âm thanh được mở khóa lúc nhấc tay khỏi màn hình; bảng 🔊 báo âm thanh đang chạy hay bị chặn |
 | Giọng NPC | Kiểu game: chữ hiện dần, mỗi tiếng (âm tiết) một tiếng bíp, cao độ uốn theo dấu thanh tiếng Việt; mỗi kiểu nhân vật một giọng (bảng `GIONG` trong `js/cau-thoai.js`); im khi giọng chỉ đường đang đọc |
 
 ## Bản chơi trên mạng
@@ -116,6 +117,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.10.1 | 14/11/2026 | Người dùng góp ý (không cần hỏi lại): người đi bộ chỉ tính đụng khi cách xe khoảng 0,5 m (2 đơn vị, trước là 2,5 m); phạt tốc độ khi vượt từ 5 km/h liên tục 3 giây (trước là 1 giây), mỗi đoạn một lần |
 | 0.10.2 | 14/11/2026 | Người dùng chốt: phạt tốc độ bằng camera phạt nguội tại vạch dừng ngã tư có đèn (cả đèn xanh), giữa hai ngã tư chỉ nhắc nhở và không mất chuyến sạch; cả khối Phố Bánh Mì giữa hai ngã tư giới hạn 30 km/h (biển 30 và "Trẻ em" sau mỗi ngã tư); camera vẽ trên cột đèn; lời thoại NPC mới (`speedcam`, `speedcamschool`, `speedwarn`, `speedwarnschool`) |
 | 0.10.3 | 15/11/2026 | Người dùng góp ý quay đầu khó trên điện thoại, chốt cả 4 đề xuất: giữ phím rẽ thì xe tự giữ khoảng 11 km/h; quay vòng hẹp khi đi chậm (bán kính khoảng 2,5 m); trợ lái chờ 1 giây sau khi nhả phím rẽ và không giành lái khi đang bật xi-nhan; nút cảm ứng: bỏ ▲, ◀ ▶ to cạnh nhau và trượt ngón vẫn giữ, ▼ nằm giữa bên dưới. Test mới: quay đầu lọt lòng đường trong 1,2 giây |
+| 0.11 | 15/11/2026 | Giai đoạn 1, đợt 3: mũ bảo hiểm (đội một lần mỗi buổi chơi, nút 🪖/phím H), hai chốt CSGT cố định, khách gọi điện (nút 📞/phím C, nghe khi đỗ trong ô P được boa 20.000đ, vừa lái vừa nghe bị phạt tại chốt hoặc camera); lỗi mới `helmet` (500.000đ) và `phone` (900.000đ, trừ 4 điểm); 2 câu hỏi mới trong bài kiểm tra; lời thoại NPC mới; test mục 15; chỉnh CSS điện thoại (chip không bị nút góc phải đè, màn hình ngang bỏ chữ nhãn). Người dùng chốt lúc 12:12: 1b, 2, 3, 4 đồng ý |
 | (tài liệu) | 14/11/2026 | Ghi dự án Saltline làm nguồn tham khảo cho đồ họa 3D (mục 10.1): học ý tưởng, không chép mã vì không có giấy phép; chưa làm 3D, giữ nguyên lộ trình |
 
 ## 8. Kiểm tra pháp lý
@@ -186,6 +188,21 @@ Hai lượt: (1) Claude Opus đọc **toàn văn** NĐ 168/2024 và NĐ 238/2026
 - **Biển (QCVN 41:2024/BGTVT):** P.127 "Tốc độ tối đa cho phép" tròn, viền đỏ, nền trắng, ghi số km/h (đã xác nhận, kể cả trong bản 2024: biển nằm trong danh sách ở Điều 22). **Màu chữ số chưa xác nhận**: một bài ghi đỏ, game vẽ **đen** như biển ngoài đời (cần đối chiếu Phụ lục B). W.225 "Trẻ em" thuộc nhóm biển cảnh báo (Phụ lục C, hình C.27), đặt gần vườn trẻ, trường học; game vẽ tam giác **vàng viền đỏ, hình hai em nhỏ**: màu và hình chưa kiểm chứng bằng văn bản gốc.
 - Biển hết hạn chế tốc độ (DP.134) và biển nhắc lại sau nút giao: game không vẽ biển hết hạn chế, mà đặt lại biển 40 sau mỗi ngã tư (QCVN 41 cho biết hiệu lực biển P.127 chấm dứt khi đi qua nút giao nếu không có biển nhắc lại: nguồn luatvietnam.vn, bản 2019).
 
+### Kiểm tra ngày 15/11/2026: mũ bảo hiểm và dùng điện thoại khi lái (bản 0.11)
+
+Một agent Sonnet độc lập đối chiếu, cộng một lượt tra lại của Claude. **Cả hai đều không mở được toàn văn NĐ 168/2024** (thuvienphapluat, luatvietnam, hoatieu chỉ cho bản tóm tắt), nên kết quả dưới đây dựa trên nhiều nguồn thứ cấp khớp nhau, **chưa đối chiếu văn bản gốc**.
+
+| Lỗi | Căn cứ | Mức phạt | Trừ điểm | Mức tin cậy | Trong game |
+|---|---|---|---|---|---|
+| Không đội mũ bảo hiểm hoặc đội không cài quai (người điều khiển) | Điểm h khoản 2 Điều 7 NĐ 168/2024 (điểm i là người được chở) | 400.000–600.000đ | Không (không có trong bảng lỗi trừ điểm xe máy của thuvienphapluat) | Mức phạt chắc (nhiều nguồn); điểm/khoản khá chắc; "không trừ điểm" khá chắc (suy từ bảng không liệt kê) | `helmet`, trừ 500.000đ, 0 điểm |
+| Dùng tay cầm và sử dụng điện thoại khi điều khiển xe máy | Điểm đ khoản 4 Điều 7 (phạt tiền); trừ điểm thuộc nhóm trừ 4 điểm ở khoản 13 | 800.000–1.000.000đ | 4 điểm | Mức phạt và điểm trừ chắc (nhiều nguồn khớp); số khoản/điểm ở mức trung bình | `phone`, trừ 900.000đ, 4 điểm |
+| Gây tai nạn khi dùng điện thoại | Điểm b khoản 10 (phạt tiền), điểm d khoản 13 | 10.000.000–14.000.000đ | 10 điểm | Khớp với lỗi `crash` đã có | không thêm lỗi riêng |
+
+- **Số khoản trừ điểm của lỗi điện thoại:** các nguồn thứ cấp ghi "điểm b khoản 13" cho trường hợp một tay lái, một tay dùng điện thoại, trùng với nhóm trừ 4 điểm đã dùng cho `red` và `speed3`; agent kiểm tra khuyên chưa đưa số này vào game khi chưa có văn bản gốc, nên `js/luat.js` ghi thận trọng "trừ 4 điểm theo quy định trừ điểm tại khoản 13".
+- **Điện thoại gắn giá đỡ chỉ xem bản đồ:** các nguồn (lsvn.vn trích ý kiến luật sư; baolaocai.vn) kết luận không bị phạt nếu không cầm và không thao tác, căn cứ khoản 6 Điều 9 Luật TTATGTĐB 2024 (cấm dùng tay cầm và sử dụng điện thoại). **Đây là ý kiến luật sư và báo chí, chưa có hướng dẫn của cơ quan chức năng.** Một bài báo có tiêu đề "phạt 14 triệu, trừ 10 điểm" nhưng thân bài nói mức đó chỉ áp dụng khi gây tai nạn: không áp dụng cho việc xem bản đồ.
+- **Cách game dựng chốt CSGT** là cách chơi (hai chốt cố định, xe bị giữ 2 giây), không phải quy định pháp luật; mức phạt không đổi.
+- **Việc cần làm khi có dịp:** lấy PDF NĐ 168/2024 chính thức (vbpl.vn hoặc cổng thông tin Chính phủ) để đối chiếu số khoản/điểm của hai lỗi trên.
+
 ## 9. Việc còn bỏ ngỏ (ưu tiên từ trên xuống)
 
 - (Đã chốt 12/11/2026 lúc 09:14: "Ok, chỉ nhắc nhở theo đúng luật.") Đỗ xe ngược chiều: NĐ 168/2024 Điều 7 không có mức phạt riêng cho xe máy, nên game chỉ nhắc nhở (mục `parkdir` trong `js/luat.js`). Nếu sau này muốn phạt, chỉ có thể dùng điểm d khoản 2 Điều 7 (đỗ ở lòng đường gây cản trở) hoặc điểm e khoản 2 (đỗ nơi cấm, ví dụ bên trái đường một chiều).
@@ -204,7 +221,8 @@ Hai lượt: (1) Claude Opus đọc **toàn văn** NĐ 168/2024 và NĐ 238/2026
 - Đọc toàn văn Thông tư 105/2026/TT-BCA để chốt mốc áp dụng đề kiểm tra mới.
 - Văn hóa giao thông: hai thanh điểm riêng (luật / văn hóa), các hành vi tốt được thưởng.
 - Thu xe, đổi xe cũ khi không đủ tiền đền; mua xe; nhiều loại xe và vai (xe đạp, đi bộ, ô tô).
-- Thêm lỗi: không đội mũ bảo hiểm, dùng điện thoại khi lái (bản 0.11), dừng đỗ sai chỗ, đi vào làn cấm.
+- Bản 0.11 (chờ người dùng chơi thử): nút 🪖 và 📞 ở góc phải dưới bản đồ nhỏ có dễ bấm trên iPhone không (nút 📞 nhấp nháy to dần); chuông điện thoại và còi CSGT có khó chịu không; hai chốt CSGT có dễ thấy từ xa không và việc bị giữ xe 2 giây có hợp lý không; cứ 2–3 chuyến mới có một cuộc gọi, có quá ít hay quá nhiều không; tiền boa 20.000đ tạm thời, sẽ đổi thành điểm văn hóa ở bản 1.0. Số khoản/điểm của hai lỗi mới chưa đối chiếu toàn văn (mục 8).
+- Thêm lỗi: dừng đỗ sai chỗ, đi vào làn cấm. (Không đội mũ bảo hiểm và dùng điện thoại khi lái đã làm ở bản 0.11.)
 - Âm thanh nhóm C (tiếng phố, chợ) và G (nhạc nền).
 - Nhiều người chơi thật, phòng, giảm NPC khi người chơi tăng.
 - Đo chỉ số thành công khi có người chơi thật.
@@ -259,7 +277,7 @@ Người dùng yêu cầu lúc 10:57 ngày 12/11/2026 và chốt lúc 08:15 ngà
 | Biển cấm xe máy, biển cấm ô tô | 1 (làm trước) | **Xong ở bản 0.9** (chờ chơi thử) |
 | Xi-nhan và lỗi không xi-nhan | 1 (làm trước) | **Xong ở bản 0.9** (chờ chơi thử) |
 | Biển hạn chế tốc độ, lỗi quá tốc độ | 1 | **Xong ở bản 0.10**, chỉnh ở 0.10.1 và 0.10.2 (camera phạt nguội ở vạch dừng; chờ chơi thử) |
-| Mũ bảo hiểm, dùng điện thoại khi lái | 1 | Chưa làm |
+| Mũ bảo hiểm, dùng điện thoại khi lái | 1 | **Xong ở bản 0.11** (chờ chơi thử; số khoản/điểm chưa đối chiếu toàn văn) |
 | Hai thanh điểm: luật và văn hóa | 1 | Chưa làm |
 | Mở rộng bản đồ gấp 2, chia theo khu | 2 | Chưa làm |
 | Bộ sinh lộ trình NPC tự động | 2 | Chưa làm |
@@ -279,8 +297,8 @@ Rồi mới tới (người dùng chốt lúc 10:05 ngày 13/11/2026, đồng ý
 
 - **Bản 0.10: biển hạn chế tốc độ.** Nâng tốc độ tối đa của xe lên khoảng 55 km/h. Đường thường cắm biển 40 km/h; đoạn trước trường mầm non Sơn Ca cắm biển 30 km/h kèm biển "Trẻ em". Đồng hồ đổi màu khi quá tốc độ, có dòng nhắc. Chỉ phạt khi vượt quá từ 5 km/h, mỗi đoạn đường phạt một lần. **Đã làm ở bản 0.10** (13/11/2026); mức phạt ba bậc đã đối chiếu toàn văn NĐ 168 và một agent độc lập, ghi ở mục 8.
 - **Bản 0.11: mũ bảo hiểm và điện thoại.**
-  - Mũ bảo hiểm: mỗi đầu chuyến có nút "🪖 Đội mũ". Quên đội vẫn chạy được, nhưng bị phạt khi đi ngang **chốt CSGT** (2 chốt cố định); NPC nhắc khi thấy.
-  - Điện thoại: thỉnh thoảng reo (khách gọi hỏi đơn). Nghe khi đang chạy thì bị phạt nếu đi qua chốt hoặc camera. Tấp vào ô P rồi nghe thì được cộng điểm văn hóa. Không nghe thì khách gọi lại, không mất gì.
+  - Mũ bảo hiểm: nút "🪖 Đội mũ". Quên đội vẫn chạy được, nhưng bị phạt khi đi ngang **chốt CSGT** (2 chốt cố định); NPC nhắc khi thấy. **Đã làm ở bản 0.11; người dùng chốt 15/11/2026 đội MỘT lần cho cả buổi chơi (không phải mỗi chuyến).**
+  - Điện thoại: thỉnh thoảng reo (khách gọi hỏi đơn). Nghe khi đang chạy thì bị phạt nếu đi qua chốt hoặc camera. Tấp vào ô P rồi nghe thì được cộng điểm văn hóa (tạm thời trong 0.11: boa 20.000đ; đổi thành điểm văn hóa ở 1.0). Không nghe thì khách gọi lại, không mất gì. Nghe lúc dừng đèn đỏ hay đứng giữa đường vẫn tính là đang lái (người dùng chốt 15/11/2026).
 - **Bản 1.0: hai thanh điểm.** Thanh luật là điểm GPLX hiện có (12 điểm). Thanh văn hóa 0–100, bắt đầu 70.
   - Trừ khi: dừng giữa đường làm người khác chờ, leo vỉa hè gặp người đi bộ, bám đuôi, quên tắt xi-nhan, làm người khác kẹt xe.
   - Cộng khi: dừng nhường người đi bộ, tấp vào ô P để nghe điện thoại, chuyến đi không làm ai phải chờ.

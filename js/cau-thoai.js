@@ -78,6 +78,36 @@ const LINES = {
     'Khối phố có trường mà {x} chạy nhanh vậy sao? Giảm xuống 30 đi, tới ngã tư camera chụp bây giờ.',
     'Có biển "Trẻ em" mà {x} chưa giảm ga. Mấy bé hay chạy ra bất chợt đó, chậm lại nha.'
   ],
+  // mũ bảo hiểm: helmet = CSGT thổi còi tại chốt; helmetnpc = người đi đường nhắc, không phạt
+  helmet: [
+    'Tuýt! Đầu trần mà qua chốt à {x}? Mũ bảo hiểm là cái "áo giáp" rẻ nhất mà {x} lại để ở nhà.',
+    'Mời {x} tấp vào. Không đội mũ bảo hiểm, phạt theo quy định nhé. Mũ rẻ hơn tiền phạt nhiều.',
+    'Xe thì có biển số, đầu thì không có mũ. {X} đưa giấy tờ giùm tôi!'
+  ],
+  helmetnpc: [
+    '{X} ơi, mũ bảo hiểm đâu rồi? Qua chốt CSGT là bị thổi còi đó, đội vào nha.',
+    'Đầu trần chạy xe thế này nguy hiểm lắm {x} ơi. Đội mũ vào, nhanh một giây không bằng an toàn cả đời.',
+    'Gió mát nhỉ {x}? Mát thì mát, nhưng đội mũ vào rồi hẵng mát.'
+  ],
+  // điện thoại: phone = CSGT bắt tại chốt; phonecam = camera ngã tư chụp; phonewarn = người đi đường nhắc; phoneok = khách vui vì được nghe máy đàng hoàng
+  phone: [
+    'Tuýt! Một tay lái một tay cầm điện thoại, {x} định làm xiếc à? Mời tấp vào lập biên bản.',
+    'Khách gọi thì khách chờ được, còn xe tải đâu có chờ {x}. Cầm điện thoại khi lái là bị phạt và trừ điểm nhé.',
+    '{X} nghe điện thoại ngay giữa chốt CSGT luôn. Can đảm thì có, đúng luật thì không!'
+  ],
+  phonecam: [
+    'Tách! Camera ngã tư chụp được {x} đang cầm điện thoại. Ảnh nét lắm, thư phạt về nhà liền.',
+    'Cầm điện thoại qua ngã tư có camera là có ảnh làm kỷ niệm đó {x}. Lần sau tấp vào ô P rồi hẵng nghe.'
+  ],
+  phonewarn: [
+    '{X} ơi, cầm điện thoại khi lái nguy hiểm lắm! Tấp vào ô P nghe cũng đâu mất bao lâu.',
+    'Một tay lái một tay điện thoại, xe lắc lư như đi trên dây vậy {x}. Phía trước có chốt và camera đó.',
+    'Khách gọi gấp tới đâu cũng đừng vừa chạy vừa nghe. Hai chữ "cầm máy" đắt hơn cuốc xe nhiều {x} ạ.'
+  ],
+  phoneok: [
+    'Cảm ơn {x} đã dừng lại nghe máy đàng hoàng! Khách thấy lịch sự nên boa thêm chút đỉnh.',
+    'Tấp vào đỗ rồi mới nghe máy, chuẩn quá {x}. Đơn của tôi nhờ {x} chăm sóc nhé, có chút trà đá gửi {x}.'
+  ],
   signal: [
     'Rẽ mà không xi-nhan, người sau đoán ý {x} kiểu gì? Chưa ai có thần giao cách cảm đâu.',
     '{X} rẽ bất ngờ như phim kinh dị vậy. Bật xi-nhan trước nha, cả phố đỡ giật mình.',

@@ -78,6 +78,8 @@ const SND = (function(){
     g.gain.setValueAtTime(0.16, t + 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
     o.connect(g); g.connect(fxBus); o.start(t); lfo.start(t); o.stop(t + 0.8); lfo.stop(t + 0.8);
   }
+  // chuông điện thoại: hai tiếng "ring ring"
+  function ring(){ [0, 0.16, 0.5, 0.66].forEach((t, i) => tone(i % 2 ? 1175 : 880, 0.12, 'sine', 0.2, t)); }
   function shutter(){ noise(0.05, 0.35, 2500, 0.15); noise(0.07, 0.3, 1800, 0.23); }
   function thud(){ tone(95, 0.3, 'sine', 0.5, 0, 38); noise(0.18, 0.25, 0, 0); }
   // tiếng xi-nhan: "tích" khi đèn sáng, "tắc" (trầm hơn) khi đèn tắt
@@ -252,6 +254,6 @@ const SND = (function(){
     if (ac.state === 'running') return 'Âm thanh: đang chạy.';
     return 'Âm thanh: đang bị trình duyệt chặn, hãy chạm vào màn hình. Trên iPhone, kiểm tra nút gạt im lặng và âm lượng.';
   }
-  return {audioStatus, npcSyllable, toneMark, syllableCount: () => syllables, engineModel, init, update, whistle, shutter, thud, tick, reward, applyVolume, voiceStatus, announceTrip, speak,
+  return {audioStatus, npcSyllable, toneMark, syllableCount: () => syllables, engineModel, init, update, whistle, ring, shutter, thud, tick, reward, applyVolume, voiceStatus, announceTrip, speak,
     stopVoice(){ try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch(e){} }};
 })();

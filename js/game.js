@@ -24,7 +24,11 @@ const S = {
   // camCool = mốc thời gian chống bị camera chụp hai lần liền
   spdSec: '', spdSaid: false, spdT: 0, spdMax: 0, spdLimit: 40, camCool: -99,
   // lastSteer = lần cuối người chơi bấm rẽ (trợ lái chờ 1 giây sau đó mới nắn xe lại)
-  lastSteer: -99
+  lastSteer: -99,
+  // bản 0.11: helmet = đã đội mũ (chỉ trong buổi chơi, không lưu); noHelmT/helmSaidT = bộ đếm nhắc nhở của NPC; csgtT = lần cuối qua từng chốt
+  // call = cuộc gọi của khách {state:'ring'|'talk', t, drove, fined, warned, dT}; callIn = số chuyến nữa thì có cuộc gọi; callAt = giờ sẽ đổ chuông
+  helmet: false, noHelmT: 0, helmSaidT: -99, csgtT: {},
+  call: null, callIn: 2, callAt: -1
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -95,6 +99,7 @@ function save(){
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
   S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99; S.lastSteer = -99;
+  S.helmet = false; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callIn = 2; S.callAt = -1;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
   newTrip();
 }
@@ -205,14 +210,16 @@ function remind(type, speaker){
 }
 // Lỗi do camera ngã tư chụp (phạt nguội): có tiếng máy ảnh và loé sáng
 const CAM_TYPES = {red: 1, speed1: 1, speed2: 1, speed3: 1};
-function violate(type, quipKey, speaker){
+// cam: true/false ép có hay không có tiếng máy ảnh và loé sáng (bỏ trống thì theo CAM_TYPES)
+function violate(type, quipKey, speaker, cam){
+  const isCam = cam === undefined ? !!CAM_TYPES[type] : cam;
   const law = LAW[type];
   S.stats[type] = (S.stats[type] || 0) + 1;
   const n = S.stats[type];
   const hadPts = S.pts > 0;
   S.money -= law.fine; S.pts = Math.max(0, S.pts - law.pts);
   if (hadPts && S.pts === 0) suspendLicense();
-  SND.whistle(); if (CAM_TYPES[type]) SND.shutter();
+  SND.whistle(); if (isCam) SND.shutter();
   if (S.trip) S.trip.clean = false;
   S.streak = 0; S.epId++; S.epAffected = 0; S.epJamSaid = false;
   S.faultUntil = Math.max(S.faultUntil, S.now + 3);
@@ -225,7 +232,7 @@ function violate(type, quipKey, speaker){
     `<small>${law.ref}</small><br>💡 ${law.tip}<br>`+
     `<small>Trong game bị trừ ${fmt(law.fine)}, bằng khoảng ${trips} chuyến giao hàng.${S.pts === 0 ? ' Điểm GPLX đã về 0: không được lái xe nữa cho tới khi kiểm tra đạt và được phục hồi điểm.' : ''}</small>`);
   floatText(player.x, player.y, '−' + fmt(law.fine).replace('−',''), '#e5484d');
-  if (CAM_TYPES[type]) S.flash = 0.7;
+  if (isCam) S.flash = 0.7;
   save();
 }
 function compensate(n, amount, note){
@@ -233,6 +240,82 @@ function compensate(n, amount, note){
   floatText(n.x, n.y, '+' + fmt(amount), '#2f9e6b');
   floatText(player.x, player.y, '−' + fmt(amount) + (note ? ' ' + note : ''), '#e5484d');
   save();
+}
+
+/* =========================================================
+   6b. MŨ BẢO HIỂM, ĐIỆN THOẠI, CHỐT CSGT (bản 0.11)
+   ========================================================= */
+const CSGT_SPK = {name: 'Chú CSGT', follow: true};
+const CALL_RING = 12, CALL_TALK = 8, CALL_TIP = 20000;
+function putOnHelmet(){
+  if (S.helmet || S.paused || S.suspended) return;
+  S.helmet = true; S.noHelmT = 0; SND.tick(true);
+  floatText(player.x, player.y, '🪖 Đã đội mũ, cài quai xong', '#2f9e6b');
+}
+// Đang cầm điện thoại khi lái? Chỉ khi đang nghe máy và KHÔNG đỗ trong ô P. Đứng giữa đường hay dừng đèn đỏ vẫn tính là đang lái.
+function phoneDriving(){
+  return !!(S.call && S.call.state === 'talk' && !(S.inBay && Math.abs(player.v) < 12));
+}
+function answerCall(){
+  const c = S.call;
+  if (!c || c.state !== 'ring' || S.paused || S.suspended) return;
+  c.state = 'talk'; c.t = CALL_TALK; c.drove = false; c.fined = false; c.warned = false; c.dT = 0;
+  SND.tick(true);
+}
+function endCall(){
+  const c = S.call; S.call = null;
+  if (!c) return;
+  if (!c.drove){   // nghe máy khi đang đỗ trong ô P: khách vui, boa thêm
+    S.money += CALL_TIP; S.stats.callOk = (S.stats.callOk || 0) + 1;
+    floatText(player.x, player.y, '+' + fmt(CALL_TIP) + ' khách boa', '#2f9e6b');
+    SND.reward(1);
+    say({name: 'Khách đặt hàng', follow: true}, fill(pick(LINES.phoneok)));
+    save();
+  } else if (!c.fined){
+    S.stats.callDrive = (S.stats.callDrive || 0) + 1;
+    floatText(player.x, player.y, 'May mà chưa gặp chốt hay camera', '#6b6875');
+  }
+}
+function updCall(dt){
+  let c = S.call;
+  if (!c){
+    if (S.callAt > 0 && S.now >= S.callAt && !S.suspended){
+      S.callAt = -1; S.call = c = {state: 'ring', t: CALL_RING, ringT: 0, drove: false, fined: false, warned: false, dT: 0};
+      SND.ring();
+    }
+    return;
+  }
+  c.t -= dt;
+  if (c.state === 'ring'){
+    c.ringT += dt;
+    if (c.ringT > 1.6){ c.ringT = 0; SND.ring(); }
+    if (c.t <= 0){ S.call = null; S.stats.callMiss = (S.stats.callMiss || 0) + 1; floatText(player.x, player.y, 'Nhỡ cuộc gọi, khách sẽ gọi lại sau', '#6b6875'); }
+    return;
+  }
+  if (phoneDriving()){
+    c.drove = true; c.dT += dt;
+    if (c.dT >= 3 && !c.warned && !c.fined){   // người đi đường thấy bạn cầm điện thoại: nhắc một lần mỗi cuộc gọi
+      c.warned = true;
+      say(nearestNPC(player.x, player.y, 280) || {name: 'Loa phường', follow: true}, fill(pick(LINES.phonewarn)));
+    }
+  }
+  if (c.t <= 0) endCall();
+}
+// Qua vạch kiểm tra của chốt CSGT (cả hai chiều): đầu trần hoặc đang cầm điện thoại thì bị thổi còi, dừng xe 2 giây và phạt
+function csgtCheck(prev){
+  if (S.suspended || Math.abs(player.v) < 5 || classify(player.x, player.y).t === 'bay') return;
+  for (const p of CSGT){
+    const a = p.axis === 'x' ? prev.x - p.x : prev.y - p.y, b = p.axis === 'x' ? player.x - p.x : player.y - p.y;
+    const lat = p.axis === 'x' ? Math.abs(player.y - p.y) : Math.abs(player.x - p.x);
+    if (lat >= HALF || !((a < 0 && b >= 0) || (a > 0 && b <= 0))) continue;
+    if (S.now - (S.csgtT[p.id] ?? -99) < 8) continue;
+    S.csgtT[p.id] = S.now;
+    const noHelmet = !S.helmet, onPhone = phoneDriving() && !S.call.fined;
+    if (!noHelmet && !onPhone){ floatText(player.x, player.y, '👮 Chốt CSGT: đủ mũ, mời đi', '#2f9e6b'); continue; }
+    player.v = 0; player.stun = 2;
+    if (noHelmet){ violate('helmet', 'helmet', CSGT_SPK, false); S.faultUntil = S.now; }
+    if (onPhone){ S.call.fined = true; violate('phone', 'phone', CSGT_SPK, false); S.faultUntil = S.now; }
+  }
 }
 
 /* =========================================================
@@ -287,6 +370,8 @@ function newTrip(){
   S.trip = {dest: d, fx: player.x, fy: player.y, clean: true, t0: S.now};
   S.route = computeRoute();
   SND.announceTrip();
+  // cứ 2–3 chuyến thì có một cuộc gọi của khách, đổ chuông sau khi nhận chuyến khoảng 6–14 giây
+  if (--S.callIn <= 0 && !S.call){ S.callAt = S.now + 6 + Math.random() * 8; S.callIn = 2 + (Math.random() < 0.5 ? 1 : 0); }
 }
 function arrive(){
   const t = S.trip, dd = Math.hypot(t.dest.bay.cx - t.fx, t.dest.bay.cy - t.fy);
@@ -583,10 +668,11 @@ function updPlayer(dt){
     const steer = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
     // Tốc độ góc: đi chậm thì quay vòng hẹp (bán kính khoảng 2,5 m = 10 đơn vị, như xe máy thật); từ 13 km/h trở lên giảm dần về 2,4 rad/s ở 27 km/h
     const sv = Math.abs(player.v);
-    const rate = sv <= 40 ? Math.min(sv / 10, 3.3) : 3.3 - 0.9 * clamp((sv - 40) / 40, 0, 1);
+    let rate = sv <= 40 ? Math.min(sv / 10, 3.3) : 3.3 - 0.9 * clamp((sv - 40) / 40, 0, 1);
+    if (phoneDriving()) rate *= 0.7;   // một tay cầm điện thoại: lái khó hơn
     if (steer){ S.lastSteer = S.now; player.a = normA(player.a + steer * rate * dt * Math.sign(player.v || 1)); }
     // Trợ lái chờ 1 giây sau khi nhả phím rẽ; đang bật xi-nhan (6 giây đầu, ngoài ô đỗ) thì không giành lái vì có thể đang định rẽ hoặc quay đầu
-    else if (S.assist && player.v > 20 && S.now - S.lastSteer > 1 && !(S.turn !== 0 && S.now - S.sigOnT < 6 && prevC.t !== 'bay')) laneAssist(prevC, dt);
+    else if (S.assist && !phoneDriving() && player.v > 20 && S.now - S.lastSteer > 1 && !(S.turn !== 0 && S.now - S.sigOnT < 6 && prevC.t !== 'bay')) laneAssist(prevC, dt);
   }
   const nx = clamp(player.x + Math.cos(player.a) * player.v * dt, 8, W - 8);
   const ny = clamp(player.y + Math.sin(player.a) * player.v * dt, 8, H - 8);
@@ -655,9 +741,19 @@ function checkRules(prev, prevC, dt){
             violate(over > 20 ? 'speed3' : over >= 10 ? 'speed2' : 'speed1', si.id === 'school' ? 'speedcamschool' : 'speedcam');
           }
         }
+        // camera cũng chụp người đang cầm điện thoại khi qua vạch dừng (mỗi cuộc gọi chỉ phạt một lần)
+        if (phoneDriving() && !S.call.fined){ S.call.fined = true; violate('phone', 'phonecam', null, true); }
         if (lightOf(L, dx ? 'EW' : 'NS', S.now) === 'red') violate('red');
       }
     }
+  }
+
+  // 1b) Chốt CSGT kiểm tra mũ bảo hiểm và điện thoại; người đi đường nhắc nếu thấy đầu trần
+  csgtCheck(prev);
+  if (!S.helmet && sp > 20 && player.stun <= 0) S.noHelmT += dt; else if (S.helmet) S.noHelmT = 0;
+  if (S.noHelmT > 8 && S.now - S.helmSaidT > 45){
+    const nb = nearestNPC(player.x, player.y, 200);
+    if (nb){ S.helmSaidT = S.now; say(nb, fill(pick(LINES.helmetnpc))); }
   }
 
   // 2) Phố Chợ là phố đi bộ (biển P.104 cấm xe máy, P.103a cấm ô tô): xe máy chạy vào là bị phạt
@@ -800,6 +896,7 @@ function step(dt){
   for (const n of npcs) updNPC(n, dt);
   for (const p of peds) updPed(p, dt);
   updPlayer(dt);
+  updCall(dt);
   updJam(dt);
   if (S.turn !== 0){   // đèn xi-nhan nháy 0,7 giây một nhịp, mỗi lần đổi trạng thái có một tiếng tích/tắc
     S.blinkT += dt;
@@ -1080,7 +1177,7 @@ function drawAgents(){
     ctx.globalAlpha = 1;
   }
   if (S.view === 'bike') return;   // góc nhìn sau tay lái: xe của mình là ghi đông ở mép dưới màn hình
-  drawBike(player, '#ff8a3d', '#ffffff', true, S.turn);
+  drawBike(player, '#ff8a3d', S.helmet ? '#ffffff' : '#3a2e2a', true, S.turn);   // đầu trần thì vẽ tóc sẫm thay vì mũ trắng
   ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.a); ctx.fillStyle = '#c0703a'; ctx.fillRect(-11, -4, 6, 8); ctx.restore();
 }
 
@@ -1117,7 +1214,31 @@ function drawSignboards(){
     });
   }
 }
+// Chốt CSGT: vạch kiểm tra cam dạng đứt ngang đường, vài cọc tiêu, chòi và chú CSGT bên vỉa hè
+function drawCSGT(){
+  for (const p of CSGT){
+    if (tilted() && Math.hypot(p.x - player.x, p.y - player.y) > (S.view === 'bike' ? 520 : 700)) continue;
+    const ax = p.axis === 'x';
+    ctx.save(); ctx.strokeStyle = 'rgba(255,140,0,.75)'; ctx.lineWidth = 2.2; ctx.setLineDash([7, 6]);
+    ctx.beginPath(); if (ax){ ctx.moveTo(p.x, p.y - HALF); ctx.lineTo(p.x, p.y + HALF); } else { ctx.moveTo(p.x - HALF, p.y); ctx.lineTo(p.x + HALF, p.y); }
+    ctx.stroke(); ctx.restore();
+    for (const k of [6, 16, 26]){   // cọc tiêu dọc mép đường phía chòi
+      const cx = ax ? p.x : p.x - HALF + k, cy = ax ? p.y + HALF - k : p.y;
+      up(cx, cy, () => { ctx.fillStyle = '#ff7a1a'; ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(4, 0); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.fillRect(-2.2, -5, 4.4, 1.8); });
+    }
+    up(p.cabin.x, p.cabin.y, () => {
+      ctx.fillStyle = '#2f6fde'; rr(ctx, -9, -26, 18, 22, 2); ctx.fill();
+      ctx.fillStyle = '#ffd43b'; rr(ctx, -11, -30, 22, 5, 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillRect(-9, -17, 18, 2.4);
+      ctx.fillStyle = '#d9d36a'; rr(ctx, 11, -12, 6, 12, 2); ctx.fill();   // chú CSGT mặc áo vàng
+      ctx.fillStyle = '#f1c9a5'; ctx.beginPath(); ctx.arc(14, -15, 3, 0, Math.PI*2); ctx.fill();
+    });
+    label(p.cabin.x, p.cabin.y + 26, '👮 CHỐT CSGT', {size: 12, bold: true, bg: '#2f6fde', color: '#fff'});
+  }
+}
 function drawUprights(){
+  drawCSGT();
   // cột đèn tín hiệu, mỗi hướng đi vào có một cột bên tay phải người lái
   for (const L of LIGHTS){
     const posts = [
@@ -1322,6 +1443,17 @@ function updHUD(){
       $('sigchip').style.display = S.turn ? 'inline-block' : 'none';
       $('sigL').style.opacity = L ? '1' : '.25'; $('sigR').style.opacity = R ? '1' : '.25';
       $('sigCkL').setAttribute('opacity', L ? '1' : '0'); $('sigCkR').setAttribute('opacity', R ? '1' : '0'); } }
+  // mũ bảo hiểm và cuộc gọi: chip trên cùng và hai nút lớn (nút nằm cạnh bản đồ nhỏ)
+  { const hk = S.helmet ? '' : '🪖 Chưa đội mũ';
+    if (hudCache.helm !== hk){ hudCache.helm = hk; $('helmchip').style.display = hk ? 'inline-block' : 'none'; $('helmchip').textContent = hk; $('helmBtn').style.display = hk ? 'block' : 'none'; } }
+  { const c = S.call, drv = phoneDriving();
+    const ck = !c ? '' : c.state === 'ring' ? 'ring' : 'talk' + Math.ceil(c.t) + (drv ? 'd' : 'p');
+    if (hudCache.call !== ck){ hudCache.call = ck;
+      const el = $('callchip');
+      el.style.display = c ? 'inline-block' : 'none';
+      el.textContent = !c ? '' : c.state === 'ring' ? '📞 Khách đang gọi…' : '📞 Đang nghe máy · ' + Math.ceil(c.t) + ' giây' + (drv ? ' · ⚠️ vừa lái vừa nghe' : ' · đang đỗ, khách vui');
+      el.className = 'chip' + (drv ? ' over' : '');
+      $('callBtn').style.display = c && c.state === 'ring' ? 'block' : 'none'; } }
   // cảnh báo: sai phần đường (ưu tiên), rồi tới đèn phía trước
   let w = '';
   if (S.warnT > 0) w = S.warnText;
@@ -1331,6 +1463,9 @@ function updHUD(){
     else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc và dừng trước vạch dừng';
     else if (over >= 5) w = '🚨 Quá tốc độ: ' + Math.round(kmhF) + ' km/h, biển cho phép tối đa ' + S.spdLimit + '. Nhả ga, giảm tốc trước ngã tư kẻo camera chụp' + (S.spdLimit <= 30 ? ' (khu trường có trẻ em!)' : '');
     else if (over > 0) w = '⚠️ Hơi quá giới hạn ' + S.spdLimit + ' km/h một chút, nhả ga nhé';
+    else if (phoneDriving()) w = '📵 Đang cầm điện thoại khi lái: qua chốt CSGT hoặc camera ngã tư là bị phạt. Tấp vào ô P đi!';
+    else if (S.call && S.call.state === 'ring') w = '📞 Khách gọi! Muốn nghe thì tấp vào ô P rồi bấm "Nghe máy" (vừa lái vừa nghe là vi phạm)';
+    else if (!S.helmet) w = '💡 Bạn chưa đội mũ bảo hiểm: bấm nút 🪖 Đội mũ' + (isTouch ? '' : ' (phím H)') + ' kẻo qua chốt CSGT bị phạt';
     else {   // sắp rẽ hoặc quay đầu mà chưa bật xi-nhan đúng bên: nhắc
       const i = S.route && S.route.instr;
       if (i && (i.type === 'left' || i.type === 'right' || i.type === 'uturn') && (i.type === 'uturn' || i.dist <= 240)){
@@ -1366,7 +1501,7 @@ function setupInput(){
   const map = {ArrowUp:'up', KeyW:'up', ArrowDown:'down', KeyS:'down', Space:'brake', ArrowLeft:'left', KeyA:'left', ArrowRight:'right', KeyD:'right'};
   window.addEventListener('keydown', e => {
     const k = map[e.code]; if (k){ keys[k] = true; e.preventDefault(); }
-    if (!e.repeat && !S.paused){ if (e.code === 'KeyQ') setSignal(-1); else if (e.code === 'KeyE') setSignal(1); }   // Q: xi-nhan trái, E: xi-nhan phải
+    if (!e.repeat && !S.paused){ if (e.code === 'KeyQ') setSignal(-1); else if (e.code === 'KeyE') setSignal(1); else if (e.code === 'KeyH') putOnHelmet(); else if (e.code === 'KeyC') answerCall(); }   // Q: xi-nhan trái, E: xi-nhan phải
   });
   window.addEventListener('keyup', e => { const k = map[e.code]; if (k){ keys[k] = false; e.preventDefault(); } });
   window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -1396,6 +1531,9 @@ function setupInput(){
   document.querySelectorAll('.sbtn').forEach(b => {
     b.addEventListener('pointerdown', e => { if (!S.paused) setSignal(+b.dataset.s); e.preventDefault(); });
   });
+  // nút Đội mũ và Nghe máy
+  $('helmBtn').addEventListener('pointerdown', e => { putOnHelmet(); e.preventDefault(); });
+  $('callBtn').addEventListener('pointerdown', e => { answerCall(); e.preventDefault(); });
   isTouch = ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   if (isTouch) document.body.classList.add('touch');
   $('go').addEventListener('click', () => { S.xungho = $('xungho').value; S.assist = !!$('assist').checked; save(); closeOverlay('start');
@@ -1443,4 +1581,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};

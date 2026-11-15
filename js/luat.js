@@ -67,6 +67,17 @@ const LAW = {
     ref: 'NĐ 168/2024/NĐ-CP, Điều 7: điểm a khoản 8 (phạt tiền), điểm b khoản 13 (trừ điểm)',
     tip: 'Trước trường học có biển "Trẻ em" (tam giác vàng, W.225) và biển tốc độ thấp. Vượt trên 20 km/h bị phạt nặng và trừ 4 điểm; nếu gây tai nạn thì còn nặng hơn nhiều.'
   },
+  // Mũ bảo hiểm và điện thoại (bản 0.11). Đối chiếu ngày 15/11/2026 qua nhiều nguồn thứ cấp (chưa lấy được toàn văn NĐ 168): xem docs/THIET-KE.md mục 8.
+  helmet: {
+    name: 'Không đội mũ bảo hiểm (hoặc đội không cài quai)', fine: 500000, range: '400.000–600.000đ', pts: 0,
+    ref: 'NĐ 168/2024/NĐ-CP, Điều 7, điểm h khoản 2 (người điều khiển xe mô tô, xe gắn máy không đội mũ bảo hiểm hoặc đội không cài quai đúng quy cách; các nguồn không ghi trừ điểm GPLX)',
+    tip: 'Lên xe là đội mũ và cài quai ngay, kể cả đi quãng ngắn. Trong game bấm nút "Đội mũ" (phím H). Qua chốt CSGT mà đầu trần là bị thổi còi dừng xe.'
+  },
+  phone: {
+    name: 'Vừa lái xe vừa cầm và dùng điện thoại', fine: 900000, range: '800.000–1.000.000đ', pts: 4,
+    ref: 'NĐ 168/2024/NĐ-CP, Điều 7, điểm đ khoản 4 (dùng tay cầm và sử dụng điện thoại khi điều khiển xe; trừ 4 điểm GPLX theo quy định trừ điểm tại khoản 13). Gây tai nạn thì bị phạt nặng hơn, tính vào lỗi "gây va chạm". Căn cứ cấm: khoản 6 Điều 9 Luật TTATGTĐB 2024. Điện thoại gắn cố định trên giá đỡ, chỉ nhìn bản đồ, không cầm và không thao tác thì không bị phạt theo hành vi này',
+    tip: 'Có cuộc gọi thì tấp vào ô P hoặc chỗ được phép đỗ rồi mới nghe. Đang chạy, kể cả đang dừng đèn đỏ, mà cầm điện thoại thì vẫn là đang lái xe và bị phạt. Màn hình dẫn đường gắn trên xe thì được, miễn đừng cầm và thao tác.'
+  },
   // CHỈ NHẮC NHỞ (người dùng chốt 12/11/2026): xe máy không có mức phạt riêng cho hành vi này.
   // remind: true → không phạt tiền, không trừ điểm, nhưng chuyến đó không tính là chuyến sạch.
   parkdir: {
@@ -77,7 +88,7 @@ const LAW = {
   }
 };
 // 'wrongway' tạm không có trong sổ tay vì bản đồ hiện chưa còn phố một chiều (Phố Chợ đã thành phố đi bộ); sẽ có lại ở bản đồ mở rộng.
-const LAW_ORDER = ['red','speed1','speed2','speed3','noentry','signal','line','lane','ring','crash','parkdir'];
+const LAW_ORDER = ['red','speed1','speed2','speed3','noentry','signal','helmet','phone','line','lane','ring','crash','parkdir'];
 
 // Bài kiểm tra khi bằng lái hết điểm. Đáp án đúng luôn đặt ở vị trí đầu (a[0]); game tự xáo trộn khi hiển thị.
 const QUIZ = [
@@ -107,6 +118,10 @@ const QUIZ = [
    a:['Gần đoạn đường thường có trẻ em qua lại, phải đi chậm và thận trọng','Cấm trẻ em đi vào','Có trạm xe buýt dành cho học sinh'], why:'Đó là biển W.225 "Trẻ em", đặt gần trường học, vườn trẻ. Gặp biển này phải giảm tốc, chú ý trẻ em chạy ra bất ngờ.'},
   {q:'Biển hạn chế tốc độ ghi 40. Bạn đi 52 km/h thì bị gì?',
    a:['Phạt 800.000–1.000.000đ (vượt 10 đến 20 km/h)','Không sao vì chỉ vượt 12 km/h','Phạt 6–8 triệu đồng, trừ 4 điểm'], why:'Vượt từ 10 đến 20 km/h bị phạt 800.000–1.000.000đ (điểm a khoản 4 Điều 7 NĐ 168/2024). Chỉ vượt dưới 5 km/h mới không bị phạt; vượt trên 20 km/h bị phạt 6–8 triệu và trừ 4 điểm.'},
+  {q:'Đi xe máy mà không đội mũ bảo hiểm (hoặc đội mà không cài quai) thì bị xử phạt thế nào?',
+   a:['Phạt 400.000–600.000đ','Chỉ bị nhắc nhở nếu đi quãng ngắn','Phạt 4–6 triệu đồng, trừ 4 điểm'], why:'Người điều khiển xe máy không đội mũ bảo hiểm hoặc đội không cài quai đúng quy cách bị phạt 400.000–600.000đ (điểm h khoản 2 Điều 7 NĐ 168/2024). Đi quãng ngắn cũng không được miễn.'},
+  {q:'Có khách gọi điện lúc bạn đang chạy xe máy. Việc đúng là gì?',
+   a:['Tấp vào chỗ được phép đỗ rồi mới nghe máy','Cầm điện thoại nghe một tay cho nhanh','Dừng giữa đường nghe cho tiện'], why:'Vừa lái vừa cầm và dùng điện thoại bị phạt 800.000–1.000.000đ và trừ 4 điểm GPLX (điểm đ khoản 4 Điều 7 NĐ 168/2024). Điện thoại gắn cố định trên giá đỡ để xem bản đồ thì không bị phạt, nhưng không được cầm và thao tác khi đang lái. Dừng giữa đường làm cản trở người khác.'},
   {q:'Mỗi giấy phép lái xe có bao nhiêu điểm?',
    a:['12 điểm','10 điểm','20 điểm'], why:'Theo Luật Trật tự, an toàn giao thông đường bộ 2024, mỗi GPLX có 12 điểm.'}
 ];

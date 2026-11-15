@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.10.3)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.11)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,7 +50,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.10.3)
+## Cách chơi (bản 0.11)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
 - **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
@@ -67,7 +67,9 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Phố Chợ là phố đi bộ:** hai đầu phố có biển **cấm xe máy** (tròn, viền đỏ, gạch chéo, hình người lái xe máy) và biển **cấm ô tô**, kèm bảng "PHỐ ĐI BỘ". Xe máy chạy vào là bị phạt. Chỉ đường sẽ không dẫn bạn qua đó. Chợ Hoa Sữa giờ đỗ xe ở bãi ngoài cổng chợ, trên đường Me Chua.
 - **Tốc độ:** xe giờ chạy tối đa **55 km/h**. Đường thường có biển tròn viền đỏ ghi **40** (tốc độ tối đa cho phép), đặt bên phải ngay sau mỗi ngã tư. **Cả khối Phố Bánh Mì giữa hai ngã tư** (chỗ có trường mầm non Sơn Ca) giới hạn **30**, có thêm biển tam giác vàng **"Trẻ em"**. Ô tốc độ ở góc trên ghi giới hạn hiện tại ("tối đa 40"): **vàng** là đang hơi quá, **đỏ** là quá từ 5 km/h trở lên và có dòng nhắc 🚨 (ở góc nhìn sau tay lái, số trên đồng hồ cũng đổi màu). Chạy quá dưới 5 km/h thì không sao.
 - **Camera phạt nguội:** giữa hai ngã tư bạn chỉ bị nhắc nhở, không bị phạt. Nhưng **ba ngã tư có đèn đều có camera trên cột đèn**: đúng lúc xe qua vạch dừng (đèn xanh hay đèn đỏ đều tính), nếu tốc độ vượt giới hạn của đoạn đường vừa đi qua từ 5 km/h thì bị phạt theo mức vượt lúc đó: 5 đến dưới 10 km/h phạt 400–600 nghìn; 10 đến 20 km/h phạt 800 nghìn–1 triệu; trên 20 km/h (chỉ gặp được ở khối trường học) phạt 6–8 triệu và trừ 4 điểm GPLX. Có tiếng máy ảnh "tách" và loé sáng. Vậy nhả ga **trước** khi tới vạch dừng. Phố Chợ và vòng xuyến không có camera.
-- **Phạt:** vượt đèn đỏ, chạy quá tốc độ, đi vào phố đi bộ có biển cấm xe máy, rẽ hoặc quay đầu không xi-nhan, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
+- **Mũ bảo hiểm:** mỗi buổi chơi xe bắt đầu **đầu trần** (ô đỏ "🪖 Chưa đội mũ" ở góc trên). Bấm nút vàng **🪖 Đội mũ** (phím **H**) ở góc phải, dưới bản đồ nhỏ; đội một lần là dùng cho cả buổi chơi. Có hai **chốt CSGT** cố định (chòi xanh, chú CSGT áo vàng, cọc tiêu cam và vạch đứt cam ngang đường): một trên Đường Hoa Sữa giữa Phố Chợ và Đường Cầu Vồng, một trên Đường Cầu Vồng giữa hai ngã tư. Đầu trần chạy qua chốt là bị thổi còi, giữ xe khoảng 2 giây và phạt 500.000đ (không trừ điểm). Đã đội mũ thì chú CSGT cho đi. Đầu trần chạy lâu thì người đi đường cũng nhắc.
+- **Khách gọi điện:** cứ 2–3 chuyến thì điện thoại đổ chuông (ô "📞 Khách đang gọi…", nút xanh nhấp nháy **📞 Nghe máy**, hoặc phím **C**). Có 12 giây để nghe; không nghe thì khách gọi lại sau, không mất gì. **Tấp vào ô P rồi mới nghe**: hết cuộc gọi khách vui và boa 20.000đ. **Vừa chạy vừa nghe (hoặc đứng giữa đường, kể cả dừng đèn đỏ) là vừa lái vừa cầm điện thoại**: xe lái khó hơn, trợ lái tắt, và nếu qua chốt CSGT hoặc qua vạch dừng ngã tư có camera lúc đó thì bị phạt 900.000đ và trừ 4 điểm GPLX (mỗi cuộc gọi phạt một lần). Điện thoại gắn trên xe để xem bản đồ thì không bị coi là vi phạm.
+- **Phạt:** vượt đèn đỏ, chạy quá tốc độ, không đội mũ bảo hiểm khi qua chốt, cầm điện thoại khi lái, đi vào phố đi bộ có biển cấm xe máy, rẽ hoặc quay đầu không xi-nhan, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
 - **Nhắc nhở (không phạt tiền):** đỗ trong ô P mà đầu xe quay ngược chiều đi. Luật yêu cầu đỗ sát lề bên phải theo chiều đi, nhưng với xe máy không có mức phạt riêng, nên game chỉ nhắc. Chuyến đó không được tính là chuyến sạch.
 - **Đền:** ai bị bạn làm kẹt xe hoặc đụng phải thì được đền tiền từ ví của bạn. Người bị ảnh hưởng hiện mặt 😤.
 - **Hết điểm GPLX:** bị trừ hết 12 điểm thì xe dừng ngay, không lái tiếp được, đúng như luật. Muốn lái lại thì làm bài kiểm tra 5 câu về luật, đúng từ 4 câu là được phục hồi đủ 12 điểm. Nếu không muốn thi, bạn có thể chọn chơi lại từ đầu.
@@ -75,6 +77,17 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 0.11 đổi gì so với bản 0.10.3
+
+1. Mũ bảo hiểm: nút 🪖 Đội mũ (phím H), đội một lần cho cả buổi chơi; đầu trần qua chốt CSGT bị phạt 500.000đ.
+2. Hai chốt CSGT cố định (Đường Hoa Sữa và Đường Cầu Vồng).
+3. Khách gọi điện: nút 📞 Nghe máy (phím C); đỗ trong ô P rồi nghe thì được boa, vừa lái vừa nghe bị phạt 900.000đ và trừ 4 điểm tại chốt hoặc camera.
+4. Hai câu hỏi mới trong bài kiểm tra phục hồi điểm; điện thoại cầm ngang gọn hơn.
+
+**Nhờ bạn chơi thử:** hai nút 🪖 và 📞 ở góc phải có dễ bấm trên điện thoại không? Chốt CSGT có dễ thấy từ xa không? Bị giữ xe 2 giây có bực quá không? Cứ 2–3 chuyến có một cuộc gọi như vậy thì nhiều hay ít?
+
+*Lưu ý pháp lý:* số khoản/điểm của hai lỗi mới được đối chiếu qua nhiều nguồn tổng hợp, chưa đối chiếu toàn văn Nghị định 168/2024 (ghi ở mục 8 của `docs/THIET-KE.md`).
 
 ## Bản 0.10.3 đổi gì so với bản 0.10.2
 

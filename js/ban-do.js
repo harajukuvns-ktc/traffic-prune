@@ -167,6 +167,14 @@ function inCurb(x, y){
   return null;
 }
 
+// Chốt CSGT (bản 0.11): hai chốt cố định. Xe đi qua "vạch kiểm tra" (cả hai chiều) mà đầu trần hoặc đang cầm điện thoại là bị thổi còi.
+//   axis 'x': vạch kiểm tra là đường thẳng đứng x = x0, nằm trên đường ngang quanh y = y0
+//   axis 'y': vạch kiểm tra là đường nằm ngang y = y0, nằm trên đường dọc quanh x = x0
+//   cabin: chỗ đặt chòi CSGT bên vỉa hè (chỉ để vẽ)
+const CSGT = [
+  {id: 'hoasua',  axis: 'x', x: 990,  y: 300, cabin: {x: 990,  y: 352}, name: 'Đường Hoa Sữa'},
+  {id: 'cauvong', axis: 'y', x: 1200, y: 700, cabin: {x: 1150, y: 700}, name: 'Đường Cầu Vồng'}
+];
 function classify(x, y){
   for (const b of BAYS) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return {t:'bay', bay:b};
   const dr = Math.hypot(x - RB.x, y - RB.y);
