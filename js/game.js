@@ -22,7 +22,9 @@ const S = {
   pedEp: false, pedCool: -99,
   // tốc độ: spdSec = đoạn đường đang đi, spdSaid = đoạn này đã nhắc nhở rồi, spdT = thời gian đã chạy quá, spdMax = mức vượt lớn nhất, spdLimit = giới hạn hiện tại (km/h)
   // camCool = mốc thời gian chống bị camera chụp hai lần liền
-  spdSec: '', spdSaid: false, spdT: 0, spdMax: 0, spdLimit: 40, camCool: -99
+  spdSec: '', spdSaid: false, spdT: 0, spdMax: 0, spdLimit: 40, camCool: -99,
+  // lastSteer = lần cuối người chơi bấm rẽ (trợ lái chờ 1 giây sau đó mới nắn xe lại)
+  lastSteer: -99
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -92,7 +94,7 @@ function save(){
 }
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
-  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99;
+  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99; S.lastSteer = -99;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
   newTrip();
 }
@@ -570,13 +572,21 @@ function updPlayer(dt){
   if ((!keys.up && !braking) || player.stun > 0){
     const fr = 70 * dt; player.v = Math.abs(player.v) <= fr ? 0 : player.v - Math.sign(player.v) * fr;
   }
+  // Cua chậm (quay đầu, rẽ gắt): giữ phím rẽ mà không bấm ga thì xe tự giữ khoảng 11 km/h, khỏi phải nhấp nhả GA
+  if ((keys.left || keys.right) && !keys.up && !braking && player.v >= 0 && player.v < 33 && player.stun <= 0 && !S.suspended){
+    player.v = Math.min(33, player.v + 115 * dt);
+  }
   const vmax = prevC.t === 'off' ? 45 : VMAX;
   if (player.v > vmax) player.v = Math.max(vmax, player.v - 320 * dt);
   player.v = Math.max(player.v, -35);
   if (player.stun <= 0){
     const steer = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
-    if (steer) player.a = normA(player.a + steer * 2.4 * dt * clamp(Math.abs(player.v) / 40, 0, 1) * Math.sign(player.v || 1));
-    else if (S.assist && player.v > 20) laneAssist(prevC, dt);
+    // Tốc độ góc: đi chậm thì quay vòng hẹp (bán kính khoảng 2,5 m = 10 đơn vị, như xe máy thật); từ 13 km/h trở lên giảm dần về 2,4 rad/s ở 27 km/h
+    const sv = Math.abs(player.v);
+    const rate = sv <= 40 ? Math.min(sv / 10, 3.3) : 3.3 - 0.9 * clamp((sv - 40) / 40, 0, 1);
+    if (steer){ S.lastSteer = S.now; player.a = normA(player.a + steer * rate * dt * Math.sign(player.v || 1)); }
+    // Trợ lái chờ 1 giây sau khi nhả phím rẽ; đang bật xi-nhan (6 giây đầu, ngoài ô đỗ) thì không giành lái vì có thể đang định rẽ hoặc quay đầu
+    else if (S.assist && player.v > 20 && S.now - S.lastSteer > 1 && !(S.turn !== 0 && S.now - S.sigOnT < 6 && prevC.t !== 'bay')) laneAssist(prevC, dt);
   }
   const nx = clamp(player.x + Math.cos(player.a) * player.v * dt, 8, W - 8);
   const ny = clamp(player.y + Math.sin(player.a) * player.v * dt, 8, H - 8);
@@ -1364,11 +1374,24 @@ function setupInput(){
   const held = {};
   document.querySelectorAll('.cbtn').forEach(b => {
     const k = b.dataset.k; let down = false;
+    if (k === 'left' || k === 'right') return;   // hai nút rẽ xử lý riêng ở dưới (trượt ngón vẫn giữ)
     const on = e => { if (!down){ down = true; held[k] = (held[k] || 0) + 1; } keys[k] = true; b.classList.add('on'); e.preventDefault(); };
     const off = e => { if (down){ down = false; held[k] = Math.max(0, (held[k] || 1) - 1); } keys[k] = held[k] > 0; b.classList.remove('on'); e.preventDefault(); };
     b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off);
     b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
   });
+  // hai nút rẽ ◀ ▶ nằm cạnh nhau: đặt ngón vào là giữ, trượt ngón sang nút kia hay lệch ra ngoài mép vẫn tính là đang giữ; chỉ nhấc ngón lên mới nhả
+  const steerBox = document.querySelector('.steer');
+  if (steerBox){
+    const bl = steerBox.querySelector('[data-k=left]'), br = steerBox.querySelector('[data-k=right]');
+    let pid = null;
+    const setSide = e => { const r = steerBox.getBoundingClientRect(), left = e.clientX < r.left + r.width / 2;
+      keys.left = left; keys.right = !left; bl.classList.toggle('on', left); br.classList.toggle('on', !left); };
+    const release = e => { if (e.pointerId !== pid) return; pid = null; keys.left = keys.right = false; bl.classList.remove('on'); br.classList.remove('on'); e.preventDefault(); };
+    steerBox.addEventListener('pointerdown', e => { if (pid !== null) return; pid = e.pointerId; try { steerBox.setPointerCapture(pid); } catch(_){} setSide(e); e.preventDefault(); });
+    steerBox.addEventListener('pointermove', e => { if (e.pointerId === pid) setSide(e); });
+    steerBox.addEventListener('pointerup', release); steerBox.addEventListener('pointercancel', release);
+  }
   // hai nút xi-nhan nhỏ trên điện thoại: chạm một lần để bật, chạm lại để tắt
   document.querySelectorAll('.sbtn').forEach(b => {
     b.addEventListener('pointerdown', e => { if (!S.paused) setSignal(+b.dataset.s); e.preventDefault(); });

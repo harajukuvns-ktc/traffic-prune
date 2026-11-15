@@ -5,7 +5,7 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
-  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
+  S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.lastSteer = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -348,6 +348,40 @@ S.pts = 12; S.suspended = false;
   ok(LAW_ORDER_HAS(['speed1','speed2','speed3']), 'ba bậc phạt tốc độ có trong Sổ tay');
   r = drive(450, 320, 0, 0, 2);
   ok(r.s1 + r.s2 + r.s3 === 0, 'đứng yên không bị phạt tốc độ');
+}
+// 14) Quay đầu, cua chậm và trợ lái không giành lái (bản 0.10.3)
+{ const place = (x, y, a, v) => { reset(); clearNear(x, y, 600); player.x = x; player.y = y; player.a = a; player.v = v; S.assist = true; keys.up = keys.down = keys.brake = keys.left = keys.right = false; };
+  // tự giữ ga khi cua chậm
+  place(600, 320, 0, 0); keys.left = true; run(1);
+  ok(player.v >= 30 && player.v <= 34, `giữ phím rẽ mà không bấm ga thì xe tự giữ khoảng 11 km/h (đạt ${(player.v/3).toFixed(1)} km/h)`);
+  keys.left = false;
+  place(600, 320, 0, 0); run(1);
+  ok(player.v === 0, 'không bấm gì thì xe đứng yên, không tự bò');
+  place(600, 320, 0, 0); keys.left = true; keys.brake = true; run(1); keys.left = keys.brake = false;
+  ok(player.v === 0, 'giữ phím rẽ cùng phanh thì không tự bò');
+  // quay đầu ở đoạn đường ngang: lọt lòng đường, không leo vỉa hè
+  place(600, 320, 0, 0); keys.left = true;
+  let minY = 999, maxY = -999, off = 0, t = 0;
+  while (t < 6 && !(Math.abs(player.a) > 2.9)){ step(dt); t += dt; minY = Math.min(minY, player.y); maxY = Math.max(maxY, player.y); if (classify(player.x, player.y).t === 'off') off++; }
+  keys.left = false;
+  ok(Math.abs(player.a) > 2.9 && t < 6, `giữ phím rẽ là quay đầu xong trong ${t.toFixed(1)} giây (dưới 6 giây)`);
+  ok(off === 0 && minY > 262 && maxY < 338, `quay đầu lọt trong lòng đường (y từ ${minY.toFixed(0)} đến ${maxY.toFixed(0)}, đường rộng 260–340), không leo vỉa hè`);
+  // tốc độ cao thì tốc độ góc vẫn 2,4 rad/giây như cũ
+  place(600, 320, 0, 120); keys.left = true; for (let i = 0; i < 0.5/dt; i++){ player.v = 120; step(dt); } keys.left = false;
+  ok(Math.abs(player.a + 1.2) < 0.06, `ở 40 km/h tốc độ góc vẫn như cũ (0,5 giây quay ${(-player.a).toFixed(2)} rad, mong đợi khoảng 1,2)`);
+  // trợ lái chờ 1 giây sau khi nhả phím rẽ (xe chạy chéo nhẹ trên làn, góc 0,12 rad)
+  place(600, 318, 0.12, 60); S.lastSteer = S.now;
+  for (let i = 0; i < 0.6/dt; i++){ player.v = 60; step(dt); }
+  const a1 = player.a;
+  for (let i = 0; i < 1.6/dt; i++){ player.v = 60; step(dt); }
+  ok(Math.abs(a1 - 0.12) < 0.01 && Math.abs(player.a) < Math.abs(a1) - 0.03, `vừa nhả phím rẽ thì trợ lái chờ (0,6 giây sau góc ${a1.toFixed(2)}, 2,2 giây sau ${player.a.toFixed(2)})`);
+  // đang bật xi-nhan thì trợ lái không giành lái, qua 6 giây mới nắn
+  place(450, 916, -0.03, 40); S.turn = -1; S.sigOnT = S.now; S.lastSteer = -99;
+  for (let i = 0; i < 3/dt; i++){ player.v = 40; step(dt); }
+  const a2 = player.a;
+  for (let i = 0; i < 4/dt; i++){ player.v = 40; step(dt); }
+  ok(Math.abs(a2 + 0.03) < 0.01 && Math.abs(player.a - a2) > 0.05, `đang bật xi-nhan thì trợ lái không giành lái (3 giây đầu góc ${a2.toFixed(2)}), quá 6 giây mới nắn (${player.a.toFixed(2)})`);
+  S.turn = 0;
 }
 function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && TP.LAW[k].fine > 0); }
 

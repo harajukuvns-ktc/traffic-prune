@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.10.2)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.10.3)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,11 +50,12 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.10.2)
+## Cách chơi (bản 0.10.3)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
 - **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
-- **Lái xe:** ↑ hoặc W để ga, **Space để phanh** (chỉ phanh, dừng hẳn thì đứng yên), ↓ hoặc S cũng phanh nhưng giữ tiếp sau khi dừng thì xe lùi chậm, ← → hoặc A D để rẽ trái, rẽ phải. Vì bản đồ xoay theo xe nên ← luôn là rẽ sang trái của bạn. Trên điện thoại: bên trái có 4 nút hình chữ thập (▲ tiến, giống GA; ▼ phanh, dừng hẳn rồi giữ tiếp thì lùi chậm; ◀ ▶ rẽ), bên phải có PHANH (chỉ phanh, không lùi) và GA.
+- **Lái xe:** ↑ hoặc W để ga, **Space để phanh** (chỉ phanh, dừng hẳn thì đứng yên), ↓ hoặc S cũng phanh nhưng giữ tiếp sau khi dừng thì xe lùi chậm, ← → hoặc A D để rẽ trái, rẽ phải. Vì bản đồ xoay theo xe nên ← luôn là rẽ sang trái của bạn. Trên điện thoại: bên trái có hai nút rẽ **◀ ▶ to nằm cạnh nhau** (đặt ngón vào là giữ; trượt ngón sang nút kia hay lệch ra ngoài mép vẫn tính là đang giữ, nhấc ngón lên mới nhả) và nút **▼** nhỏ hơn bên dưới (phanh, dừng hẳn rồi giữ tiếp thì lùi chậm); bên phải có PHANH (chỉ phanh, không lùi) và GA.
+- **Cua chậm và quay đầu:** giữ nút rẽ mà không bấm GA thì xe tự chạy chậm khoảng 11 km/h, nên quay đầu chỉ cần giữ một nút rẽ. Đi chậm thì xe quay gắt hơn (khoảng 2,5 m, như xe máy thật). Trợ lái giữ làn chờ 1 giây sau khi bạn nhả nút rẽ mới nắn xe lại, và không nắn trong vài giây đầu sau khi bạn bật xi-nhan.
 - **Trợ lái giữ làn:** khi bạn thả phím rẽ ra, xe tự chạy thẳng theo làn bên phải. Bạn chỉ cần bấm rẽ ở ngã tư, khi vào ô đỗ hoặc khi muốn vượt. Tắt được ở màn hình mở đầu (nút ❔).
 - **Giao hàng:** tới nơi thì tấp vào **ô đỗ xe có biển P** của điểm giao (đang nhấp nháy xanh) và dừng hẳn lại. Dừng ngoài lòng đường không tính.
 - **Ô đỗ xe P:** có 11 ô, kẻ vạch trắng ngay trên lòng đường, sát vỉa hè bên phải theo chiều xe chạy, giống ngoài đời. Muốn đỗ vào ô ở lề bên kia thì phải quay đầu để đỗ đúng chiều; chỉ đường sẽ dẫn bạn như vậy. Đỗ trong ô thì không cản ai và không ai đụng bạn. Dừng lâu giữa đường làm người khác phải chờ thì sẽ bị nhắc.
@@ -74,6 +75,13 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 0.10.3 đổi gì so với bản 0.10.2
+
+1. Quay đầu dễ hơn: giữ nút rẽ là xe tự chạy chậm và quay vòng gọn; trợ lái không giành lái khi bạn vừa nhả nút rẽ hay đang bật xi-nhan.
+2. Nút trên điện thoại: bỏ nút ▲, hai nút rẽ ◀ ▶ to hơn nằm cạnh nhau, trượt ngón vẫn giữ nút.
+
+**Nhờ bạn chơi thử:** quay đầu ở đoạn vạch đứt trên điện thoại giờ đã dễ chưa? Hai nút ◀ ▶ có đủ to, ngón cái có với tới thoải mái không?
 
 ## Bản 0.10.2 đổi gì so với bản 0.10.1
 
