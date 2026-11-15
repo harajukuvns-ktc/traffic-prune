@@ -129,6 +129,7 @@ Không giao trọn một mảng cho một agent cố định (agent không nhớ
 | 0.12.4 | 15/11/2026 | Người dùng góp ý lúc 16:27: trên điện thoại vô lăng và đồng hồ che kín xe và một phần đường; chốt cách sửa lúc 16:31 ("1. Đồng ý"). Trên điện thoại bỏ nền tối dày, chỉ còn ô đồng hồ nhỏ và nửa vành vô lăng mờ đặt phía trên hàng nút (`#cockpitCar` bottom 200px, rộng 190px); xe của người chơi đặt cao hơn bảng này (`want = VH - 300` trong `resize`) để thấy làn phía trước. Máy tính giữ nguyên. Chưa vẽ mép nắp capo (để sau nếu cần) |
 | (tài liệu) | 15/11/2026 | Người dùng chốt lúc 16:34: dừng chỉnh góc nhìn sau tay lái / sau vô lăng, để làm lại ở nấc 3D số 2 (mục 10.1); góc dẫn đường vẫn mặc định |
 | 1.0 | 15/11/2026 | Người dùng chốt toàn bộ kế hoạch lúc 16:37 ("Đồng ý toàn bộ"). Hai thanh điểm: thêm điểm văn hóa 0–100 (bắt đầu 70, dùng chung hai xe, không phạt tiền, không tự hồi); trừ khi làm kẹt xe, leo vỉa hè, dừng chắn đường, bám đuôi, quên tắt xi-nhan, không nhường người qua vạch; cộng khi nhường người đi bộ, nghe máy trong ô P (thay tiền boa), chuyến không làm phiền ai; khách boa thêm/chấm sao theo văn hóa. Người đi bộ qua vạch ở hai đầu Phố Chợ, xe NPC dừng nhường; lỗi bám đuôi; test mục 20; sửa bài test mục 12 chập chờn. Tiền boa 5.000đ bỏ hẳn |
+| 1.1 (đang làm, bước 1/7) | 15/11/2026 | Nhánh `ban-1.1`: bộ máy bản đồ dạng dữ liệu (`NODES`, `ROADS`, `dungBanDo`) chạy song song bộ cũ, cho kết quả y hệt trên khu hiện tại; test mục 21. Game chưa đổi gì với người chơi |
 | (tài liệu) | 15/11/2026 | Người dùng đổi giai đoạn 2 thành bản đồ gấp 4 (16:54) và chốt kế hoạch 4 bản 1.1–1.4, 4 khu (16:56); mục 10.2 |
 | (tài liệu) | 14/11/2026 | Ghi dự án Saltline làm nguồn tham khảo cho đồ họa 3D (mục 10.1): học ý tưởng, không chép mã vì không có giấy phép; chưa làm 3D, giữ nguyên lộ trình |
 
@@ -427,6 +428,20 @@ Viết ngày 15/11/2026 sau khi người dùng chốt (16:56, 17:02). Đây là 
 **Cách làm an toàn:** (1) viết bộ máy mới bên cạnh bộ cũ; (2) khai báo khu cũ bằng dữ liệu mới, so sánh từng điểm `classify` cũ và mới trên lưới toàn bản đồ (sai khác phải bằng 0 hoặc giải thích được); (3) chuyển từng phần (vẽ → chỉ đường → NPC → bắt lỗi → trợ lái), sau mỗi phần chạy `tests/kiem-tra-logic.js` phải đạt hết; (4) xoá bộ cũ. Test mới: mục 21 so sánh bản đồ cũ/mới và kiểm tra một đoạn đường chéo thử (không đưa vào bản đồ chơi ở 1.1).
 
 **Rủi ro:** việc lớn, nên chia nhiều lần đẩy lên; nếu điện thoại giật thì giảm độ phân giải mảnh nền.
+
+**Tiến độ** (làm trên nhánh `ban-1.1`, chỉ gộp vào `main` khi xong cả 7 bước; người dùng đồng ý lúc 17:16 ngày 15/11/2026):
+
+| Bước | Nội dung | Trạng thái |
+|---|---|---|
+| 1 | Dữ liệu `NODES` / `ROADS` cho khu cũ, hàm `dungBanDo()` (cuối `js/ban-do.js`) dựng `MAP`: chiếu điểm lên đường (`MAP.hits`, `MAP.project`), `MAP.classify`, góc vỉa hè bo cong, vạch giữa (`MAP.lineAt`), đoạn tốc độ (`MAP.speedInfo`), đồ thị chỉ đường (`MAP.graph`), đèn (`MAP.lights`). Test mục 21: so 509.841 điểm cũ/mới (sai khác 0), vạch, đoạn tốc độ, đồ thị, đèn, góc vỉa hè đều khớp; bản đồ thử có đường chéo, ngã ba lệch, đường cong, hẻm cấm ô tô | **Xong** 15/11/2026 |
+| 2 | Vẽ nền theo mảnh 512 × 512 từ `MAP` (đường, vạch, vỉa hè, nhà dạng đa giác, ô đỗ, cột đèn, biển) | Chưa làm |
+| 3 | Chỉ đường trên `MAP.graph`, rẽ trái/phải theo góc nhánh | Chưa làm |
+| 4 | Bộ sinh lộ trình NPC thay `ROUTES` | Chưa làm |
+| 5 | Bắt lỗi theo hướng đường (sai làn, đè vạch, đèn đỏ, camera, xi-nhan); `CSGT`, `SCHOOL`, người qua vạch lấy vị trí từ dữ liệu | Chưa làm |
+| 6 | Trợ lái giữ làn, ôm cua, quay đầu tự động theo hướng đường | Chưa làm |
+| 7 | Xoá bộ cũ (`HR`, `VR`, `OW`, `RB`, `N`, `SEGS`, `CORNERS`, `lineType`…), cập nhật tài liệu, gộp vào `main` | Chưa làm |
+
+Ghi chú bước 1: ngã tư được nhận tự động (nút có từ 3 nhánh cho xe, hoặc 2 nhánh lệch hướng); đầu Phố Chợ (nút B, E) chỉ có 2 nhánh xe thẳng hàng nên không phải ngã tư, giống bộ cũ. Pha đèn tạm tính theo hướng nhánh (`MAP.armPhase`: gần trục dọc là 'NS'); bản 1.2 cần khai báo pha riêng từng nhánh cho ngã năm, đường chéo. Phố đi bộ khai báo là đường `cap: 'ped'`.
 
 ## 11. Chọn mô hình cho từng loại việc (để đỡ tốn hạn mức)
 

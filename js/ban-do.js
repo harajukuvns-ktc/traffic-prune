@@ -322,3 +322,194 @@ function pointAt(route, s){
   return {x: route.pts[0].x, y: route.pts[0].y, idx: 1};
 }
 
+
+/* =========================================================
+   2b. BỘ MÁY BẢN ĐỒ DẠNG DỮ LIỆU (bản 1.1, xem mục 10.3 của docs/THIET-KE.md)
+   Bản đồ khai báo bằng hai bảng: NODES (điểm nút) và ROADS (đoạn đường giữa hai nút).
+   Mọi thứ còn lại tự sinh: vùng ngã tư, vỉa hè bo cong, vạch giữa, đoạn tốc độ, đồ thị chỉ đường, đèn.
+   Đường đi theo góc bất kỳ, có thể cong (điểm uốn `via`). Đang chuyển dần: bộ cũ ở trên vẫn chạy game,
+   bộ mới phải cho kết quả y hệt bộ cũ trên khu hiện tại (tests mục 21).
+   ========================================================= */
+// kind: 'light' (có đèn) | 'priority' (biển ưu tiên) | 'plain' (không biển) | 'ring' (vòng xuyến) | 'end' (mép bản đồ)
+const NODES = [
+  {id:'A', x:400,  y:300, kind:'light', light:{off:0}},
+  {id:'B', x:800,  y:300, kind:'plain'},
+  {id:'C', x:1200, y:300, kind:'light', light:{off:7}},
+  {id:'D', x:400,  y:900, kind:'light', light:{off:14}},
+  {id:'E', x:800,  y:900, kind:'plain'},
+  {id:'F', x:1200, y:900, kind:'ring', ring:{rOut:100, rIn:48, rLane:76}},
+  {id:'W1', x:0, y:300, kind:'end'}, {id:'E1', x:1600, y:300, kind:'end'},
+  {id:'W2', x:0, y:900, kind:'end'}, {id:'E2', x:1600, y:900, kind:'end'},
+  {id:'N1', x:400, y:0, kind:'end'}, {id:'S1', x:400, y:1200, kind:'end'},
+  {id:'N2', x:1200, y:0, kind:'end'}, {id:'S2', x:1200, y:1200, kind:'end'}
+];
+// cap: 'big' (đường lớn) | 'normal' (đường thường) | 'alley' (hẻm) | 'ped' (phố đi bộ)
+// half: nửa bề rộng mặt đường; lanes: số làn mỗi chiều; limit: tốc độ tối đa (km/h)
+// noCar / noBike: biển cấm ô tô / xe máy; oneway: chỉ được đi từ a sang b; via: điểm uốn nếu đường cong
+const RD = (id, a, b, name, more) => Object.assign({id, a, b, name, cap:'normal', half:HALF, lanes:1, limit:SPEED_LIMIT}, more || {});
+const ROADS = [
+  RD('hs0','W1','A','Đường Hoa Sữa'), RD('hs1','A','B','Đường Hoa Sữa'), RD('hs2','B','C','Đường Hoa Sữa'), RD('hs3','C','E1','Đường Hoa Sữa'),
+  RD('mc0','W2','D','Đường Me Chua'), RD('mc1','D','E','Đường Me Chua'), RD('mc2','E','F','Đường Me Chua'), RD('mc3','F','E2','Đường Me Chua'),
+  RD('bm0','N1','A','Phố Bánh Mì'), RD('bm1','A','D','Phố Bánh Mì', {limit:30, child:true}), RD('bm2','D','S1','Phố Bánh Mì'),
+  RD('cv0','N2','C','Đường Cầu Vồng'), RD('cv1','C','F','Đường Cầu Vồng'), RD('cv2','F','S2','Đường Cầu Vồng'),
+  RD('pc', 'B','E','Phố Chợ', {cap:'ped', half:22, lanes:0, noCar:true, noBike:true})
+];
+
+function dungBanDo(nodeList, roadList, opt){
+  opt = opt || {};
+  const M = {nodes: {}, roads: [], bays: opt.bays || [], curb: opt.curb == null ? CURB : opt.curb, solidLen: opt.solidLen == null ? SOLID_LEN : opt.solidLen};
+  for (const n of nodeList) M.nodes[n.id] = Object.assign({arms: []}, n);
+  const unit = (x, y) => { const l = Math.hypot(x, y) || 1; return {x: x/l, y: y/l}; };
+  const crossU = (u, v) => u.x*v.y - u.y*v.x;
+  for (const r0 of roadList){
+    const r = Object.assign({}, r0), A = M.nodes[r.a], B = M.nodes[r.b];
+    r.veh = r.cap !== 'ped';
+    // đường cong: lấy mẫu đường Bézier bậc hai thành chuỗi điểm
+    if (r.via){ r.pts = []; for (let i = 0; i <= 16; i++){ const t = i/16, u = 1 - t;
+        r.pts.push({x: u*u*A.x + 2*u*t*r.via.x + t*t*B.x, y: u*u*A.y + 2*u*t*r.via.y + t*t*B.y}); } }
+    else r.pts = [{x: A.x, y: A.y}, {x: B.x, y: B.y}];
+    r.seg = []; let L = 0;
+    for (let i = 0; i + 1 < r.pts.length; i++){ const p = r.pts[i], q = r.pts[i+1], l = Math.hypot(q.x - p.x, q.y - p.y);
+      r.seg.push({p, s0: L, l, d: unit(q.x - p.x, q.y - p.y)}); L += l; }
+    r.len = L;
+    const n = r.pts.length;
+    r.dirA = unit(r.pts[1].x - r.pts[0].x, r.pts[1].y - r.pts[0].y);        // hướng ra khỏi nút a
+    r.dirB = unit(r.pts[n-2].x - r.pts[n-1].x, r.pts[n-2].y - r.pts[n-1].y); // hướng ra khỏi nút b
+    // kiểu đường để khớp với bộ cũ: 'h' (ngang), 'v' (dọc), 'road' (góc bất kỳ hoặc cong)
+    r.kieu = r.via ? {t:'road'} : Math.abs(r.dirA.y) < 1e-9 ? {t:'h', Y: A.y} : Math.abs(r.dirA.x) < 1e-9 ? {t:'v', X: A.x} : {t:'road'};
+    M.roads.push(r);
+    A.arms.push({road: r, end: 'a', out: r.dirA, half: r.half});
+    B.arms.push({road: r, end: 'b', out: r.dirB, half: r.half});
+  }
+  M.road = id => M.roads.find(r => r.id === id);
+  const parallel = (u, v) => Math.abs(crossU(u, v)) < 0.1;
+  for (const id in M.nodes){
+    const nd = M.nodes[id];
+    nd.arms.sort((p, q) => Math.atan2(p.out.y, p.out.x) - Math.atan2(q.out.y, q.out.x));
+    const veh = nd.arms.filter(a => a.road.veh);
+    // ngã tư = nút có ít nhất 3 nhánh cho xe, hoặc 2 nhánh lệch hướng (không thẳng hàng)
+    nd.junction = nd.kind !== 'ring' && nd.kind !== 'end' &&
+      (veh.length >= 3 || (veh.length === 2 && !parallel(veh[0].out, {x: -veh[1].out.x, y: -veh[1].out.y})));
+  }
+
+  // Chiếu điểm lên các đoạn đường: trả về mọi đường mà điểm nằm trên mặt đường
+  // s: quãng đường dọc theo đường tính từ nút a; lat: lệch ngang có dấu (dương là bên phải theo chiều a→b); dir: hướng a→b tại đó
+  M.hits = (x, y) => {
+    const out = [];
+    for (const r of M.roads){
+      let best = null;
+      for (const g of r.seg){
+        const t = (x - g.p.x)*g.d.x + (y - g.p.y)*g.d.y;
+        if (t < -1e-9 || t > g.l + 1e-9) continue;
+        const lat = -(x - g.p.x)*g.d.y + (y - g.p.y)*g.d.x;
+        if (Math.abs(lat) <= r.half + 1e-9 && (!best || Math.abs(lat) < Math.abs(best.lat))) best = {road: r, s: g.s0 + t, lat, dir: g.d};
+      }
+      if (best) out.push(best);
+    }
+    return out;
+  };
+  // Đường gần nhất (kể cả khi điểm nằm ngoài mặt đường), để trợ lái và chỉ đường dùng sau này
+  M.project = (x, y) => {
+    let best = null;
+    for (const r of M.roads) for (const g of r.seg){
+      const t = Math.max(0, Math.min(g.l, (x - g.p.x)*g.d.x + (y - g.p.y)*g.d.y));
+      const px = g.p.x + g.d.x*t, py = g.p.y + g.d.y*t, dist = Math.hypot(x - px, y - py);
+      if (!best || dist < best.dist) best = {road: r, s: g.s0 + t, dist, lat: -(x - g.p.x)*g.d.y + (y - g.p.y)*g.d.x, dir: g.d};
+    }
+    return best;
+  };
+  M.pointAt = (r, s) => {
+    for (const g of r.seg) if (s <= g.s0 + g.l || g === r.seg[r.seg.length-1]){ const t = s - g.s0; return {x: g.p.x + g.d.x*t, y: g.p.y + g.d.y*t, dir: g.d}; }
+  };
+
+  // Vỉa hè bo cong ở góc giữa hai nhánh kề nhau của mỗi nút (không làm ở vòng xuyến và mép bản đồ)
+  M.corners = [];
+  for (const id in M.nodes){
+    const nd = M.nodes[id];
+    if (nd.kind === 'ring' || nd.kind === 'end' || nd.arms.length < 2) continue;
+    const k = nd.arms.length;
+    for (let i = 0; i < k; i++){
+      const p = nd.arms[i], q = nd.arms[(i + 1) % k];
+      let g = Math.atan2(q.out.y, q.out.x) - Math.atan2(p.out.y, p.out.x); if (g <= 0) g += 2*Math.PI;
+      if (g >= Math.PI - 0.17) continue;                          // hai nhánh gần thẳng hàng hoặc góc tù lớn: không có góc vỉa hè
+      const sn = Math.sin(g), tn = M.curb / Math.tan(g/2);
+      const ex = nd.x + p.out.x*q.half/sn + q.out.x*p.half/sn, ey = nd.y + p.out.y*q.half/sn + q.out.y*p.half/sn;  // góc mép đường
+      const bis = unit(p.out.x + q.out.x, p.out.y + q.out.y), bd = M.curb / Math.sin(g/2);
+      const vehArm = p.road.veh ? p : q;
+      M.corners.push({node: id, u: p.out, v: q.out, sn, tn, ex, ey, cx: ex + bis.x*bd, cy: ey + bis.y*bd,
+                      t: nd.junction ? {t:'junction', X: nd.x, Y: nd.y, node: id} : Object.assign({}, vehArm.road.kieu, {road: vehArm.road})});
+    }
+  }
+  M.inCurb = (x, y) => {
+    for (const c of M.corners){
+      // toạ độ xiên theo hai nhánh: (x,y) - góc = a*u + b*v
+      const dx = x - c.ex, dy = y - c.ey;
+      const a = (dx*c.v.y - dy*c.v.x) / (c.u.x*c.v.y - c.u.y*c.v.x), b = (c.u.x*dy - c.u.y*dx) / (c.u.x*c.v.y - c.u.y*c.v.x);
+      if (a >= -1e-9 && a <= c.tn + 1e-9 && b >= -1e-9 && b <= c.tn + 1e-9 && Math.hypot(x - c.cx, y - c.cy) > M.curb) return c.t;
+    }
+    return null;
+  };
+
+  // Phân loại một điểm trên bản đồ (thay cho classify() cũ). Kết quả giữ đúng dạng cũ ({t:'h', Y} / {t:'v', X} ...),
+  // thêm road, s, lat, dir khi điểm nằm trên đường, để các phần khác chuyển dần sang tính theo hướng đường.
+  M.classify = (x, y) => {
+    for (const b of M.bays) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return {t:'bay', bay:b};
+    for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind !== 'ring') continue;
+      const dr = Math.hypot(x - nd.x, y - nd.y);
+      if (dr <= nd.ring.rOut) return dr < nd.ring.rIn ? {t:'island', node: id} : {t:'ring', node: id}; }
+    const hs = M.hits(x, y), vh = hs.filter(h => h.road.veh);
+    const ped = hs.find(h => !h.road.veh && h.s >= h.road.gapA.gap - 1e-9 && h.s <= h.road.len - h.road.gapB.gap + 1e-9);
+    for (let i = 0; i < vh.length; i++) for (let j = i + 1; j < vh.length; j++){
+      const r1 = vh[i].road, r2 = vh[j].road;
+      if (parallel(vh[i].dir, vh[j].dir)) continue;
+      for (const nid of [r1.a, r1.b]) if ((nid === r2.a || nid === r2.b) && M.nodes[nid].junction)
+        return {t:'junction', X: M.nodes[nid].x, Y: M.nodes[nid].y, node: nid};
+    }
+    if (ped) return {t:'ped', road: ped.road, s: ped.s, lat: ped.lat, dir: ped.dir};
+    if (vh.length){ const h = vh.reduce((p, q) => Math.abs(q.lat) < Math.abs(p.lat) ? q : p, vh[0]);
+      return Object.assign({}, h.road.kieu, {road: h.road, s: h.s, lat: h.lat, dir: h.dir}); }
+    return M.inCurb(x, y) || {t:'off'};
+  };
+
+  // Vạch giữa đường tại quãng s trên đường r: 'none' trong nút giao, 'solid' (liền) gần ngã tư và vòng xuyến, 'broken' (đứt) ở giữa đoạn
+  const endGap = (r, end) => {
+    const nd = M.nodes[end === 'a' ? r.a : r.b], me = end === 'a' ? r.dirA : r.dirB;
+    if (nd.kind === 'ring') return {gap: nd.ring.rOut, solid: true};
+    if (nd.kind === 'end') return {gap: -Infinity, solid: false};   // mép bản đồ: đường chạy tiếp ra ngoài
+    let gap = 0;
+    for (const a of nd.arms){ if (a.road === r) continue;
+      const sn = Math.abs(crossU(a.out, me)); if (sn < 0.1) continue;   // nhánh thẳng hàng thì không chắn vạch
+      gap = Math.max(gap, a.half / sn); }
+    return {gap, solid: nd.junction};
+  };
+  for (const r of M.roads){ r.gapA = endGap(r, 'a'); r.gapB = endGap(r, 'b'); }
+  M.lineAt = (r, s) => {
+    if (!r.veh) return 'none';
+    let solid = false;
+    for (const [d, e] of [[s, r.gapA], [r.len - s, r.gapB]]){
+      if (d <= e.gap + 1e-9) return 'none';
+      if (e.solid && d <= e.gap + M.solidLen + 1e-9) solid = true;
+    }
+    return solid ? 'solid' : 'broken';
+  };
+
+  // Đoạn tốc độ: các đường nối liền qua nút không phải ngã tư (ví dụ đầu phố đi bộ) gộp thành một đoạn
+  const par = {}; const find = id => par[id] === id ? id : (par[id] = find(par[id]));
+  for (const r of M.roads) if (r.veh) par[r.id] = r.id;
+  for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.junction || nd.kind === 'ring' || nd.kind === 'end') continue;
+    const veh = nd.arms.filter(a => a.road.veh); for (let i = 1; i < veh.length; i++) par[find(veh[i].road.id)] = find(veh[0].road.id); }
+  for (const r of M.roads) if (r.veh) r.section = find(r.id);
+  M.speedInfo = c => c && c.road && c.road.veh ? {id: c.road.section, limit: c.road.limit, child: !!c.road.child} : null;
+
+  // Đồ thị chỉ đường (chỉ đường cho xe) và đèn tín hiệu
+  M.graph = {N: {}, DEAD: {}, SEGS: []};
+  for (const id in M.nodes){ const nd = M.nodes[id];
+    if (nd.arms.some(a => a.road.veh)){ M.graph.N[id] = {x: nd.x, y: nd.y}; if (nd.kind === 'end') M.graph.DEAD[id] = 1; } }
+  for (const r of M.roads) if (r.veh) M.graph.SEGS.push({a: r.a, b: r.b, name: r.name, road: r});
+  M.lights = [];
+  for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind === 'light') M.lights.push({x: nd.x, y: nd.y, off: nd.light.off, node: id}); }
+  // pha đèn của một nhánh: nhánh gần trục dọc màn hình là 'NS', còn lại 'EW' (đủ cho khu cũ; bản 1.2 khai báo pha riêng từng nhánh)
+  M.armPhase = out => Math.abs(out.y) > Math.abs(out.x) ? 'NS' : 'EW';
+  return M;
+}
+const MAP = dungBanDo(NODES, ROADS, {bays: BAYS});

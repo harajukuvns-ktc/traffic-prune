@@ -655,5 +655,67 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(S.cult <= 68 && S.cult >= 64, `bám đuôi xe phía trước: bị trừ văn hóa (còn ${S.cult}/100, nhắc không quá một lần mỗi 10 giây)`);
 }
 
+// 21) Bản 1.1: bộ máy bản đồ dạng dữ liệu phải cho kết quả y hệt bộ cũ trên khu hiện tại
+{
+  const {MAP, dungBanDo, N, SEGS, DEAD, CORNERS, speedInfo, lineType, LIGHTS: L1} = TP;
+  const W = 1600, Hh = 1200, key = c => c.t + (c.X != null ? ':' + c.X : '') + (c.Y != null ? ':' + c.Y : '') + (c.bay ? ':' + BAYS.indexOf(c.bay) : '');
+  let diff = 0, n = 0, ex = '';
+  const secMap = {};  let secBad = 0, limBad = 0;
+  for (let x = -20; x <= W + 20; x += 2) for (let y = -20; y <= Hh + 20; y += 2){
+    const a = classify(x, y), b = MAP.classify(x, y); n++;
+    if (key(a) !== key(b)){ diff++; if (diff <= 3) ex += ` (${x},${y}: cũ ${key(a)}, mới ${key(b)})`; continue; }
+    const si = speedInfo(a, x, y), sj = MAP.speedInfo(b);
+    if (!!si !== !!sj){ secBad++; continue; }
+    if (si){ if (si.limit !== sj.limit) limBad++;
+      if (secMap[si.id] == null) secMap[si.id] = sj.id; else if (secMap[si.id] !== sj.id) secBad++; }
+  }
+  ok(diff === 0, `phân loại điểm (classify) cũ và mới khớp nhau trên ${n} điểm (sai khác ${diff})${ex}`);
+  const vals = Object.values(secMap);
+  ok(secBad === 0 && limBad === 0 && new Set(vals).size === vals.length, `đoạn tốc độ và giới hạn tốc độ khớp nhau (${vals.length} đoạn, lệch ${secBad + limBad})`);
+  let lb = 0, ln = 0;
+  for (const r of MAP.roads){ if (!r.veh || r.kieu.t === 'road') continue;
+    for (let s = 0; s <= r.len; s += 1){ const p = MAP.pointAt(r, s); ln++;
+      const old = r.kieu.t === 'h' ? lineType('h', r.kieu.Y, p.x) : lineType('v', r.kieu.X, p.y);
+      if (old !== MAP.lineAt(r, s)) lb++; } }
+  ok(lb === 0, `vạch giữa đường (liền / đứt / không có) khớp nhau trên ${ln} điểm (sai khác ${lb})`);
+  const eKey = sg => [sg.a, sg.b].sort().join('-') + ':' + sg.name;
+  const g = MAP.graph;
+  ok(Object.keys(N).length === Object.keys(g.N).length && Object.keys(N).every(id => g.N[id] && g.N[id].x === N[id].x && g.N[id].y === N[id].y) &&
+     JSON.stringify(Object.keys(DEAD).sort()) === JSON.stringify(Object.keys(g.DEAD).sort()) &&
+     JSON.stringify(SEGS.map(eKey).sort()) === JSON.stringify(g.SEGS.map(eKey).sort()), `đồ thị chỉ đường tự sinh khớp bản viết tay (${g.SEGS.length} đoạn, ${Object.keys(g.N).length} nút)`);
+  ok(L1.length === MAP.lights.length && L1.every(L => MAP.lights.some(M => M.x === L.x && M.y === L.y && M.off === L.off)), `đèn tín hiệu tự sinh khớp (${MAP.lights.length} đèn)`);
+  const cKey = c => [c.ex, c.ey, c.cx, c.cy].map(v => Math.round(v*1000)/1000).join(',');
+  ok(CORNERS.length === MAP.corners.length && CORNERS.every(c => MAP.corners.some(d => cKey(c) === cKey(d))), `góc vỉa hè bo cong tự sinh khớp (${MAP.corners.length} góc)`);
+
+  // Bản đồ thử có đường chéo, ngã ba lệch và một đoạn đường cong (không đưa vào bản đồ chơi ở 1.1)
+  const T = dungBanDo([
+    {id:'P', x:0, y:0, kind:'end'}, {id:'Q', x:400, y:300, kind:'plain'}, {id:'R', x:400, y:-200, kind:'end'},
+    {id:'S', x:900, y:300, kind:'light', light:{off:0}}, {id:'U', x:1300, y:700, kind:'end'}, {id:'V', x:900, y:800, kind:'end'}
+  ], [
+    {id:'cheo', a:'P', b:'Q', name:'Đại lộ Chéo', cap:'normal', half:40, lanes:1, limit:40},
+    {id:'doc', a:'R', b:'Q', name:'Đường Dọc', cap:'normal', half:40, lanes:1, limit:40},
+    {id:'ngang', a:'Q', b:'S', name:'Đường Ngang', cap:'normal', half:40, lanes:1, limit:40},
+    {id:'cong', a:'S', b:'U', name:'Đường Cong', cap:'normal', half:40, lanes:1, limit:40, via:{x:1300, y:300}},
+    {id:'hem', a:'S', b:'V', name:'Hẻm Nhỏ', cap:'alley', half:20, lanes:1, limit:20, noCar:true}
+  ], {bays: []});
+  const ch = T.road('cheo'), mid = T.pointAt(ch, 250), c0 = T.classify(mid.x, mid.y);
+  ok(c0.t === 'road' && c0.road === ch && Math.abs(c0.s - 250) < 1e-6 && Math.abs(c0.lat) < 1e-6, `đường chéo: điểm giữa đường nằm trên đường, đúng quãng (s=${c0.s && c0.s.toFixed(1)})`);
+  const rgt = {x: mid.x - mid.dir.y*20, y: mid.y + mid.dir.x*20}, c1 = T.classify(rgt.x, rgt.y);
+  const far = {x: mid.x - mid.dir.y*50, y: mid.y + mid.dir.x*50};
+  ok(c1.road === ch && Math.abs(c1.lat - 20) < 1e-6 && T.classify(far.x, far.y).t === 'off', `đường chéo: lệch phải 5 m vẫn trên làn phải (lat=${c1.lat.toFixed(1)}), lệch 12,5 m là ra ngoài`);
+  ok(T.classify(400, 300).t === 'junction' && T.nodes.Q.junction && T.nodes.S.junction, 'ngã ba lệch (đường chéo gặp đường dọc và đường ngang) được nhận là ngã tư');
+  ok(T.lineAt(ch, 250) === 'broken' && T.lineAt(ch, ch.len - 100) === 'solid' && T.lineAt(ch, ch.len - 5) === 'none' && T.lineAt(ch, 5) === 'broken',
+     'đường chéo: vạch đứt ở giữa, vạch liền gần ngã ba, không có vạch trong ngã ba, vạch đứt ở mép bản đồ');
+  // phía còn lại của ngã ba là góc 217°, không có góc vỉa hè
+  ok(T.corners.filter(c => c.node === 'Q').length === 2 && T.corners.every(c => isFinite(c.cx) && isFinite(c.cy)), `ngã ba lệch có 2 góc vỉa hè bo cong ở hai góc nhọn/vuông (${T.corners.filter(c => c.node === 'Q').length})`);
+  const qc = T.corners.find(c => c.node === 'Q' && Math.abs(c.sn - 0.8) < 1e-6);
+  ok(qc && T.classify(qc.ex + (qc.u.x + qc.v.x)*1.5, qc.ey + (qc.u.y + qc.v.y)*1.5).t === 'junction', 'góc nhọn 53° của ngã ba lệch: sát góc vỉa hè vẫn tính là lòng đường ngã ba');
+  const cg = T.road('cong'), cm = T.pointAt(cg, cg.len/2), cc = T.classify(cm.x, cm.y), pj = T.project(cm.x + 3, cm.y - 200);
+  ok(cc.t === 'road' && cc.road === cg && Math.abs(cc.lat) < 1 && pj.road === cg && cg.len > 600, `đường cong: điểm giữa nằm trên đường (dài ${Math.round(cg.len)} đơn vị, lệch ${cc.lat.toFixed(2)})`);
+  const hm = T.road('hem'), hp = T.pointAt(hm, 200);
+  ok(T.classify(hp.x, hp.y).road === hm && T.classify(hp.x + 30, hp.y).t === 'off' && hm.noCar, 'hẻm hẹp (nửa bề rộng 5 m), có biển cấm ô tô');
+  ok(T.graph.SEGS.length === 5 && T.lights.length === 1 && T.speedInfo(c0).limit === 40, 'bản đồ thử: đồ thị 5 đoạn, 1 đèn, giới hạn tốc độ đọc được');
+}
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);
