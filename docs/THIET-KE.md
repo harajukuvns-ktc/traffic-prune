@@ -372,6 +372,14 @@ Rồi mới tới (người dùng chốt lúc 10:05 ngày 13/11/2026, đồng ý
 - Luật mới (sai làn xe máy/ô tô, đường sắt, nhường khi từ hẻm ra) phải tra và cho agent độc lập đối chiếu (mục 8).
 - Mô hình: 1.1 dùng Opus (sửa nhiều file); 1.2 trở đi dùng Sonnet.
 
+**Bản đồ mới phải bám thực tế** (người dùng lưu ý lúc 16:59, chốt lựa chọn lúc 17:02 ngày 15/11/2026):
+1. **Không phải giao lộ nào cũng có đèn.** Bốn loại giao lộ: có đèn; có biển ưu tiên (đường chính biển "đường ưu tiên", đường phụ biển "giao nhau với đường ưu tiên" hoặc STOP); **không biển** (nhường xe đến từ bên phải); vòng xuyến. **Chốt: có cả biển ưu tiên/STOP lẫn giao lộ không biển.** NPC đi theo đúng quy tắc; lỗi mới "không nhường đường tại nơi giao nhau" (tra luật, agent độc lập đối chiếu).
+   - **Người dùng bổ sung:** một số ngã tư có **bảng cho phép rẽ phải khi đèn đỏ**; một số ngã ba có **biển cho phép đi thẳng khi đèn đỏ**. Ở những chỗ đó đi lúc đèn đỏ theo đúng hướng được phép thì không phạt (vẫn phải nhường người đi bộ và xe đang đi đúng đèn). Số hiệu biển và câu chữ luật cần tra QCVN 41:2024 và Luật TTATGTĐB 2024 trước khi làm.
+2. **Có đường lớn, đường nhỏ.** Ba cấp: đường lớn (nhiều làn mỗi chiều, chia làn ở bản 1.3); đường thường (một làn mỗi chiều, có vạch giữa); đường nhỏ / hẻm (hẹp, không vạch giữa, tốc độ thấp). **Chốt: một số hẻm có biển cấm ô tô.**
+3. **Không chỉ ô bàn cờ.** Bộ máy cho phép đường theo góc bất kỳ, khối nhà hình nhiều cạnh. **Chốt cho bản 1.2: một đại lộ chéo, một ngã năm, vài ngã ba lệch** (và đoạn đường cong). Trợ lái giữ làn, ôm cua, chỉ đường, bắt lỗi phải chạy được với đường góc bất kỳ.
+
+**Ảnh hưởng:** bản 1.1 làm bộ máy tổng quát ngay từ đầu (góc bất kỳ, 3 cấp đường, 4 loại giao lộ, biển phụ cho phép đi khi đèn đỏ) nhưng vẫn dựng lại đúng khu cũ; bản 1.2 thêm khu mới với đường chéo, ngã năm, đường nhỏ, giao lộ không đèn, biển phụ và lỗi không nhường đường.
+
 (Kế hoạch cũ gấp 2 bên dưới giữ để tham khảo.)
 
 - Đại lộ có phân làn ô tô / xe máy, dải phân cách, điểm mở để quay đầu.
