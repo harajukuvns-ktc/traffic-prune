@@ -717,5 +717,38 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(T.graph.SEGS.length === 5 && T.lights.length === 1 && T.speedInfo(c0).limit === 40, 'bản đồ thử: đồ thị 5 đoạn, 1 đèn, giới hạn tốc độ đọc được');
 }
 
+// ===== 22. Bản 1.1 bước 2: vẽ nền tĩnh từ MAP (js/ve-nen.js) =====
+{
+  const {veNen, MAP, NODES, ROADS, dungBanDo, NEN} = TP;
+  // máy ghi lại các lệnh vẽ: mọi toạ độ phải là số hữu hạn, đếm số lần gọi từng lệnh
+  const ghi = () => { const cnt = {}, bad = []; const g = new Proxy({}, {
+    get(t, p){ if (p in t) return t[p]; return (...a) => { cnt[p] = (cnt[p] || 0) + 1; if (a.some(v => typeof v === 'number' && !isFinite(v))) bad.push(p); return g; }; },
+    set(t, p, v){ t[p] = v; return true; } }); return {g, cnt, bad}; };
+  const o = {W: 1600, H: 1200, EXT: 600, SIDE: 22, blocks: []};
+  const r1 = ghi(); let err = null;
+  try { veNen(r1.g, MAP, Object.assign({}, o, {blocks: TP.BLOCKS})); } catch (e){ err = e; }
+  ok(!err && r1.bad.length === 0, 'vẽ nền khu hiện tại từ MAP chạy được, mọi toạ độ là số hữu hạn' + (err ? ' (' + err.message + ')' : ''));
+  // mỗi góc vỉa hè 1 cung; vòng xuyến: 1 mặt đường + 2 viền đảo + 10 chấm hoa + 1 tâm = 14
+  ok(r1.cnt.arc === MAP.corners.length + 14, `có vẽ ${MAP.corners.length} góc vỉa hè bo cong, vòng xuyến và đảo (${r1.cnt.arc} cung tròn)`);
+  ok(r1.cnt.fillText === MAP.bays.length, `mỗi ô đỗ có chữ P (${r1.cnt.fillText} ô)`);
+  // bản đồ thử có đường chéo, đường cong, hẻm, ngã ba lệch: không được lỗi hay ra số vô cùng
+  const T = dungBanDo([
+    {id:'P', x:0, y:0, kind:'end'}, {id:'Q', x:400, y:300, kind:'plain'}, {id:'R', x:400, y:-200, kind:'end'},
+    {id:'S', x:900, y:300, kind:'light', light:{off:0}}, {id:'U', x:1300, y:700, kind:'end'}, {id:'V', x:900, y:800, kind:'end'}
+  ], [
+    {id:'cheo', a:'P', b:'Q', name:'Đại lộ Chéo', cap:'normal', half:40, lanes:1, limit:40},
+    {id:'doc', a:'R', b:'Q', name:'Đường Dọc', cap:'normal', half:40, lanes:1, limit:40},
+    {id:'ngang', a:'Q', b:'S', name:'Đường Ngang', cap:'normal', half:40, lanes:1, limit:40},
+    {id:'cong', a:'S', b:'U', name:'Đường Cong', cap:'normal', half:40, lanes:1, limit:40, via:{x:1300, y:300}},
+    {id:'hem', a:'S', b:'V', name:'Hẻm Nhỏ', cap:'alley', half:20, lanes:1, limit:20, noCar:true}
+  ], {bays: []});
+  const r2 = ghi(); err = null;
+  try { veNen(r2.g, T, Object.assign({}, o, {blocks: []})); } catch (e){ err = e; }
+  ok(!err && r2.bad.length === 0 && r2.cnt.stroke > 5, 'vẽ nền bản đồ thử (đường chéo, cong, hẻm, ngã ba lệch, ngã tư có đèn) chạy được' + (err ? ' (' + err.message + ')' : ''));
+  // quản lý mảnh: trong Node không có canvas thật nên game phải quay về bộ vẽ cũ, không được lỗi
+  let e3 = null; try { render(0.016); } catch (e){ e3 = e; }
+  ok(!e3 && NEN.tiles.size === 0, 'không có canvas thật (Node): render() quay về bộ vẽ cũ, không tạo mảnh');
+}
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);

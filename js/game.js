@@ -1218,7 +1218,7 @@ function label(x, y, text, opt){
   });
 }
 
-function drawGround(){
+function drawGroundOld(){
   ctx.fillStyle = '#e9e1d3'; ctx.fillRect(0, 0, W, H);
   for (const b of BLOCKS){ ctx.fillStyle = '#cfe6c4'; ctx.fillRect(b.x1 + SIDE, b.y1 + SIDE, b.x2 - b.x1 - 2*SIDE, b.y2 - b.y1 - 2*SIDE); }
   // đường
@@ -1298,6 +1298,42 @@ function drawGround(){
   for (const h of HR){ ctx.moveTo(2, h.y - HALF); ctx.lineTo(2, h.y + HALF); ctx.moveTo(W - 2, h.y - HALF); ctx.lineTo(W - 2, h.y + HALF); }
   for (const v of VR){ ctx.moveTo(v.x - HALF, 2); ctx.lineTo(v.x + HALF, 2); ctx.moveTo(v.x - HALF, H - 2); ctx.lineTo(v.x + HALF, H - 2); }
   ctx.stroke(); ctx.setLineDash([]);
+}
+
+/* Nền tĩnh vẽ theo mảnh (bản 1.1, bước 2): veNen() trong js/ve-nen.js vẽ nền từ MAP vào từng mảnh 512 × 512 đơn vị
+   một lần (khi mảnh đầu tiên lọt vào tầm nhìn); mỗi khung hình chỉ dán các mảnh gần máy quay.
+   NEN.on = false thì quay về bộ vẽ cũ (drawGroundOld, sẽ xoá ở bước 7). */
+const NEN = {on: true, size: 512, pad: 3, k: 0, tiles: new Map(), built: 0, frame: 0, keep: 20};
+const nenOk = () => NEN.on && typeof document.createElement === 'function';
+// k: số điểm ảnh của mảnh cho mỗi đơn vị bản đồ; đổi nhiều (đổi kiểu nhìn, đổi cỡ màn hình) thì vẽ lại mảnh
+function nenSetScale(k){
+  k = clamp(k, 0.6, 2);
+  if (!NEN.k || k > NEN.k * 1.3 || k < NEN.k * 0.6){ NEN.k = k; NEN.tiles.clear(); }
+}
+function nenTile(i, j){
+  const key = i + ',' + j; let t = NEN.tiles.get(key); if (t) return t;
+  const P = NEN.size + 2*NEN.pad, n = Math.ceil(P * NEN.k), c = document.createElement('canvas'); c.width = c.height = n;
+  const g = c.getContext('2d'), x0 = -EXT + i*NEN.size - NEN.pad, y0 = -EXT + j*NEN.size - NEN.pad, kk = n / P;
+  g.setTransform(kk, 0, 0, kk, -x0*kk, -y0*kk);
+  veNen(g, MAP, {W, H, EXT, SIDE, blocks: BLOCKS});
+  t = {c, x0, y0, P, f: NEN.frame}; NEN.tiles.set(key, t); NEN.built++;
+  return t;
+}
+function drawGround(){
+  if (!nenOk()) return drawGroundOld();
+  nenSetScale(RES * zoom); NEN.frame++;
+  const ci = Math.ceil((W + 2*EXT) / NEN.size), cj = Math.ceil((H + 2*EXT) / NEN.size);
+  // mảnh nào có hình tròn bao quanh chạm khung vẽ thì dán (đổi toạ độ bản đồ sang toạ độ khung vẽ giống phép biến đổi trong render)
+  const ca = Math.cos(-camA - Math.PI/2), sa = Math.sin(-camA - Math.PI/2), R = NEN.size * 0.7072 * zoom;
+  for (let j = 0; j < cj; j++) for (let i = 0; i < ci; i++){
+    const mx = -EXT + (i + 0.5)*NEN.size - camX, my = -EXT + (j + 0.5)*NEN.size - camY;
+    const sx = ancX + zoom*(mx*ca - my*sa), sy = ancY + zoom*(mx*sa + my*ca);
+    if (sx < -R || sx > CW + R || sy < -R || sy > CH + R) continue;
+    if (tilted() && Math.abs(sx - CW/2) > VW*0.58 + (CW/2 - VW*0.58) * clamp(sy / CH, 0, 1) + R) continue;   // ngoài hình thang nhìn thấy (xem phần cắt ở render)
+    const t = nenTile(i, j); t.f = NEN.frame; ctx.drawImage(t.c, t.x0, t.y0, t.P, t.P);
+  }
+  // giữ tối đa NEN.keep mảnh trong bộ nhớ (điện thoại): bỏ các mảnh lâu chưa dùng
+  if (NEN.tiles.size > NEN.keep) for (const [key, t] of NEN.tiles) if (t.f < NEN.frame - 30 && NEN.tiles.size > NEN.keep) NEN.tiles.delete(key);
 }
 
 function drawRoute(){
@@ -1869,4 +1905,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {BLOCKS, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
