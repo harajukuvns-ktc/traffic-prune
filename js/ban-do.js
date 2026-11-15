@@ -168,14 +168,16 @@ function inCurb(x, y){
 }
 
 // Chốt CSGT (bản 0.11): hai chốt cố định. Xe đi qua "vạch kiểm tra" (cả hai chiều) mà đầu trần hoặc đang cầm điện thoại là bị thổi còi.
-//   axis 'x': vạch kiểm tra là đường thẳng đứng x = x0, nằm trên đường ngang quanh y = y0
-//   axis 'y': vạch kiểm tra là đường nằm ngang y = y0, nằm trên đường dọc quanh x = x0
-//   cabin: chỗ đặt chòi CSGT bên vỉa hè (chỉ để vẽ)
+// Từ bản 1.1 bước 5: khai báo theo đường và quãng s (tính từ nút a của đường); vị trí, hướng vạch kiểm tra và chỗ đặt chòi
+// tự tính từ MAP (hàm datTheoDuong ở cuối file). cabin: chòi cách tim đường bao nhiêu đơn vị, về phía bên phải theo chiều a→b.
 const CSGT = [
-  {id: 'hoasua',  axis: 'x', x: 990,  y: 300, cabin: {x: 990,  y: 352}, name: 'Đường Hoa Sữa'},
-  {id: 'cauvong', axis: 'y', x: 1200, y: 700, cabin: {x: 1150, y: 700}, name: 'Đường Cầu Vồng'}
+  {id: 'hoasua',  road: 'hs2', s: 190, cabin: 52, name: 'Đường Hoa Sữa'},
+  {id: 'cauvong', road: 'cv1', s: 400, cabin: 50, name: 'Đường Cầu Vồng'}
 ];
-function classify(x, y){
+// Vạch qua đường cho người đi bộ ở hai đầu Phố Chợ (bản 1.0b), khai báo theo đường và quãng s như CSGT
+const CROSSWALKS = [{road: 'hs1', s: 400}, {road: 'mc1', s: 400}];
+// Bộ cũ (xoá ở bước 7): game đã chuyển sang MAP.classify từ bản 1.1 bước 5; giữ lại để test mục 21 so sánh
+function classifyOld(x, y){
   for (const b of BAYS) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return {t:'bay', bay:b};
   const dr = Math.hypot(x - RB.x, y - RB.y);
   if (dr <= RB.rOut) return dr < RB.rIn ? {t:'island'} : {t:'ring'};
@@ -357,7 +359,7 @@ const ROADS = [
 
 function dungBanDo(nodeList, roadList, opt){
   opt = opt || {};
-  const M = {nodes: {}, roads: [], bays: opt.bays || [], curb: opt.curb == null ? CURB : opt.curb, solidLen: opt.solidLen == null ? SOLID_LEN : opt.solidLen};
+  const M = {nodes: {}, roads: [], bays: opt.bays || [], W: opt.W || W, H: opt.H || H, curb: opt.curb == null ? CURB : opt.curb, solidLen: opt.solidLen == null ? SOLID_LEN : opt.solidLen};
   for (const n of nodeList) M.nodes[n.id] = Object.assign({arms: []}, n);
   const unit = (x, y) => { const l = Math.hypot(x, y) || 1; return {x: x/l, y: y/l}; };
   const crossU = (u, v) => u.x*v.y - u.y*v.x;
@@ -513,6 +515,32 @@ function dungBanDo(nodeList, roadList, opt){
   for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind === 'light') M.lights.push({x: nd.x, y: nd.y, off: nd.light.off, node: id}); }
   // pha đèn của một nhánh: nhánh gần trục dọc màn hình là 'NS', còn lại 'EW' (đủ cho khu cũ; bản 1.2 khai báo pha riêng từng nhánh)
   M.armPhase = out => Math.abs(out.y) > Math.abs(out.x) ? 'NS' : 'EW';
+  // Vạch dừng của từng nhánh xe ở mỗi nút có đèn (bản 1.1 bước 5): cách tâm nút gap + STOPG theo hướng nhánh.
+  // d: hướng xe đi tới nút (ngược với hướng nhánh); sx, sy: điểm giữa vạch dừng trên tim đường; phase: pha đèn của nhánh
+  M.stopLines = [];
+  for (const L of M.lights){ const nd = M.nodes[L.node];
+    for (const a of nd.arms){ if (!a.road.veh) continue;
+      const g = (a.end === 'a' ? a.road.gapA : a.road.gapB).gap + STOPG;
+      M.stopLines.push({L, node: L.node, road: a.road, half: a.half, d: {x: -a.out.x, y: -a.out.y}, sx: nd.x + a.out.x*g, sy: nd.y + a.out.y*g, phase: M.armPhase(a.out)}); } }
+  // Vòng xuyến (để bắt lỗi không nhường, đi ngược vòng; ringBusy nhận một phần tử của danh sách này)
+  M.rings = [];
+  for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind === 'ring') M.rings.push({node: id, x: nd.x, y: nd.y, rOut: nd.ring.rOut, rIn: nd.ring.rIn, rLane: nd.ring.rLane}); }
+  M.ringOf = id => M.rings.find(g => g.node === id) || null;
   return M;
 }
-const MAP = dungBanDo(NODES, ROADS, {bays: BAYS});
+let MAP = dungBanDo(NODES, ROADS, {bays: BAYS});
+// Đặt các vật khai báo theo {road, s} (chốt CSGT, vạch qua đường) lên bản đồ M: tính toạ độ, hướng đường d (a→b),
+// pháp tuyến n (bên phải theo chiều a→b) và nửa bề rộng đường. Đường không có trên M thì đánh dấu off.
+function datTheoDuong(M, list){
+  for (const o of list){
+    const r = M.road(o.road); o.off = !r; if (!r) continue;
+    const p = M.pointAt(r, o.s);
+    o.x = p.x; o.y = p.y; o.d = {x: p.dir.x, y: p.dir.y}; o.n = {x: -p.dir.y, y: p.dir.x}; o.half = r.half;
+  }
+  return list;
+}
+datTheoDuong(MAP, CSGT); datTheoDuong(MAP, CROSSWALKS);
+for (const p of CSGT) p.cabinPt = {x: p.x + p.n.x*p.cabin, y: p.y + p.n.y*p.cabin};
+// Game dùng bộ phân loại mới (bản 1.1 bước 5); MAP có thể đổi tạm qua useMap (bài test mục 25 dựng bản đồ thử)
+function classify(x, y){ return MAP.classify(x, y); }
+function useMap(M){ const old = MAP; MAP = M; return old; }

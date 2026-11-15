@@ -7,7 +7,7 @@ const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { if (S.veh !== 'bike') TP.setVehicle('bike'); for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
   S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.lastSteer = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null;
   S.helmet = true; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callAt = -1; S.callIn = 99; S.cult = 70; S.statsBy.car = {};
-  for (const p of TP.peds) if (p.cross){ p.y = p.y0; p.dir = 1; p.wait = 999; p.stopT = 0; } /* người qua vạch đứng chờ ở lề, để các bài thử cũ không bị họ chen vào */ S.ptsBy.car = 12; S.belt = false; };
+  for (const p of TP.peds) if (p.cross){ p.x = p.x0; p.y = p.y0; p.dir = 1; p.wait = 999; p.stopT = 0; } /* người qua vạch đứng chờ ở lề, để các bài thử cũ không bị họ chen vào */ S.ptsBy.car = 12; S.belt = false; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -662,7 +662,7 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   let diff = 0, n = 0, ex = '';
   const secMap = {};  let secBad = 0, limBad = 0;
   for (let x = -20; x <= W + 20; x += 2) for (let y = -20; y <= Hh + 20; y += 2){
-    const a = classify(x, y), b = MAP.classify(x, y); n++;
+    const a = TP.classifyOld(x, y), b = MAP.classify(x, y); n++;   // bộ cũ giữ lại là classifyOld (game đã dùng bộ mới từ bước 5)
     if (key(a) !== key(b)){ diff++; if (diff <= 3) ex += ` (${x},${y}: cũ ${key(a)}, mới ${key(b)})`; continue; }
     const si = speedInfo(a, x, y), sj = MAP.speedInfo(b);
     if (!!si !== !!sj){ secBad++; continue; }
@@ -856,6 +856,90 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   }
   ok(xong === chay, `bản đồ thử: xe NPC chạy hết tuyến (qua đèn, ngã năm, vòng xuyến, đường cong) trong 90 giây (${xong}/${chay})`);
   player.x = sv.x; player.y = sv.y; reset();
+}
+
+// ===== 25. Bản 1.1 bước 5: bắt lỗi theo hướng đường, trên bản đồ thử có ngã năm, đại lộ chéo, hẻm cấm ô tô, phố một chiều =====
+console.log('\n== 25. Bắt lỗi theo hướng đường (bản đồ thử) ==');
+{
+  const {dungBanDo, useMap, getMap, setVehicle, lightOf, playerLightAhead, setSignal} = TP;
+  const RD = (id, a, b, name, more) => Object.assign({id, a, b, name, cap:'normal', half:40, lanes:1, limit:40}, more || {});
+  // Đặt xa khu phố cũ (x từ 3000 trở lên) để không đụng nhà, đảo vòng xuyến, chốt CSGT, người qua vạch của khu cũ
+  const T = dungBanDo([
+    {id:'O', x:3600, y:1000, kind:'light', light:{off:0}},
+    {id:'W', x:3000, y:1000, kind:'end'}, {id:'E', x:4400, y:1000, kind:'end'}, {id:'N', x:3600, y:400, kind:'end'}, {id:'NE', x:4000, y:600, kind:'end'},
+    {id:'S', x:3600, y:1600, kind:'plain'}, {id:'S2', x:3600, y:2200, kind:'end'}, {id:'H', x:4400, y:1600, kind:'end'},
+    {id:'K', x:3000, y:2600, kind:'end'}, {id:'L', x:4400, y:2600, kind:'end'}
+  ], [
+    RD('ow','W','O','Đường Tây'), RD('oe','O','E','Đường Đông'), RD('on','O','N','Đường Bắc'), RD('cheo','O','NE','Đại lộ Chéo'),
+    RD('os','O','S','Đường Nam'), RD('os2','S','S2','Đường Nam'),
+    RD('hem','S','H','Hẻm Nhỏ', {cap:'alley', half:20, limit:20, noCar:true}),
+    RD('mot','K','L','Phố Một Chiều', {oneway:true})
+  ], {bays: [], W: 5000, H: 3000});
+  // chốt CSGT và vạch qua đường khai báo theo {đường, quãng s}: vị trí tính ra phải đúng như toạ độ viết tay của bộ cũ
+  const {CSGT, CROSSWALKS} = TP, eq = (p, x, y) => Math.abs(p.x - x) < 1e-6 && Math.abs(p.y - y) < 1e-6;
+  ok(eq(CSGT[0], 990, 300) && eq(CSGT[0].cabinPt, 990, 352) && eq(CSGT[1], 1200, 700) && eq(CSGT[1].cabinPt, 1150, 700) && CSGT.every(p => p.half === 40),
+    'chốt CSGT tính từ dữ liệu đường đúng chỗ cũ (Hoa Sữa x=990, Cầu Vồng y=700, chòi bên phải)');
+  ok(eq(CROSSWALKS[0], 800, 300) && eq(CROSSWALKS[1], 800, 900) && TP.peds.filter(p => p.cross).every(p => Math.abs(p.x0 - 800) < 1e-6 && Math.abs(p.y1 - p.y0 - 104) < 1e-6),
+    'vạch qua đường ở hai đầu Phố Chợ tính từ dữ liệu đúng chỗ cũ (x=800, người đi từ lề này sang lề kia 104 đơn vị)');
+  ok(T.nodes.O.junction && T.nodes.O.arms.length === 5 && T.stopLines.length === 5, `ngã năm có đèn: 5 nhánh, mỗi nhánh một vạch dừng (${T.stopLines.length})`);
+  const sl = T.stopLines.find(q => q.road.id === 'cheo'), L = sl.L;
+  ok(Math.abs(Math.hypot(sl.sx - 3600, sl.sy - 1000) - (40 / Math.SQRT1_2 + 40)) < 0.01, `vạch dừng nhánh chéo lùi xa tâm hơn vì góc xiên (${Math.hypot(sl.sx - 3600, sl.sy - 1000).toFixed(1)} đơn vị)`);
+  // vị trí trên làn: đường id, quãng s, fwd: theo chiều a→b hay ngược lại, side: 1 làn phải, -1 làn trái (phần đường ngược chiều)
+  const lane = (id, s, fwd, side, off) => { const r = T.road(id), p = T.pointAt(r, s), d = fwd ? p.dir : {x: -p.dir.x, y: -p.dir.y}, k = (side || 1) * (off || 20);
+    return {x: p.x - d.y*k, y: p.y + d.x*k, a: Math.atan2(d.y, d.x)}; };
+  const chay = (pos, v, sec, each) => { player.x = pos.x; player.y = pos.y; player.a = pos.a; player.v = v; S.money = 5000000;
+    for (let i = 0; i < sec/dt; i++){ if (player.stun <= 0) player.v = v; if (each) each(); step(dt); } };
+  const choDen = (want, sec) => { while (!(lightOf(L, sl.phase, S.now) === want && lightOf(L, sl.phase, S.now + sec) === want)) run(0.1); };
+  const sach = () => Object.keys(S.stats).length === 0;
+  const s0 = {x: player.x, y: player.y, a: player.a}, M0 = useMap(T);
+  const rs = () => { reset(); S.assist = false; for (const q of npcs){ q.hidden = true; q.respawnT = 999; } };
+  ok(getMap() === T, 'bài test đổi tạm sang bản đồ thử được (useMap)');
+
+  // a) vượt đèn đỏ ở nhánh chéo; đèn xanh thì không bị phạt
+  rs(); choDen('red', 4); { const p = lane('cheo', 250, false); player.x = p.x; player.y = p.y; player.a = p.a;
+    const la = playerLightAhead(300); ok(la && la.state === 'red' && Math.abs(la.dist - (250 - Math.hypot(sl.sx - 3600, sl.sy - 1000))) < 1, `đèn phía trước trên nhánh chéo đọc đúng (đỏ, còn ${la && la.dist.toFixed(0)} đơn vị)`); }
+  chay(lane('cheo', 250, false), 90, 2.4);
+  ok(S.stats.red === 1 && !S.stats.line && !S.stats.lane, `vượt đèn đỏ ở nhánh chéo của ngã năm bị phạt (${JSON.stringify(S.stats)})`);
+  rs(); choDen('green', 4); chay(lane('cheo', 250, false), 90, 2.4);
+  ok(sach(), `đi đúng đèn xanh qua nhánh chéo: không bị phạt (${JSON.stringify(S.stats)})`);
+  // b) camera phạt nguội ở vạch dừng nhánh chéo: 55 km/h trên đường 40 km/h
+  rs(); choDen('green', 4); chay(lane('cheo', 300, false), 165, 1.6);
+  ok(S.stats.speed2 === 1 && !S.stats.red, `camera ở vạch dừng nhánh chéo phạt quá tốc độ 15 km/h (${JSON.stringify(S.stats)})`);
+  // c) đè vạch liền và chạy lâu bên phần đường ngược chiều trên đại lộ chéo
+  rs(); chay(lane('cheo', 108, true, -1), 30, 1.2);
+  ok(T.lineAt(T.road('cheo'), 120) === 'solid' && S.stats.line === 1 && !S.stats.lane, `đường chéo: lấn sang phần đường ngược chiều ở đoạn vạch liền bị phạt đè vạch (${JSON.stringify(S.stats)})`);
+  rs(); chay(lane('cheo', 230, true, -1), 60, 0.9);
+  ok(sach(), 'đường chéo: cắt vạch đứt một lúc (dưới 1,2 giây) không bị phạt');
+  rs(); chay(lane('cheo', 230, true, -1), 60, 4.5);
+  ok(S.stats.lane === 1 && !S.stats.line, `đường chéo: chạy lâu bên phần đường ngược chiều ở đoạn vạch đứt bị phạt (${JSON.stringify(S.stats)})`);
+  rs(); chay(lane('cheo', 160, true), 90, 4);
+  ok(sach(), 'đường chéo: đi đúng làn phải suốt đoạn không bị phạt');
+  // d) rẽ phải ở ngã năm (từ Đường Tây sang Đường Nam): không xi-nhan bị phạt, có xi-nhan thì không
+  const rePhai = sig => { rs();
+    const sw = T.stopLines.find(q => q.road.id === 'ow'); while (!(lightOf(L, sw.phase, S.now) === 'green' && lightOf(L, sw.phase, S.now + 6) === 'green')) run(0.1);
+    if (sig) setSignal(1);
+    let quay = false;
+    chay(lane('ow', 600 - 130, true), 40, 6, () => { if (!quay && player.x > 3562) quay = true; keys.right = quay && player.a < Math.PI/2 - 0.04; });
+    keys.right = false; };
+  rePhai(false);
+  ok(S.stats.signal === 1 && Math.abs(player.a - Math.PI/2) < 0.2 && player.y > 1100, `rẽ phải ở ngã năm không xi-nhan bị phạt (${JSON.stringify(S.stats)}, xe ở ${player.x.toFixed(0)},${player.y.toFixed(0)})`);
+  rePhai(true);
+  ok(sach() && player.y > 1100, `rẽ phải ở ngã năm có bật xi-nhan trước: không bị phạt (${JSON.stringify(S.stats)})`);
+  // e) phố một chiều: đi ngược chiều bị phạt một lần; đi đúng chiều, kể cả lệch sang trái, thì không
+  rs(); chay(lane('mot', 900, false), 60, 3);
+  ok(S.stats.wrongway === 1 && !S.stats.lane && !S.stats.line, `đi ngược chiều phố một chiều bị phạt một lần (${JSON.stringify(S.stats)})`);
+  rs(); chay(lane('mot', 300, true, -1), 60, 5);
+  ok(sach(), 'đi đúng chiều phố một chiều (kể cả đi lệch bên trái) không bị phạt');
+  // f) hẻm cấm ô tô: ô tô vào bị phạt đi vào đường cấm, câu nhắc ghi tên hẻm; xe máy vào hẻm thì không
+  rs(); setVehicle('car'); S.belt = true; let thay = '';
+  chay(lane('hem', 70, true, 1, 10), 60, 2, () => { if (/Hẻm Nhỏ/.test(S.warnText || '')) thay = S.warnText; });
+  ok(S.stats.noentry === 1 && /cấm ô tô/.test(thay), `ô tô vào hẻm có biển cấm ô tô bị phạt (${JSON.stringify(S.stats)}), câu nhắc: "${thay}"`);
+  rs(); setVehicle('car'); S.belt = true; chay(lane('os2', 120, true), 60, 3);
+  ok(sach(), 'ô tô đi đường thường cạnh hẻm không bị phạt');
+  rs(); chay(lane('hem', 70, true, 1, 10), 45, 3);
+  ok(sach(), 'xe máy vào hẻm cấm ô tô không bị phạt');
+  useMap(M0); player.x = s0.x; player.y = s0.y; player.a = s0.a; reset();
+  ok(getMap() === M0 && TP.classify(400, 300).t === 'junction' && TP.classify(3600, 1000).t === 'off', 'trả lại bản đồ chơi sau bài test');
 }
 
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');

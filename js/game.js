@@ -14,7 +14,7 @@ const S = {
   money: 5000000, pts: 12, streak: 0, trips: 0, stats: {}, cult: 70,   // cult: điểm văn hóa 0–100 (bản 1.0), dùng chung cho cả hai xe
   faultUntil: -1, epId: 0, epAffected: 0, epJamSaid: false,
   trip: null, route: null, routeT: 0, bubble: null, floats: [], flash: 0, lawT: 0, ut: null, ta: null, warnT: 0, warnText: '',
-  wrongT: 0, okT: 0, solidT: 0, sideEp: false, ringWrongT: 0, ringEp: false, wwEp: false,
+  wrongT: 0, okT: 0, solidT: 0, sideEp: false, ringWrongT: 0, ringEp: false, wwEp: false, wwT: 0,
   jamTick: 0, sidewalkSaidT: -99, crashCool: -1, inBay: false, stopT: 0, stopSaidT: -99, suspended: false,
   sound: {on: true, fx: 0.7, voice: 0.9, npc: 0.8, bike: 'so'}, gear: 1,
   // xi-nhan: turn = -1 (trái), 0 (tắt), 1 (phải); không tự tắt. sigAcc: tổng góc đã quay; sigEp: đã xét lỗi lượt rẽ này
@@ -22,7 +22,7 @@ const S = {
   pedEp: false, pedCool: -99, tailT: 0, tailCool: -99, lastMoveT: -99,
   // tốc độ: spdSec = đoạn đường đang đi, spdSaid = đoạn này đã nhắc nhở rồi, spdT = thời gian đã chạy quá, spdMax = mức vượt lớn nhất, spdLimit = giới hạn hiện tại (km/h)
   // camCool = mốc thời gian chống bị camera chụp hai lần liền
-  spdSec: '', spdSaid: false, spdT: 0, spdMax: 0, spdLimit: 40, camCool: -99,
+  spdSec: '', spdSaid: false, spdT: 0, spdMax: 0, spdLimit: 40, spdChild: false, camCool: -99,
   // lastSteer = lần cuối người chơi bấm rẽ (trợ lái chờ 1 giây sau đó mới nắn xe lại)
   lastSteer: -99,
   // bản 0.11: helmet = đã đội mũ (chỉ trong buổi chơi, không lưu); noHelmT/helmSaidT = bộ đếm nhắc nhở của NPC; csgtT = lần cuối qua từng chốt
@@ -229,8 +229,11 @@ function makePeds(){
         color:['#e76f51','#2a9d8f','#e9c46a','#8e7dbe','#f4a261'][Math.floor(rnd()*5)]});
     } }
   // Người đi bộ qua đường ở vạch trước hai đầu Phố Chợ (bản 1.0b): đứng chờ rồi băng qua Đường Hoa Sữa / Đường Me Chua; xe phải nhường
-  for (const h of HR){
-    peds.push({cross: true, hy: h.y, x: 800, y: h.y - 52, y0: h.y - 52, y1: h.y + 52, dir: 1, wait: 2 + rnd() * 6, cyc: 0, v: 22, stopT: 0,
+  //   vị trí lấy từ CROSSWALKS (khai báo theo đường và quãng s); người đi từ lề này (x0, y0) sang lề kia (x1, y1), vuông góc với đường
+  for (const w of CROSSWALKS){ if (w.off) continue;
+    const e = w.half + 12;
+    peds.push({cross: true, cw: w, hx: w.x, hy: w.y, x: w.x - w.n.x*e, y: w.y - w.n.y*e, x0: w.x - w.n.x*e, y0: w.y - w.n.y*e, x1: w.x + w.n.x*e, y1: w.y + w.n.y*e,
+      dir: 1, wait: 2 + rnd() * 6, cyc: 0, v: 22, stopT: 0,
       name: PED_NAMES[Math.floor(rnd()*PED_NAMES.length)], color: ['#e76f51','#2a9d8f','#e9c46a','#8e7dbe','#f4a261'][Math.floor(rnd()*5)]});
   }
   pb.forEach((b, i) => {
@@ -300,7 +303,7 @@ function chainRoot(n){
   return c;
 }
 function ringBusy(theta, self, minV, rg){
-  rg = rg || RB;   // vòng xuyến nào (mặc định vòng xuyến của khu cũ); tuyến tự sinh truyền nút vòng xuyến của MAP
+  rg = rg || MAP.rings[0] || RB;   // vòng xuyến nào (mặc định vòng xuyến đầu tiên của MAP); tuyến tự sinh và luật vòng xuyến truyền vào
   for (const o of vehicles()){
     if (o === self) continue;
     if (o === player && S.inBay) continue;
@@ -327,14 +330,27 @@ function approach(o, ux, uy, L){
   if (uy < -0.7 && Math.abs(o.x - L.x) < HALF && o.y > L.y + HALF) return {dist: o.y - (L.y + HALF), axis:'NS'};
   return null;
 }
+// Đèn phía trước người chơi (bản 1.1 bước 5): xét vạch dừng của từng nhánh (MAP.stopLines), đường góc bất kỳ
 function playerLightAhead(maxD){
   const ux = Math.cos(player.a), uy = Math.sin(player.a); let best = null;
-  for (const L of LIGHTS){
-    const ap = approach(player, ux, uy, L);
-    if (!ap) continue;
-    const d = ap.dist - STOPG;
+  for (const sl of MAP.stopLines){
+    if (ux*sl.d.x + uy*sl.d.y <= 0.7) continue;
+    const rx = player.x - sl.sx, ry = player.y - sl.sy;
+    if (Math.abs(rx*sl.d.y - ry*sl.d.x) >= sl.half) continue;
+    const d = -(rx*sl.d.x + ry*sl.d.y);   // còn bao xa tới vạch dừng
     if (d < -2 || d > maxD) continue;   // đã qua vạch dừng thì thôi
-    if (!best || d < best.dist) best = {dist: d, state: lightOf(L, ap.axis, S.now)};
+    if (!best || d < best.dist) best = {dist: d, state: lightOf(sl.L, sl.phase, S.now)};
+  }
+  return best;
+}
+// Vị trí của điểm (x, y) trên đường r: quãng s, lệch ngang lat (dương là bên phải theo chiều a→b), hướng dir.
+// Dùng khi classify trả về một đường mà không kèm lat (góc vỉa hè bo cong ở đầu phố đi bộ).
+function roadPos(r, x, y){
+  let best = null;
+  for (const g of r.seg){
+    const t = clamp((x - g.p.x)*g.d.x + (y - g.p.y)*g.d.y, 0, g.l);
+    const lat = -(x - g.p.x)*g.d.y + (y - g.p.y)*g.d.x, px = g.p.x + g.d.x*t, py = g.p.y + g.d.y*t, dd = Math.hypot(x - px, y - py);
+    if (!best || dd < best.dd) best = {s: g.s0 + t, lat, dir: g.d, dd};
   }
   return best;
 }
@@ -560,9 +576,11 @@ function updCall(dt){
 function csgtCheck(prev){
   if (S.suspended || Math.abs(player.v) < 5 || classify(player.x, player.y).t === 'bay') return;
   for (const p of CSGT){
-    const a = p.axis === 'x' ? prev.x - p.x : prev.y - p.y, b = p.axis === 'x' ? player.x - p.x : player.y - p.y;
-    const lat = p.axis === 'x' ? Math.abs(player.y - p.y) : Math.abs(player.x - p.x);
-    if (lat >= HALF || !((a < 0 && b >= 0) || (a > 0 && b <= 0))) continue;
+    if (p.off) continue;
+    // vạch kiểm tra vuông góc với đường tại chốt; a, b: trước và sau khung hình, tính dọc theo đường
+    const a = (prev.x - p.x)*p.d.x + (prev.y - p.y)*p.d.y, b = (player.x - p.x)*p.d.x + (player.y - p.y)*p.d.y;
+    const lat = Math.abs((player.x - p.x)*p.n.x + (player.y - p.y)*p.n.y);
+    if (lat >= p.half || !((a < 0 && b >= 0) || (a > 0 && b <= 0))) continue;
     if (S.now - (S.csgtT[p.id] ?? -99) < 8) continue;
     S.csgtT[p.id] = S.now;
     const noHelmet = !safetyOn(), onPhone = phoneDriving() && !S.call.fined;
@@ -1095,12 +1113,12 @@ function updNPC(n, dt){
   n.a += normA(Math.atan2(uy, ux) - n.a) * Math.min(1, dt * 10);
 }
 // Người đang ở trên mặt đường (hoặc sắp bước xuống) tại vạch qua đường: xe phải nhường
-const crossOnRoad = p => p.cross && Math.abs(p.y - p.hy) < HALF + 6;
+const crossOnRoad = p => p.cross && Math.abs((p.x - p.cw.x)*p.cw.n.x + (p.y - p.cw.y)*p.cw.n.y) < p.cw.half + 6;
 function updCrosser(p, dt){
   if (p.wait > 0){ p.wait -= dt; return; }
-  const ty = p.dir > 0 ? p.y1 : p.y0, st = Math.min(p.v * dt, Math.abs(ty - p.y));
-  p.y += Math.sign(ty - p.y) * st;
-  if (Math.abs(ty - p.y) < 0.5){ p.dir = -p.dir; p.wait = 5 + Math.random() * 8; p.cyc++; }
+  const tx = p.dir > 0 ? p.x1 : p.x0, ty = p.dir > 0 ? p.y1 : p.y0, dd = Math.hypot(tx - p.x, ty - p.y), st = Math.min(p.v * dt, dd);
+  if (dd > 0){ p.x += (tx - p.x) / dd * st; p.y += (ty - p.y) / dd * st; }
+  if (dd - st < 0.5){ p.dir = -p.dir; p.wait = 5 + Math.random() * 8; p.cyc++; }
 }
 function updPed(p, dt){
   if (p.cross){ if (p.stopT > 0){ p.stopT -= dt; return; } updCrosser(p, dt); return; }
@@ -1223,8 +1241,8 @@ function updPlayer(dt){
     // Trợ lái chờ 1 giây sau khi nhả phím rẽ; đang bật xi-nhan (6 giây đầu, ngoài ô đỗ) thì không giành lái vì có thể đang định rẽ hoặc quay đầu
     else if (S.assist && !phoneDriving() && player.v > 20 && S.now - S.lastSteer > 1 && !(S.turn !== 0 && S.now - S.sigOnT < 6 && prevC.t !== 'bay')) laneAssist(prevC, dt);
   }
-  const nx = clamp(player.x + Math.cos(player.a) * player.v * dt, 8, W - 8);
-  const ny = clamp(player.y + Math.sin(player.a) * player.v * dt, 8, H - 8);
+  const nx = clamp(player.x + Math.cos(player.a) * player.v * dt, 8, MAP.W - 8);
+  const ny = clamp(player.y + Math.sin(player.a) * player.v * dt, 8, MAP.H - 8);
   // Va vào nhà: bật lại. Nếu xe đã lỡ chạm sẵn (ví dụ vừa xoay thân xe vào tường) thì vẫn cho đi để thoát ra, không kẹt.
   const houseAt = (x, y, a) => S.veh === 'car' ? bodyPts(x, y, a).some(q => hitsHouse(q.x, q.y, V.w / 2)) : hitsHouse(x, y, 7);
   if (houseAt(nx, ny, player.a) && !houseAt(player.x, player.y, player.a)){ player.v *= -0.25; }
@@ -1287,7 +1305,8 @@ function updPlayer(dt){
       if (!crossOnRoad(p) || S.inBay) continue;
       const dxp = p.x - player.x, dyp = p.y - player.y, f = dxp*ca + dyp*sa, l = Math.abs(dxp*sa - dyp*ca);
       if (l < 22 && f > 0 && f < 70 && spd < 12 && S.now - S.lastMoveT < 4 && p.yieldCyc !== p.cyc){ p.yieldCyc = p.cyc; say(p, fill(pick(LINES.crossthanks))); cultAdd(CULT.yield, 'nhường người đi bộ'); SND.reward(1); }
-      if (Math.abs(player.x - p.x) < 34 && Math.abs(player.y - p.hy) < HALF && spd > 24 && p.hitCyc !== p.cyc && p.failCyc !== p.cyc && p.yieldCyc !== p.cyc){
+      const w = p.cw, ox = player.x - w.x, oy = player.y - w.y;   // dọc đường cách vạch dưới 34 và đang ở trên mặt đường
+      if (Math.abs(ox*w.d.x + oy*w.d.y) < 34 && Math.abs(ox*w.n.x + oy*w.n.y) < w.half && spd > 24 && p.hitCyc !== p.cyc && p.failCyc !== p.cyc && p.yieldCyc !== p.cyc){
         p.failCyc = p.cyc; say(p, fill(pick(LINES.crossbump))); cultAdd(CULT.nogive, 'không nhường người đi bộ');
       }
     }
@@ -1319,28 +1338,27 @@ function checkRules(prev, prevC, dt){
 
   // 1) Vượt đèn đỏ: đầu xe vượt qua VẠCH DỪNG khi đèn hướng mình đang đỏ
   //    (đầu xe đã qua vạch dừng lúc đèn vàng thì được đi tiếp, đúng như luật)
+  //    Từ bản 1.1 bước 5: mỗi nhánh xe của mỗi nút có đèn có một vạch dừng riêng (MAP.stopLines), theo hướng nhánh, góc bất kỳ
   const nose = {x: player.x + mx * 9, y: player.y + my * 9}, pNose = {x: prev.x + mx * 9, y: prev.y + my * 9};
-  if (sp > 5) for (const L of LIGHTS){
-    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
-      if (mx*dx + my*dy < 0.3) continue;
-      const lat = dx ? Math.abs(nose.y - L.y) : Math.abs(nose.x - L.x);
-      if (lat >= HALF) continue;
-      const sx = L.x - dx*(HALF + STOPG), sy = L.y - dy*(HALF + STOPG);
-      const before = (pNose.x - sx)*dx + (pNose.y - sy)*dy, after = (nose.x - sx)*dx + (nose.y - sy)*dy;
-      if (before < 0 && after >= 0){
-        // camera chụp tốc độ đúng lúc đầu xe qua vạch dừng (cả đèn xanh lẫn đèn đỏ), so với giới hạn của đoạn đường vừa đi qua
-        const si = speedInfo(prevC, prev.x, prev.y);
-        if (si && S.now >= S.camCool){
-          const over = sp / 3 - si.limit;
-          if (over >= 5){
-            S.camCool = S.now + 3;
-            violate(speedType(over), si.id === 'school' ? 'speedcamschool' : 'speedcam');
-          }
+  if (sp > 5) for (const sl of MAP.stopLines){
+    const dx = sl.d.x, dy = sl.d.y;
+    if (mx*dx + my*dy < 0.3) continue;
+    const lat = Math.abs((nose.x - sl.sx)*dy - (nose.y - sl.sy)*dx);
+    if (lat >= sl.half) continue;
+    const before = (pNose.x - sl.sx)*dx + (pNose.y - sl.sy)*dy, after = (nose.x - sl.sx)*dx + (nose.y - sl.sy)*dy;
+    if (before < 0 && after >= 0){
+      // camera chụp tốc độ đúng lúc đầu xe qua vạch dừng (cả đèn xanh lẫn đèn đỏ), so với giới hạn của đoạn đường vừa đi qua
+      const si = MAP.speedInfo(prevC);
+      if (si && S.now >= S.camCool){
+        const over = sp / 3 - si.limit;
+        if (over >= 5){
+          S.camCool = S.now + 3;
+          violate(speedType(over), si.child ? 'speedcamschool' : 'speedcam');
         }
-        // camera cũng chụp người đang cầm điện thoại khi qua vạch dừng (mỗi cuộc gọi chỉ phạt một lần)
-        if (phoneDriving() && !S.call.fined){ S.call.fined = true; violate('phone', 'phonecam', null, true); }
-        if (lightOf(L, dx ? 'EW' : 'NS', S.now) === 'red') violate('red');
       }
+      // camera cũng chụp người đang cầm điện thoại khi qua vạch dừng (mỗi cuộc gọi chỉ phạt một lần)
+      if (phoneDriving() && !S.call.fined){ S.call.fined = true; violate('phone', 'phonecam', null, true); }
+      if (lightOf(sl.L, sl.phase, S.now) === 'red') violate('red');
     }
   }
 
@@ -1352,21 +1370,36 @@ function checkRules(prev, prevC, dt){
     if (nb){ S.helmSaidT = S.now; say(nb, fill(pick(linesOf('helmetnpc')))); }
   }
 
-  // 2) Phố Chợ là phố đi bộ (biển P.104 cấm xe máy, P.103a cấm ô tô): xe máy chạy vào là bị phạt
-  if (c.t === 'ped'){
-    warn(S.veh === 'car' ? '⛔ Phố Chợ là phố đi bộ, có biển cấm ô tô: lùi ra và đi đường khác' : '⛔ Phố Chợ là phố đi bộ, có biển cấm xe máy: lùi ra và đi đường khác');
+  // 2) Đi vào đường có biển cấm loại xe đang lái (bản 1.1 bước 5: đọc cờ noCar / noBike của đường trên MAP).
+  //    Phố Chợ là phố đi bộ (biển P.104 cấm xe máy, P.103a cấm ô tô); bản 1.2 có thêm hẻm cấm ô tô.
+  const ban = c.road && (S.veh === 'car' ? c.road.noCar : c.road.noBike) ? c.road : null;
+  if (ban){
+    if (c.t === 'ped') warn(S.veh === 'car' ? '⛔ ' + ban.name + ' là phố đi bộ, có biển cấm ô tô: lùi ra và đi đường khác' : '⛔ ' + ban.name + ' là phố đi bộ, có biển cấm xe máy: lùi ra và đi đường khác');
+    else warn('⛔ ' + ban.name + ' có biển cấm ' + (S.veh === 'car' ? 'ô tô' : 'xe máy') + ': lùi ra và đi đường khác');
     if (sp > 10 && player.stun <= 0 && !S.pedEp && S.now > S.pedCool){ S.pedEp = true; violate('noentry'); }
     if (S.pedEp) S.faultUntil = Math.max(S.faultUntil, S.now + 1);
   } else if (S.pedEp){ S.pedEp = false; S.pedCool = S.now + 4; }
 
-  // 3) Vạch giữa đường
+  // 3) Vạch giữa đường (bản 1.1 bước 5: theo hướng đường c.dir, lệch ngang c.lat và MAP.lineAt, đường góc bất kỳ)
   //    Vạch liền: sang phần đường ngược chiều là bị phạt ngay.
   //    Vạch đứt: được cắt qua để rẽ, vượt, vào ô đỗ; chạy lâu bên phần đường ngược chiều mới bị phạt.
-  let wrong = false, zone = 'broken';
-  if (sp > 15 && player.stun <= 0){   // bị dội ngược sau va chạm thì không tính
-    if (c.t === 'h'){ if ((mx > 0.6 && player.y < c.Y - 3) || (mx < -0.6 && player.y > c.Y + 3)) wrong = true; zone = lineType('h', c.Y, player.x); }
-    if (c.t === 'v'){ if ((my < -0.6 && player.x < c.X - 3) || (my > 0.6 && player.x > c.X + 3)) wrong = true; zone = lineType('v', c.X, player.y); }
+  //    Phố một chiều: không có phần đường ngược chiều, mà đi ngược hướng của phố là lỗi đi ngược chiều (wrongway).
+  let wrong = false, zone = 'broken', against = false;
+  const rd = c.road && c.road.veh && (c.t === 'h' || c.t === 'v' || c.t === 'road') ? c.road : null;
+  if (rd && sp > 15 && player.stun <= 0){   // bị dội ngược sau va chạm thì không tính
+    const ps = c.lat != null ? c : roadPos(rd, player.x, player.y);
+    const along = mx*ps.dir.x + my*ps.dir.y;
+    if (rd.oneway) against = along < -0.6;
+    else {
+      if ((along > 0.6 && ps.lat < -3) || (along < -0.6 && ps.lat > 3)) wrong = true;
+      zone = MAP.lineAt(rd, ps.s);
+    }
   }
+  if (against){
+    S.wwT += dt;
+    if (S.wwT > 0.6 && !S.wwEp){ S.wwEp = true; violate('wrongway'); }
+    if (S.wwEp) S.faultUntil = Math.max(S.faultUntil, S.now + 1);
+  } else { S.wwT = 0; if (!rd || !rd.oneway) S.wwEp = false; }   // mỗi lần vào phố một chiều chỉ phạt một lần
   if (wrong){
     S.wrongT += dt; S.okT = 0;
     if (zone === 'solid'){
@@ -1383,15 +1416,18 @@ function checkRules(prev, prevC, dt){
     if (S.okT > 1.2){ S.wrongT = 0; S.sideEp = false; }
   }
 
-  // 4) Vòng xuyến: nhường xe bên trái khi vào, và không đi ngược chiều vòng
-  const pr = Math.hypot(prev.x - RB.x, prev.y - RB.y), cr = Math.hypot(player.x - RB.x, player.y - RB.y);
-  if (pr > RB.rOut && cr <= RB.rOut && sp > 15){
-    const th = Math.atan2(player.y - RB.y, player.x - RB.x);
-    const other = ringBusy(th, player, 12);
-    if (other && Math.hypot(other.x - player.x, other.y - player.y) < 110) violate('ring', 'ring', other);
+  // 4) Vòng xuyến: nhường xe bên trái khi vào, và không đi ngược chiều vòng (bản 1.1 bước 5: xét mọi vòng xuyến của MAP)
+  for (const rg of MAP.rings){
+    const pr = Math.hypot(prev.x - rg.x, prev.y - rg.y), cr = Math.hypot(player.x - rg.x, player.y - rg.y);
+    if (pr > rg.rOut && cr <= rg.rOut && sp > 15){
+      const th = Math.atan2(player.y - rg.y, player.x - rg.x);
+      const other = ringBusy(th, player, 12, rg);
+      if (other && Math.hypot(other.x - player.x, other.y - player.y) < 110) violate('ring', 'ring', other);
+    }
   }
-  if (c.t === 'ring' && sp > 15 && player.stun <= 0){
-    const rx = player.x - RB.x, ry = player.y - RB.y, r = Math.hypot(rx, ry) || 1;
+  const rgc = c.t === 'ring' ? MAP.ringOf(c.node) : null;
+  if (rgc && sp > 15 && player.stun <= 0){
+    const rx = player.x - rgc.x, ry = player.y - rgc.y, r = Math.hypot(rx, ry) || 1;
     const tang = (rx * my - ry * mx) / r; // > 0: đi theo chiều kim đồng hồ (sai)
     if (tang > 0.45){ S.ringWrongT += dt; } else S.ringWrongT = Math.max(0, S.ringWrongT - dt);
     if (S.ringWrongT > 0.6){
@@ -1401,7 +1437,7 @@ function checkRules(prev, prevC, dt){
   } else if (c.t !== 'ring'){ S.ringWrongT = 0; S.ringEp = false; }
 
   // 5) Dừng giữa đường làm người khác phải chờ: chỉ nhắc nhẹ, chưa phạt
-  const onRoad = c.t === 'h' || c.t === 'v' || c.t === 'junction' || c.t === 'ring';
+  const onRoad = c.t === 'h' || c.t === 'v' || c.t === 'road' || c.t === 'junction' || c.t === 'ring';
   if (onRoad && sp < 3 && player.stun <= 0 && !reasonToStop()) S.stopT += dt; else S.stopT = 0;
   if (S.stopT > 4 && S.now - S.stopSaidT > 20){
     const blocked = npcs.find(n => !n.hidden && n.blockedBy === player && n.waitT > 1.5);
@@ -1410,10 +1446,11 @@ function checkRules(prev, prevC, dt){
 
   // 5b) Tốc độ giữa hai ngã tư: chỉ NHẮC NHỞ, không phạt và không làm mất "chuyến sạch" (quyết định ngày 14/11/2026).
   //     Việc phạt nằm ở camera tại vạch dừng ngã tư có đèn (mục 1). Vượt từ 5 km/h trở lên liên tục 3 giây thì NPC nhắc một lần mỗi đoạn.
-  { const si = speedInfo(c, player.x, player.y);
+  //     Đoạn đường và giới hạn lấy từ MAP.speedInfo; đoạn có trẻ em (đường khai báo child: true) dùng câu nhắc riêng.
+  { const si = MAP.speedInfo(c);
     if (si){
       if (si.id !== S.spdSec){ S.spdSec = si.id; S.spdSaid = false; S.spdT = 0; S.spdMax = 0; }
-      S.spdLimit = si.limit;
+      S.spdLimit = si.limit; S.spdChild = si.child;
     }
     const onRd = si || c.t === 'junction' || c.t === 'ring';
     const over = sp / 3 - S.spdLimit;
@@ -1421,7 +1458,7 @@ function checkRules(prev, prevC, dt){
       S.spdT += dt; S.spdMax = Math.max(S.spdMax, over);
       if (S.spdT >= 3){
         S.spdSaid = true;
-        say(nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true}, fill(pick(S.spdSec === 'school' ? LINES.speedwarnschool : LINES.speedwarn)));
+        say(nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true}, fill(pick(S.spdChild ? LINES.speedwarnschool : LINES.speedwarn)));
       }
     } else if (over < 5){ S.spdT = 0; S.spdMax = 0; }
   }
@@ -1429,7 +1466,7 @@ function checkRules(prev, prevC, dt){
   // 6) Xi-nhan. Chỉ bắt khi RẼ Ở NGÃ TƯ (một lượt rẽ đi qua nút giao và quay xe quá khoảng 50 độ) hoặc QUAY ĐẦU (quá khoảng 137 độ).
   //    Cắt vạch đứt để vượt xe không tính (đó là lỗi khác). Trợ lái chỉ nắn nhẹ trên đường thẳng nên không bị tính là rẽ.
   //    Phải bật đúng bên và bật TRƯỚC khi bắt đầu rẽ (cho phép trễ 0,25 giây).
-  const sigZone = (c.t === 'junction' || c.t === 'h' || c.t === 'v');
+  const sigZone = (c.t === 'junction' || c.t === 'h' || c.t === 'v' || c.t === 'road');
   if (!sigZone){ S.sigAcc = 0; S.sigStraightT = 0; S.sigEp = false; S.turnBegan = false; S.sigInJ = false; }
   else if (sp > 8 && player.stun <= 0){
     if (c.t === 'junction') S.sigInJ = true;   // lượt rẽ này đi qua nút giao
@@ -1883,23 +1920,23 @@ function drawSignboards(){
 function drawCSGT(){
   for (const p of CSGT){
     if (tilted() && Math.hypot(p.x - player.x, p.y - player.y) > (S.view === 'bike' ? 520 : 700)) continue;
-    const ax = p.axis === 'x';
+    if (p.off) continue;
     ctx.save(); ctx.strokeStyle = 'rgba(255,140,0,.75)'; ctx.lineWidth = 2.2; ctx.setLineDash([7, 6]);
-    ctx.beginPath(); if (ax){ ctx.moveTo(p.x, p.y - HALF); ctx.lineTo(p.x, p.y + HALF); } else { ctx.moveTo(p.x - HALF, p.y); ctx.lineTo(p.x + HALF, p.y); }
+    ctx.beginPath(); ctx.moveTo(p.x - p.n.x*p.half, p.y - p.n.y*p.half); ctx.lineTo(p.x + p.n.x*p.half, p.y + p.n.y*p.half);
     ctx.stroke(); ctx.restore();
-    for (const k of [6, 16, 26]){   // cọc tiêu dọc mép đường phía chòi
-      const cx = ax ? p.x : p.x - HALF + k, cy = ax ? p.y + HALF - k : p.y;
+    for (const k of [6, 16, 26]){   // cọc tiêu dọc vạch kiểm tra, sát mép đường phía chòi
+      const cx = p.x + p.n.x*(p.half - k), cy = p.y + p.n.y*(p.half - k);
       up(cx, cy, () => { ctx.fillStyle = '#ff7a1a'; ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(4, 0); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.fillRect(-2.2, -5, 4.4, 1.8); });
     }
-    up(p.cabin.x, p.cabin.y, () => {
+    up(p.cabinPt.x, p.cabinPt.y, () => {
       ctx.fillStyle = '#2f6fde'; rr(ctx, -9, -26, 18, 22, 2); ctx.fill();
       ctx.fillStyle = '#ffd43b'; rr(ctx, -11, -30, 22, 5, 2); ctx.fill();
       ctx.fillStyle = '#fff'; ctx.fillRect(-9, -17, 18, 2.4);
       ctx.fillStyle = '#d9d36a'; rr(ctx, 11, -12, 6, 12, 2); ctx.fill();   // chú CSGT mặc áo vàng
       ctx.fillStyle = '#f1c9a5'; ctx.beginPath(); ctx.arc(14, -15, 3, 0, Math.PI*2); ctx.fill();
     });
-    label(p.cabin.x, p.cabin.y + 26, '👮 CHỐT CSGT', {size: 12, bold: true, bg: '#2f6fde', color: '#fff'});
+    label(p.cabinPt.x, p.cabinPt.y + 26, '👮 CHỐT CSGT', {size: 12, bold: true, bg: '#2f6fde', color: '#fff'});
   }
 }
 function drawUprights(){
@@ -2287,4 +2324,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {useMap, getMap: () => MAP, classifyOld, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
