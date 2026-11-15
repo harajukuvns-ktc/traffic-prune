@@ -441,9 +441,20 @@ Viết ngày 15/11/2026 sau khi người dùng chốt (16:56, 17:02). Đây là 
 | 2 | Vẽ nền theo mảnh 512 × 512 từ `MAP` (đường, vạch, vỉa hè, nhà dạng đa giác, ô đỗ, cột đèn, biển) | **Xong** 15/11/2026 (xem ghi chú bước 2 bên dưới) |
 | 3 | Chỉ đường trên `MAP.graph`, rẽ trái/phải theo góc nhánh | **Xong** 15/11/2026 (xem ghi chú bước 3 bên dưới) |
 | 4 | Bộ sinh lộ trình NPC thay `ROUTES` | **Xong** 15/11/2026 (xem ghi chú bước 4 bên dưới) |
-| 5 | Bắt lỗi theo hướng đường (sai làn, đè vạch, đèn đỏ, camera, xi-nhan); `CSGT`, `SCHOOL`, người qua vạch lấy vị trí từ dữ liệu | Chưa làm |
+| 5 | Bắt lỗi theo hướng đường (sai làn, đè vạch, đèn đỏ, camera, xi-nhan); `CSGT`, `SCHOOL`, người qua vạch lấy vị trí từ dữ liệu | Kế hoạch đã duyệt 19:53 15/11/2026 (xem "Kế hoạch bước 5" bên dưới), chưa làm |
 | 6 | Trợ lái giữ làn, ôm cua, quay đầu tự động theo hướng đường | Chưa làm |
 | 7 | Xoá bộ cũ (`HR`, `VR`, `OW`, `RB`, `N`, `SEGS`, `CORNERS`, `lineType`…), cập nhật tài liệu, gộp vào `main` | Chưa làm |
+
+**Kế hoạch bước 5 (người dùng duyệt lúc 19:53 ngày 15/11/2026, đồng ý cả mục 7; làm ở phiên mới, mô hình Opus):**
+1. Game dùng `MAP.classify` thay `classify` cũ (bước 1 đã chứng minh khớp từng điểm); kết quả thêm `road`, `s`, `lat`, `dir`.
+2. Vượt đèn đỏ + camera phạt nguội (mục 1 của `checkRules`): vạch dừng tính cho từng nhánh xe của mỗi nút `light`, cách tâm `gap + STOPG` theo hướng nhánh, pha `MAP.armPhase`; `playerLightAhead` / `approach` cũng đổi theo. Mức phạt, cách tính không đổi.
+3. Sai phần đường / đè vạch liền (mục 3): theo `c.dir`, `c.lat` và `MAP.lineAt(road, s)`; giữ ngưỡng cũ (vạch liền 0,3 giây, vạch đứt cảnh báo 1,2 giây, phạt 3,5 giây).
+4. Vòng xuyến (mục 4): xét mọi nút `ring` của `MAP` (không nhường khi vào, đi ngược vòng); `ringBusy` nhận vòng xuyến làm tham số.
+5. Xi-nhan, dừng giữa đường, nhắc tốc độ (mục 5, 5b, 6): chấp nhận `c.t === 'road'` (đường góc bất kỳ); đoạn trường học lấy từ đường có `child: true` (`MAP.speedInfo`), câu thoại `speedcamschool` / `speedwarnschool` theo cờ này thay cho `id === 'school'`.
+6. `CSGT` và người đi bộ qua vạch (hiện `x = 800` viết cứng) khai báo theo {đường, quãng s}; vị trí, hướng vạch kiểm tra tự tính.
+7. **Thêm cách bắt (luật đã có sẵn trong `js/luat.js`, không sửa luật):** đi vào đường có biển cấm loại xe đang lái (`noCar` / `noBike`, lỗi `noentry`, câu nhắc ghi tên đường) và đi ngược chiều phố một chiều (`oneway`, lỗi `wrongway`). Khu hiện tại chưa có nên chỉ có tác dụng từ bản 1.2.
+8. Kiểm tra: mọi test cũ về phạt phải đạt; test mục 25 dựng bản đồ thử đặt xa khu phố (tránh nhà cũ), người chơi lần lượt vượt đèn đỏ ở nhánh chéo, lấn làn / đè vạch liền trên đường chéo, rẽ ở ngã năm không xi-nhan, đi ngược phố một chiều, ô tô vào hẻm cấm: mỗi lỗi bắt đúng, đi đúng không bị phạt oan. Cần cho test đổi tạm bản đồ đang dùng (ví dụ `MAP` thành biến đổi được qua một hàm `useMap`).
+9. Không đổi `js/luat.js`, mức phạt, điểm trừ, câu thoại, ngưỡng thời gian, nên không cần agent kiểm tra luật lần này.
 
 Ghi chú bước 4 (15/11/2026): `NPC_GEN.on = false` quay về `ROUTES` cũ (xoá ở bước 7). Chọn tuyến bằng bộ số ngẫu nhiên riêng có hạt giống cố định (`NPC_GEN.seed`), nên bài test không chập chờn. Khoảng một nửa tuyến là **đi thẳng một mạch** (`npcStraightPath`: ở mỗi nút chọn nhánh lệch dưới 30°, vòng xuyến chọn lối đối diện), còn lại chọn ngẫu nhiên đầu ra và đi đường ngắn nhất (`npcNodePath`, không đi xuyên mép bản đồ, tôn trọng phố đi bộ, phố một chiều, hẻm cấm ô tô cho xe buýt). Chỗ rẽ là đường cong Bézier bậc ba (đi ra theo hướng vào, tới theo hướng ra), nên rẽ gắt ở ngã năm cũng không vòng ngược. Đường cong của bản đồ: lấy các điểm uốn đã dời sang làn phải, bỏ phần nằm trong nút (`npcMargin`; chỉ đường của người chơi cũng bỏ như vậy). Mốc vạch dừng đặt cách tâm ngã tư `gap + STOPG` (khu cũ: 80, đúng như bộ cũ). Tuyến tay (các bài test gán `route` không có `gen`) vẫn dừng đèn theo cách cũ (`lightLimit`). **Đo được:** 300 tuyến ngẫu nhiên đều nằm trên mặt đường, đúng làn phải, không qua phố đi bộ, không có chỗ giật lùi; khoảng 54% đi thẳng, phần còn lại có rẽ và qua vòng xuyến; mô phỏng 5 phút số lần NPC phải "đi xuyên" để gỡ kẹt là 74 (bộ cũ 71), chủ yếu ở hàng xe chờ đèn đỏ. **Chưa làm:** NPC rẽ trái chưa nhường xe đi thẳng ngược chiều (bản 1.2, cùng lỗi không nhường đường tại nơi giao nhau); chưa có ô tô NPC.
 
