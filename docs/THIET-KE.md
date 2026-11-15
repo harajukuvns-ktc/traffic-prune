@@ -405,6 +405,29 @@ Việc kỹ thuật bắt buộc kèm theo: viết bộ sinh lộ trình NPC t�
 
 Mỗi khi xong một việc, đổi trạng thái trong bảng trên và thêm dòng vào bảng lịch sử phiên bản ở mục 7.
 
+### 10.3 Thiết kế kỹ thuật bản 1.1 (bộ máy bản đồ dạng dữ liệu)
+
+Viết ngày 15/11/2026 sau khi người dùng chốt (16:56, 17:02). Đây là danh sách việc để phiên làm việc mới bắt tay ngay, không phải khảo sát lại.
+
+**Hiện trạng (đếm ngày 15/11/2026):** khoảng 150 chỗ trong `js/game.js` và `js/ban-do.js` dựa vào bản đồ cứng: `HR`/`VR` (2 đường ngang, 2 đường dọc), `OW` (Phố Chợ), `RB` (vòng xuyến), `LIGHTS` (3 đèn, trục `'EW'`/`'NS'`), `.axis`, đồ thị chỉ đường `N`/`SEGS`/`DEAD`, `ROUTES` NPC viết tay, `BLOCKS` hình chữ nhật, `CSGT`, `SCHOOL`, các số 800 / 300 / 900 rải rác (người qua vạch, biển, camera).
+
+**Dữ liệu mới (trong `js/ban-do.js`):**
+- `NODES`: điểm nút {id, x, y, kind: 'light' | 'priority' | 'plain' | 'ring' | 'end', đèn: pha, chu kỳ, lệch; biển phụ: rẽ phải / đi thẳng khi đèn đỏ theo từng nhánh; ưu tiên: nhánh nào là đường chính}.
+- `ROADS`: đoạn đường giữa hai nút {a, b, điểm cong tùy chọn, cấp: 'big' | 'normal' | 'alley', nửa bề rộng, số làn mỗi chiều, tên, giới hạn tốc độ, cấm ô tô / xe máy, một chiều}.
+- Mọi thứ còn lại **tự sinh** từ hai bảng này: mặt đường, vỉa hè bo cong, vạch giữa (liền gần nút, đứt giữa đoạn), vạch dừng, vạch người đi bộ, cột đèn, biển chỉ dẫn, biển tốc độ, khối nhà (đa giác giữa các đường), ô đỗ, đồ thị chỉ đường, tuyến NPC.
+
+**Hàm hình học chung (thay cho trục ngang/dọc):** chiếu điểm lên đoạn đường gần nhất → {road, t dọc đường, lệch ngang có dấu, hướng đường}. `classify(x, y)` trả về như cũ (bay / island / ring / junction / ped / road / off) nhưng kèm road và hướng; mọi nơi đang dùng `c.t === 'h' | 'v'` và `.axis` chuyển sang dùng hướng đường.
+
+**Viết lại theo hướng đường (góc bất kỳ):** trợ lái giữ làn (`laneAssist`), trợ lái ôm cua (`turnAssistStart` / `turnPath`: nối hướng nhánh vào và nhánh ra), quay đầu tự động, bắt lỗi sai làn / đè vạch / vượt đèn đỏ / camera / xi-nhan (góc rẽ tính theo nhánh), chỉ đường (Dijkstra trên đồ thị nút, câu "rẽ trái/phải" theo góc giữa hai nhánh, "ra ở lối thứ mấy" cho vòng xuyến và ngã năm), NPC (đi theo tuyến sinh tự động, dừng đèn, nhường theo loại nút).
+
+**Bộ sinh lộ trình NPC:** chọn ngẫu nhiên điểm vào ở mép bản đồ, tìm đường tới điểm ra khác (cùng thuật toán chỉ đường), trải thành chuỗi điểm theo làn bên phải, vào cua bằng đường cong; xe ra khỏi bản đồ thì sinh lại. Phố một chiều và hẻm cấm ô tô được tôn trọng.
+
+**Vẽ cho nhẹ máy:** vẽ sẵn nền tĩnh (đường, vạch, vỉa hè, nhà) vào các mảnh 512 × 512 một lần lúc khởi động, mỗi khung hình chỉ dán các mảnh gần máy quay; đèn, xe, người vẽ động như cũ.
+
+**Cách làm an toàn:** (1) viết bộ máy mới bên cạnh bộ cũ; (2) khai báo khu cũ bằng dữ liệu mới, so sánh từng điểm `classify` cũ và mới trên lưới toàn bản đồ (sai khác phải bằng 0 hoặc giải thích được); (3) chuyển từng phần (vẽ → chỉ đường → NPC → bắt lỗi → trợ lái), sau mỗi phần chạy `tests/kiem-tra-logic.js` phải đạt hết; (4) xoá bộ cũ. Test mới: mục 21 so sánh bản đồ cũ/mới và kiểm tra một đoạn đường chéo thử (không đưa vào bản đồ chơi ở 1.1).
+
+**Rủi ro:** việc lớn, nên chia nhiều lần đẩy lên; nếu điện thoại giật thì giảm độ phân giải mảnh nền.
+
 ## 11. Chọn mô hình cho từng loại việc (để đỡ tốn hạn mức)
 
 Người dùng hỏi ngày 13/11/2026. Nguyên tắc chung theo hướng dẫn của Anthropic: Sonnet là lựa chọn mặc định cho phần lớn việc viết code; Opus dành cho việc khó hoặc động đến nhiều chỗ; Haiku cho việc máy móc. Cách dùng hiệu quả nhất là **lập kế hoạch bằng Opus, thực hiện bằng Sonnet**; đổi mô hình giữa chừng không làm mất nội dung cuộc trò chuyện.
