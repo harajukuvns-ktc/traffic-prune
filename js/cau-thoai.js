@@ -89,6 +89,25 @@ const LINES = {
     'Đầu trần chạy xe thế này nguy hiểm lắm {x} ơi. Đội mũ vào, nhanh một giây không bằng an toàn cả đời.',
     'Gió mát nhỉ {x}? Mát thì mát, nhưng đội mũ vào rồi hẵng mát.'
   ],
+  // ô tô (bản 0.12): khóa có đuôi 'car' được dùng thay cho khóa gốc khi người chơi lái ô tô
+  belt: [
+    'Tuýt! Mời bác tài tấp vào. Dây an toàn treo đó làm cảnh à {x}?',
+    'Dây an toàn thắt mất hai giây, còn biên bản thì ký mất mười phút đó {x}.',
+    'Ngồi ô tô mà không thắt dây, phanh gấp một cái là {x} chào kính chắn gió luôn đó!'
+  ],
+  helmetnpccar: [
+    'Bác tài ơi, dây an toàn đâu? Qua chốt CSGT là bị thổi còi đó nha.',
+    '{X} lái ô tô mà không thắt dây à? Thắt vào đi, phanh gấp là nguy lắm.'
+  ],
+  noentrycar: [
+    'Phố đi bộ mà {x} lùa cả ô tô vào? Biển cấm ô tô to tướng ở đầu phố kìa!',
+    'Ô tô của {x} chiếm hết lối đi của mấy bác dạo chợ rồi. Lùi ra giùm cái!',
+    'Biển tròn gạch chéo có hình ô tô là cấm ô tô đó {x}. Phố này dành cho người đi bộ.'
+  ],
+  sidewalkcar: [
+    'Ô tô mà leo lên vỉa hè hả {x}? Người đi bộ còn chỗ nào mà đi nữa!',
+    'Ối! {X} đậu bánh xe lên vỉa hè suýt cán chân tôi rồi.'
+  ],
   // điện thoại: phone = CSGT bắt tại chốt; phonecam = camera ngã tư chụp; phonewarn = người đi đường nhắc; phoneok = khách vui vì được nghe máy đàng hoàng
   phone: [
     'Tuýt! Một tay lái một tay cầm điện thoại, {x} định làm xiếc à? Mời tấp vào lập biên bản.',

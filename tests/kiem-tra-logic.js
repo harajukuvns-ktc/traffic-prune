@@ -4,9 +4,9 @@ const dt = 1/60;
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
-const reset = () => { for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
+const reset = () => { if (S.veh !== 'bike') TP.setVehicle('bike'); for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
   S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.lastSteer = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null;
-  S.helmet = true; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callAt = -1; S.callIn = 99; };
+  S.helmet = true; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callAt = -1; S.callIn = 99; S.statsBy.car = {}; S.ptsBy.car = 12; S.belt = false; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -455,6 +455,54 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   // l) người đi đường nhắc khi đầu trần chạy lâu
   reset(); S.helmet = false; const nb = npcs[0]; nb.hidden = false; nb.v = 0; S.noHelmT = 7.9; S.helmSaidT = -99; player.x = nb.x + 100; player.y = nb.y; player.v = 60; step(dt); player.x = nb.x + 100; player.y = nb.y; player.v = 60; run(0.5);
   ok(S.helmSaidT > -99 && !(S.stats.helmet), 'đầu trần chạy lâu: người đi đường nhắc, chưa phạt');
+}
+
+// 16) Ô tô (bản 0.12)
+{ const {VEH, setVehicle, speedType, lawOf, LAW, QUIZ, safetyOn, putOnHelmet, computeRoute, navText} = TP;
+  const go = (x, y, a, kmh, sec) => { clearNear(x, y, 500); player.x = x; player.y = y; player.a = a; player.v = kmh * 3; S.money = 5000000;
+    for (let i = 0; i < sec/dt; i++){ if (player.stun <= 0) player.v = kmh * 3; step(dt); } };
+  reset(); S.pts = 9; S.stats = {red: 2};
+  setVehicle('car');
+  ok(S.veh === 'car' && S.pts === 12 && !S.stats.red && player.len === VEH.car.len, 'đổi sang ô tô: dùng bằng B riêng (12 điểm, thống kê riêng), xe dài hơn');
+  // a) tăng tốc, tốc độ tối đa
+  reset(); setVehicle('car'); clearNear(300, 920, 600); player.x = 100; player.y = 920; player.a = 0; player.v = 0; keys.up = true; run(1); const v1 = player.v; run(3.5); const vtop = player.v; keys.up = false;
+  ok(v1 < 115 && v1 > 40, `ô tô tăng tốc chậm hơn xe máy (sau 1 giây: ${(v1/3).toFixed(0)} km/h)`);
+  ok(vtop > 165 && vtop <= VEH.car.vmax + 0.1, `ô tô chạy được nhanh hơn 55 km/h, tối đa ${(VEH.car.vmax/3).toFixed(0)} (đạt ${(vtop/3).toFixed(0)})`);
+  // b) quay vòng rộng hơn xe máy
+  const radius = () => { reset(); setVehicle('car'); clearNear(400, 300, 300); player.x = 400; player.y = 278; player.a = 0; player.v = 0; keys.right = true;
+    let minx = 1e9, maxx = -1e9; for (let i = 0; i < 6/dt; i++){ step(dt); minx = Math.min(minx, player.x); maxx = Math.max(maxx, player.x); }
+    keys.right = false; return (maxx - minx) / 2; };
+  const rCar = radius();
+  ok(rCar > 18 && rCar < 32, `ô tô quay vòng chậm nhất bán kính ${(rCar/4).toFixed(1)} m (khoảng 5–8 m)`);
+  // c) chỉ đường ô tô ngại quay đầu giữa đường hơn xe máy
+  reset(); setVehicle('car'); clearNear(560, 320, 300); player.x = 560; player.y = 320; player.a = Math.PI; player.v = 0;
+  const destPho = TP.DESTS.find(d => d.name.includes('Bưu cục')); S.trip = {dest: destPho, fx: 560, fy: 320, clean: true, t0: 0};
+  const rc = computeRoute(); setVehicle('bike'); const rb = computeRoute(); setVehicle('car');
+  ok(rc && rb && rc.instr.type !== 'uturn' && rb.instr.type === 'uturn', `xe máy được bảo quay đầu tại chỗ, ô tô thì được dẫn đi vòng (${rb && rb.instr.type} / ${rc && rc.instr.type})`);
+  // d) dây an toàn thay mũ bảo hiểm
+  reset(); setVehicle('car'); S.belt = false; S.helmet = true; ok(!safetyOn(), 'lái ô tô: đội mũ không thay được dây an toàn');
+  go(940, 320, 0, 20, 1.2); ok(S.stats.belt === 1 && !S.stats.helmet && 5000000 - S.money === lawOf('belt').fine, `chưa thắt dây qua chốt CSGT: phạt lỗi dây an toàn ${lawOf('belt').fine}đ`);
+  reset(); setVehicle('car'); S.belt = false; putOnHelmet(); ok(S.belt, 'bấm nút (phím H) khi lái ô tô là thắt dây an toàn');
+  // e) mức phạt ô tô áp dụng: vượt đèn đỏ
+  reset(); setVehicle('car'); S.belt = true; const L = LIGHTS[0]; clearNear(L.x, L.y, 400);
+  while (!(lightOf(L, 'EW', S.now) === 'red' && lightOf(L, 'EW', S.now + 3) === 'red')) run(0.1);
+  player.x = L.x - 150; player.y = L.y + 20; player.a = 0; S.money = 5000000; for (let i = 0; i < 2.5/dt; i++){ player.v = 60; step(dt); }
+  ok(S.stats.red === 1 && 5000000 - S.money === lawOf('red').fine && lawOf('red').fine > LAW.red.fine, `ô tô vượt đèn đỏ: phạt theo mức ô tô ${lawOf('red').fine}đ (xe máy ${LAW.red.fine}đ)`);
+  // f) bậc tốc độ ô tô
+  ok(speedType(7) === 'speed1' && speedType(15) === 'speed2' && speedType(30) === 'speed3' && speedType(40) === 'speed4', 'ô tô có 4 bậc quá tốc độ');
+  // g) phố đi bộ cấm ô tô
+  reset(); setVehicle('car'); S.belt = true; go(800, 340, Math.PI/2, 15, 1.5); ok(S.stats.noentry === 1, 'ô tô chạy vào phố đi bộ: phạt lỗi đi vào đường cấm');
+  // h) đỗ ngược chiều: ô tô bị phạt thật (xe máy chỉ nhắc)
+  reset(); setVehicle('car'); S.belt = true; { const b = BAYS[9]; clearNear(b.cx, b.cy, 300); player.x = b.cx; player.y = b.cy; player.a = Math.atan2(-b.dir.y, -b.dir.x); player.v = 0; S.money = 5000000; run(0.5); }
+  ok(S.stats.parkdir === 1 && S.money < 5000000 === !lawOf('parkdir').remind, 'ô tô đỗ ngược chiều trong ô P: xử theo mức của ô tô');
+  // i) bài kiểm tra theo loại xe
+  ok(QUIZ.some(q => q.veh === 'car') && QUIZ.filter(q => !q.veh || q.veh === 'car').length >= 5, 'bài kiểm tra có câu riêng cho ô tô, đủ 5 câu');
+  // j) mọi lỗi ô tô đều có căn cứ
+  ok(TP.LAW_ORDER_CAR.every(k => lawOf(k) && lawOf(k).ref && lawOf(k).tip), 'mọi lỗi trong sổ tay ô tô đều có căn cứ và mẹo');
+  // k) ô tô giao hàng được ở ô P
+  reset(); setVehicle('car'); { const d = S.trip.dest, b = d.bay; clearNear(b.cx, b.cy, 300); const trips = S.trips; player.x = b.cx; player.y = b.cy; player.a = Math.atan2(b.dir.y, b.dir.x); player.v = 0; run(0.3);
+    ok(S.trips === trips + 1, 'ô tô đỗ đúng ô P của điểm giao: giao hàng thành công'); }
+  setVehicle('bike');
 }
 
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');

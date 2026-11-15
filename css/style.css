@@ -44,6 +44,9 @@
   #cockpit{position:fixed;left:50%;bottom:0;width:min(560px,100vw);transform:translateX(-50%);display:none;pointer-events:none;z-index:2}
   #cockpit svg{display:block;width:100%;height:auto}
   body.bike #cockpit{display:block}
+  body.car #cockpit{display:none}
+  #vehRow{background:#fff3e6;border-radius:12px;padding:8px 10px;font-weight:600}
+  #vehRow select{font-size:16px;font-weight:600}   /* ô tô: bản 0.12.1 mới có vô lăng */
   /* trên điện thoại ghi đông nằm phía trên hàng nút; thân xe kéo dài xuống mép dưới màn hình */
   body.bike.touch #cockpit::after{content:'';display:block;height:92px;width:25%;margin:0 auto;background:#ff8a3d;border-left:2px solid #c0703a;border-right:2px solid #c0703a;box-sizing:border-box}
   #controls{position:fixed;left:0;right:0;bottom:0;height:200px;display:none;justify-content:space-between;align-items:flex-end;padding:0 14px 16px;pointer-events:none;z-index:3}

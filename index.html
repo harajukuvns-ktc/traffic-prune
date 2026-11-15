@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Traffic Prune · bản chơi thử 0.11</title>
+<title>Traffic Prune · bản chơi thử 0.12</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%B5%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -89,14 +89,22 @@
 <div class="overlay" id="start">
   <div class="card">
     <h1>Traffic Prune</h1>
-    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.11)</p>
+    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. (Bản chơi thử 0.12)</p>
+    <div class="row" id="vehRow">
+      <label for="veh">Bạn lái:</label>
+      <select id="veh">
+        <option value="bike">🏍️ Xe máy (bằng A1)</option>
+        <option value="car">🚗 Ô tô (bằng B)</option>
+      </select>
+    </div>
     <ul>
-      <li>Bạn là shipper xe máy. Màn hình giống <b>ứng dụng dẫn đường</b>: bản đồ xoay theo hướng xe, <b>vạch chấm xanh có mũi tên nhỏ</b> chỉ lối, bảng xanh lá phía trên báo chỗ rẽ sắp tới.</li>
+      <li>Bạn là shipper, giao hàng bằng xe máy hoặc ô tô (chọn ngay ở trên). Màn hình giống <b>ứng dụng dẫn đường</b>: bản đồ xoay theo hướng xe, <b>vạch chấm xanh có mũi tên nhỏ</b> chỉ lối, bảng xanh lá phía trên báo chỗ rẽ sắp tới.</li>
       <li>Tới nơi thì <b>tấp vào ô đỗ xe chữ P</b> và dừng lại để giao hàng. Muốn nghỉ thì cũng đỗ vào ô P, đừng dừng giữa đường.</li>
       <li><b>Vạch vàng đứt</b>: được cắt qua để rẽ, vượt hoặc vào ô P bên kia đường. <b>Vạch vàng liền</b> (gần ngã tư, vòng xuyến): không được đè lên.</li>
       <li>Đi sạch luật thì được thưởng thêm. Phạt tiền và trừ điểm theo <b>mức phạt thật</b> của Nghị định 168/2024/NĐ-CP. Làm ai kẹt xe hay va chạm thì bạn phải <b>đền tiền</b> cho người đó.</li>
       <li>Lái xe: ↑ hoặc W để ga, Space để phanh (↓ hoặc S: phanh, giữ tiếp thì lùi), ← → hoặc A D để rẽ trái, rẽ phải. Trên điện thoại bấm các nút ở dưới màn hình.</li>
       <li><b>Xi-nhan</b>: bấm <b>Q</b> (trái) hoặc <b>E</b> (phải) <b>trước khi rẽ ở ngã tư hoặc quay đầu</b>; trên điện thoại là hai nút nhỏ phía trên nút mũi tên. Xi-nhan không tự tắt, rẽ xong bấm lại để tắt. Nhìn <b>biển xanh</b> bên đường để biết ngã tư dẫn đi đâu, và nhớ <b>phố đi bộ có biển cấm xe máy</b>.</li>
+      <li><b>Chọn xe</b> ngay bên dưới: xe máy hoặc ô tô, đổi lúc nào cũng được ở nút ❔. Mỗi xe một bằng lái riêng (A1, B), mỗi bằng 12 điểm. Ô tô to, quay vòng rộng: muốn quay đầu thì đi vòng xuyến, hoặc lùi xe (giữ ↓ / nút ▼ sau khi dừng). Lái ô tô thì <b>thắt dây an toàn</b> (phím H) thay cho đội mũ; mức phạt ô tô cao hơn xe máy nhiều.</li>
       <li><b>Mũ bảo hiểm</b>: bấm nút <b>🪖 Đội mũ</b> (phím H) trước khi chạy, đội một lần cho cả buổi chơi. Đầu trần mà qua <b>chốt CSGT</b> là bị thổi còi và phạt.</li>
       <li><b>Khách gọi điện</b> thì tấp vào ô P rồi bấm <b>📞 Nghe máy</b> (phím C): khách vui, boa thêm. Vừa lái vừa cầm điện thoại là vi phạm (chốt CSGT và camera ngã tư sẽ bắt); điện thoại gắn trên xe để xem bản đồ thì không sao.</li>
     </ul>

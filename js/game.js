@@ -28,7 +28,10 @@ const S = {
   // bản 0.11: helmet = đã đội mũ (chỉ trong buổi chơi, không lưu); noHelmT/helmSaidT = bộ đếm nhắc nhở của NPC; csgtT = lần cuối qua từng chốt
   // call = cuộc gọi của khách {state:'ring'|'talk', t, drove, fined, warned, dT}; callIn = số chuyến nữa thì có cuộc gọi; callAt = giờ sẽ đổ chuông
   helmet: false, noHelmT: 0, helmSaidT: -99, csgtT: {},
-  call: null, callIn: 2, callAt: -1
+  call: null, callIn: 2, callAt: -1,
+  // bản 0.12: veh = loại xe đang lái ('bike' xe máy, 'car' ô tô); belt = đã thắt dây an toàn (ô tô)
+  // mỗi loại xe dùng một bằng lái riêng (A1 / B), mỗi bằng 12 điểm và có thống kê lỗi riêng; S.pts và S.stats là của xe đang lái
+  veh: 'bike', belt: false, ptsBy: {bike: 12, car: 12}, statsBy: {bike: {}, car: {}}
 };
 const START = {x: DESTS[0].bay.cx, y: DESTS[0].bay.cy, a: 0};
 const player = {x: START.x, y: START.y, a: START.a, v: 0, len: 18, w: 8, isPlayer: true, stun: 0, name: 'Bạn'};
@@ -89,16 +92,22 @@ function load(){
       S.streak = d.streak || 0; S.trips = d.trips || 0; S.stats = d.stats || {};
       S.view = VIEWS.includes(d.view) ? d.view : 'nav'; S.assist = d.assist !== false;
       if (d.sound) S.sound = {on: d.sound.on !== false, fx: clamp(+d.sound.fx || 0, 0, 1), voice: clamp(+d.sound.voice || 0, 0, 1), npc: d.sound.npc == null ? 0.8 : clamp(+d.sound.npc || 0, 0, 1), bike: d.sound.bike === 'ga' ? 'ga' : 'so'};
+      if (d.ptsBy) S.ptsBy = {bike: d.ptsBy.bike ?? 12, car: d.ptsBy.car ?? 12}; else S.ptsBy = {bike: S.pts, car: 12};
+      if (d.statsBy) S.statsBy = {bike: d.statsBy.bike || {}, car: d.statsBy.car || {}}; else S.statsBy = {bike: S.stats, car: {}};
+      S.veh = d.veh === 'car' ? 'car' : 'bike';
+      S.pts = S.ptsBy[S.veh]; S.stats = S.statsBy[S.veh];
       S.suspended = S.pts <= 0; }
   } catch(e){}
 }
 function save(){
+  S.ptsBy[S.veh] = S.pts; S.statsBy[S.veh] = S.stats;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({xungho:S.xungho, money:S.money, pts:S.pts, streak:S.streak, trips:S.trips,
-    stats:S.stats, view:S.view, assist:S.assist, sound:S.sound})); } catch(e){}
+    stats:S.statsBy.bike, view:S.view, assist:S.assist, sound:S.sound, veh:S.veh, ptsBy:S.ptsBy, statsBy:S.statsBy})); } catch(e){}
 }
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
   S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99; S.lastSteer = -99;
+  S.belt = false; S.ptsBy = {bike: 12, car: 12}; S.statsBy = {bike: {}, car: {}}; S.statsBy[S.veh] = S.stats;
   S.helmet = false; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callIn = 2; S.callAt = -1;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
   newTrip();
@@ -194,14 +203,17 @@ function showLaw(html, good){
 }
 function warn(text){ S.warnText = text; S.warnT = 0.6; }
 // Lỗi chỉ nhắc nhở (LAW[type].remind): không phạt tiền, không trừ điểm, chuyến không còn sạch
+// Luật và lời thoại theo loại xe đang lái (ô tô: LAW_CAR, lời thoại có đuôi 'car' nếu có)
+function lawOf(type){ return (S.veh === 'car' ? LAW_CAR : LAW)[type]; }
+function linesOf(key){ return (S.veh === 'car' && LINES[key + 'car']) || LINES[key]; }
 function remind(type, speaker){
-  const law = LAW[type];
+  const law = lawOf(type);
   S.stats[type] = (S.stats[type] || 0) + 1;
   const n = S.stats[type];
   if (S.trip) S.trip.clean = false;
   S.streak = 0;
   const who = speaker || nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true};
-  let line = fill(pick(LINES[type]), n);
+  let line = fill(pick(linesOf(type)), n);
   if (n >= 2) line = fill(pick(LINES.again), n) + line;
   say(who, line);
   showLaw(`<b>📘 ${law.name}</b>: ${law.range.toLowerCase()}<br><small>${law.ref}</small><br>💡 ${law.tip}<br>`+
@@ -209,11 +221,11 @@ function remind(type, speaker){
   save();
 }
 // Lỗi do camera ngã tư chụp (phạt nguội): có tiếng máy ảnh và loé sáng
-const CAM_TYPES = {red: 1, speed1: 1, speed2: 1, speed3: 1};
+const CAM_TYPES = {red: 1, speed1: 1, speed2: 1, speed3: 1, speed4: 1};
 // cam: true/false ép có hay không có tiếng máy ảnh và loé sáng (bỏ trống thì theo CAM_TYPES)
 function violate(type, quipKey, speaker, cam){
   const isCam = cam === undefined ? !!CAM_TYPES[type] : cam;
-  const law = LAW[type];
+  const law = lawOf(type);
   S.stats[type] = (S.stats[type] || 0) + 1;
   const n = S.stats[type];
   const hadPts = S.pts > 0;
@@ -224,13 +236,13 @@ function violate(type, quipKey, speaker, cam){
   S.streak = 0; S.epId++; S.epAffected = 0; S.epJamSaid = false;
   S.faultUntil = Math.max(S.faultUntil, S.now + 3);
   const who = speaker || nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true};
-  let line = fill(pick(LINES[quipKey || type]), n);
+  let line = fill(pick(linesOf(quipKey || type)), n);
   if (n >= 2) line = fill(pick(LINES.again), n) + line;
   say(who, line);
   const trips = Math.max(1, Math.round(law.fine / 90000));
   showLaw(`<b>📘 ${law.name}</b>: phạt ${law.range}${law.pts ? `, trừ ${law.pts} điểm GPLX` : ''}<br>`+
     `<small>${law.ref}</small><br>💡 ${law.tip}<br>`+
-    `<small>Trong game bị trừ ${fmt(law.fine)}, bằng khoảng ${trips} chuyến giao hàng.${S.pts === 0 ? ' Điểm GPLX đã về 0: không được lái xe nữa cho tới khi kiểm tra đạt và được phục hồi điểm.' : ''}</small>`);
+    `<small>Trong game bị trừ ${fmt(law.fine)}, bằng khoảng ${trips} chuyến giao hàng.${S.pts === 0 ? ' Điểm bằng lái ${VEH[S.veh].lic} đã về 0: không được lái ${VEH[S.veh].name} nữa cho tới khi kiểm tra đạt và được phục hồi điểm.' : ''}</small>`);
   floatText(player.x, player.y, '−' + fmt(law.fine).replace('−',''), '#e5484d');
   if (isCam) S.flash = 0.7;
   save();
@@ -247,10 +259,13 @@ function compensate(n, amount, note){
    ========================================================= */
 const CSGT_SPK = {name: 'Chú CSGT', follow: true};
 const CALL_RING = 12, CALL_TALK = 8, CALL_TIP = 20000;
+// Đồ bảo hộ: xe máy là mũ bảo hiểm, ô tô là dây an toàn
+function safetyOn(){ return S.veh === 'car' ? S.belt : S.helmet; }
 function putOnHelmet(){
-  if (S.helmet || S.paused || S.suspended) return;
-  S.helmet = true; S.noHelmT = 0; SND.tick(true);
-  floatText(player.x, player.y, '🪖 Đã đội mũ, cài quai xong', '#2f9e6b');
+  if (safetyOn() || S.paused || S.suspended) return;
+  if (S.veh === 'car'){ S.belt = true; floatText(player.x, player.y, '💺 Đã thắt dây an toàn', '#2f9e6b'); }
+  else { S.helmet = true; floatText(player.x, player.y, '🪖 Đã đội mũ, cài quai xong', '#2f9e6b'); }
+  S.noHelmT = 0; SND.tick(true);
 }
 // Đang cầm điện thoại khi lái? Chỉ khi đang nghe máy và KHÔNG đỗ trong ô P. Đứng giữa đường hay dừng đèn đỏ vẫn tính là đang lái.
 function phoneDriving(){
@@ -310,10 +325,10 @@ function csgtCheck(prev){
     if (lat >= HALF || !((a < 0 && b >= 0) || (a > 0 && b <= 0))) continue;
     if (S.now - (S.csgtT[p.id] ?? -99) < 8) continue;
     S.csgtT[p.id] = S.now;
-    const noHelmet = !S.helmet, onPhone = phoneDriving() && !S.call.fined;
-    if (!noHelmet && !onPhone){ floatText(player.x, player.y, '👮 Chốt CSGT: đủ mũ, mời đi', '#2f9e6b'); continue; }
+    const noHelmet = !safetyOn(), onPhone = phoneDriving() && !S.call.fined;
+    if (!noHelmet && !onPhone){ floatText(player.x, player.y, S.veh === 'car' ? '👮 Chốt CSGT: đã thắt dây, mời đi' : '👮 Chốt CSGT: đủ mũ, mời đi', '#2f9e6b'); continue; }
     player.v = 0; player.stun = 2;
-    if (noHelmet){ violate('helmet', 'helmet', CSGT_SPK, false); S.faultUntil = S.now; }
+    if (noHelmet){ const t = S.veh === 'car' ? 'belt' : 'helmet'; violate(t, t, CSGT_SPK, false); S.faultUntil = S.now; }
     if (onPhone){ S.call.fined = true; violate('phone', 'phone', CSGT_SPK, false); S.faultUntil = S.now; }
   }
 }
@@ -328,9 +343,11 @@ function suspendLicense(){
   showSuspend();
 }
 function showSuspend(){
-  $('suspendCard').innerHTML = `<h2>🪪 Bằng lái của ${S.xungho} đã hết điểm</h2>
+  const V = VEH[S.veh];
+  $('suspendCard').innerHTML = `<h2>🪪 Bằng lái hạng ${V.lic} của ${S.xungho} đã hết điểm</h2>
     <p>Xe phải dừng ngay tại chỗ. Theo <b>khoản 3 Điều 58 Luật Trật tự, an toàn giao thông đường bộ 2024</b>: bằng lái bị trừ hết điểm thì <b>không được lái xe theo bằng lái đó</b>. Sau ít nhất <b>6 tháng</b> mới được dự kiểm tra kiến thức pháp luật; đạt yêu cầu thì được phục hồi đủ 12 điểm.</p>
     <p>Trong game, 6 tháng trôi qua trong nháy mắt 😄. Làm bài kiểm tra ${QUIZ_N} câu, đúng từ ${QUIZ_PASS} câu là được hồi 12 điểm và lái tiếp.</p>
+    ${S.veh === 'car' ? `<p>Bằng lái xe máy (hạng A1) có 12 điểm riêng, không bị ảnh hưởng: ${S.xungho} vẫn có thể đổi sang xe máy ở nút ❔.</p>` : ''}
     <p class="fine">Ngoài đời, bài kiểm tra cho bằng hạng A1 theo Thông tư 65/2024/TT-BCA gồm 25 câu (có câu điểm liệt, làm sai là không đạt), phải đúng từ 21 câu. Thông tư 105/2026/TT-BCA đã sửa đổi Thông tư 65, nên đề kiểm tra có thể thay đổi theo lộ trình của thông tư này.</p>
     <div class="row"><button class="btn primary" id="quizGo">Làm bài kiểm tra</button><button class="btn" id="quizReset">Chơi lại từ đầu</button></div>`;
   openOverlay('suspend');
@@ -338,7 +355,7 @@ function showSuspend(){
   $('quizReset').onclick = () => { resetAll(); closeOverlay('suspend'); };
 }
 function startQuiz(){
-  quiz = {items: shuffle(QUIZ).slice(0, QUIZ_N).map(it => ({...it, opts: shuffle(it.a), pick: null})), i: 0};
+  quiz = {items: shuffle(QUIZ.filter(q => !q.veh || q.veh === S.veh)).slice(0, QUIZ_N).map(it => ({...it, opts: shuffle(it.a), pick: null})), i: 0};
   showQuiz();
 }
 function showQuiz(){
@@ -388,10 +405,10 @@ function arrive(){
   const cust = {name: 'Khách ở ' + t.dest.name, x: t.dest.bay.cx, y: t.dest.bay.cy};
   // vừa đỗ ngược chiều ngay tại điểm giao: khách nhắc luôn, bảng thông báo ghi kèm căn cứ
   const wrongPark = S.parkDirBay === t.dest.bay;
-  say(cust, fill(pick(LINES[wrongPark ? 'parkdir' : t.clean ? 'praise' : 'meh'])));
+  say(cust, fill(pick(linesOf(wrongPark ? 'parkdir' : t.clean ? 'praise' : 'meh'))));
   showLaw(`<b>📦 Giao hàng thành công tới ${t.dest.name}</b><br>Tiền công ${fmt(base)}` +
     (t.clean ? ` + thưởng đi sạch ${fmt(bonus)} (chuỗi ${S.streak} chuyến sạch)` : ` (chuyến có vi phạm hoặc bị nhắc nên không có thưởng)`) +
-    (wrongPark ? `<br>⚠️ ${LAW.parkdir.name}: ${LAW.parkdir.range.toLowerCase()}. 💡 ${LAW.parkdir.tip}<br><small>${LAW.parkdir.ref}</small>` : '') +
+    (wrongPark ? `<br>⚠️ ${lawOf('parkdir').name}: ${lawOf('parkdir').remind ? lawOf('parkdir').range.toLowerCase() : 'phạt ' + lawOf('parkdir').range}. 💡 ${lawOf('parkdir').tip}<br><small>${lawOf('parkdir').ref}</small>` : '') +
     (t.clean && S.streak % 5 === 0 ? `<br>🪪 5 chuyến sạch liên tiếp: được hồi 1 điểm GPLX.` : ''), true);
   floatText(player.x, player.y, '+' + fmt(pay), '#2f9e6b');
   newTrip(); save();
@@ -427,7 +444,8 @@ function computeRoute(){
   for (const id in N){ if (DEAD[id]) continue; if (dist(P0, N[id]) <= (id === 'F' ? RB.rOut : HALF + 2)) atNode = id; }
   const cost = {}, prev = {}, startInfo = {}, cands = [];
   for (const id in N) cost[id] = Infinity;
-  let si = -1, pr = null, UT = UTURN_COST;
+  const UTC = VEH[S.veh].utCost;
+  let si = -1, pr = null, UT = UTC;
   const addStart = (id, c, uturn, other) => { if (c < cost[id]){ cost[id] = c; prev[id] = null; startInfo[id] = {uturn, other}; } };
   if (atNode) addStart(atNode, 0, false, null);
   else {
@@ -435,7 +453,7 @@ function computeRoute(){
     pr = projOn(P0, a, b);
     const dab = unit(a, b), fwd = hd.x*dab.x + hd.y*dab.y;
     const horiz = a.y === b.y;
-    if (lineType(horiz ? 'h' : 'v', horiz ? a.y : a.x, horiz ? pr.x : pr.y) === 'solid') UT = UTURN_COST + 200;
+    if (lineType(horiz ? 'h' : 'v', horiz ? a.y : a.x, horiz ? pr.x : pr.y) === 'solid') UT = UTC + 200;
     addStart(s.b, dist(pr, b) + (fwd < -0.2 ? UT : 0), fwd < -0.2, s.a);
     if (!s.oneway) addStart(s.a, dist(pr, a) + (fwd > 0.2 ? UT : 0), fwd > 0.2, s.b);
     if (si === dest.seg){
@@ -455,12 +473,13 @@ function computeRoute(){
       let v = null;
       if (s.a === u) v = s.b; else if (s.b === u && !s.oneway) v = s.a;
       if (!v) continue;
-      const c = cost[u] + dist(N[u], N[v]);
+      // từ nút xuất phát mà quay ngược lại đúng đoạn vừa đi là quay đầu ở nút giao (trừ vòng xuyến): tính thêm chi phí quay đầu
+      const c = cost[u] + dist(N[u], N[v]) + (u !== 'F' && prev[u] == null && startInfo[u] && startInfo[u].other === v ? UTC : 0);
       if (c < cost[v]){ cost[v] = c; prev[v] = u; }
     }
   }
   // tới nút rồi quay ngược lại đúng đoạn vừa đi cũng tính là quay đầu
-  const back = (node, next) => (node !== 'F' && (prev[node] || (startInfo[node] && startInfo[node].other)) === next ? UTURN_COST : 0);
+  const back = (node, next) => (node !== 'F' && (prev[node] || (startInfo[node] && startInfo[node].other)) === next ? UTC : 0);
   // chỉ nhận hướng tiếp cận trùng chiều xe chạy của ô đỗ (đỗ bên phải theo chiều đi)
   if (sameDir(unit(N[ds.a], N[ds.b]), dest.bay.dir))
     cands.push({type:'via', node: ds.a, next: ds.b, cost: cost[ds.a] + dist(N[ds.a], dp) + back(ds.a, ds.b)});
@@ -614,7 +633,31 @@ function updPed(p, dt){
    10. NGƯỜI CHƠI VÀ LUẬT
    ========================================================= */
 const keys = {up:false, down:false, brake:false, left:false, right:false};
-const VMAX = 165;   // 55 km/h (km/h = vận tốc / 3)
+const VMAX = 165;   // 55 km/h (km/h = vận tốc / 3): tốc độ tối đa của xe máy
+// Thông số từng loại xe (4 đơn vị = 1 m; vận tốc 3 = 1 km/h)
+//   len, w: dài, rộng · vmax: tốc độ tối đa · accLo/accHi: tăng tốc dưới/trên vận tốc accSw · brake: phanh
+//   crawl, crawlAcc: giữ phím rẽ mà không ga thì tự bò tới vận tốc crawl (crawlAcc phải lớn hơn lực hãm 70) · turnR: bán kính quay vòng nhỏ nhất (đơn vị bản đồ)
+//   rMax: tốc độ góc lớn nhất (rad/s), giảm dần về rHi khi vận tốc từ v1 lên v2 · hitR: bán kính va chạm · utCost: chỉ đường "ngại" quay đầu cỡ nào
+const VEH = {
+  bike: {name: 'xe máy', lic: 'A1', len: 18, w: 8, vmax: VMAX, accLo: 115, accHi: 70, accSw: 115, brake: 330, crawl: 33, crawlAcc: 115,
+         turnR: 10, rMax: 3.3, rHi: 2.4, v1: 40, v2: 80, hitR: 8, utCost: 250},
+  // ô tô con: dài 5 m, rộng 2,5 m (vẽ hơi to cho dễ nhìn); tối đa 70 km/h; quay vòng nhỏ nhất bán kính khoảng 5,5 m
+  car:  {name: 'ô tô', lic: 'B', len: 20, w: 10, vmax: 210, accLo: 70, accHi: 45, accSw: 120, brake: 300, crawl: 24, crawlAcc: 140,
+         turnR: 22, rMax: 1.5, rHi: 0.9, v1: 40, v2: 150, hitR: 5, utCost: 5000}   // utCost lớn: chỉ đường dẫn ô tô đi vòng (vòng xuyến, quanh khối phố) thay vì quay đầu
+};
+function setVehicle(v){
+  if (!VEH[v] || v === S.veh){ player.len = VEH[S.veh].len; player.w = VEH[S.veh].w; return; }
+  S.ptsBy[S.veh] = S.pts; S.statsBy[S.veh] = S.stats;
+  S.veh = v; S.pts = S.ptsBy[v]; S.stats = S.statsBy[v]; S.suspended = S.pts <= 0;
+  player.len = VEH[v].len; player.w = VEH[v].w; player.v = 0; S.turn = 0; S.noHelmT = 0;
+  document.body.classList.toggle('car', v === 'car');
+  hudCache = {}; S.route = computeRoute(); save(); resize();
+}
+// Các điểm dọc thân xe người chơi (đuôi, giữa, đầu) để tính va chạm với ô tô dài
+function bodyPts(x, y, a){
+  const V = VEH[S.veh], k = Math.max(0, V.len / 2 - V.w / 2), c = Math.cos(a), sn = Math.sin(a);
+  return k ? [{x: x - c*k, y: y - sn*k}, {x, y}, {x: x + c*k, y: y + sn*k}] : [{x, y}];
+}
 function laneAssist(c, dt){
   // Thả phím rẽ ra thì xe tự nắn thẳng theo làn bên phải của hướng đang đi
   const ca = Math.cos(player.a), sa = Math.sin(player.a);
@@ -643,32 +686,33 @@ function reasonToStop(){
 }
 function updPlayer(dt){
   const prev = {x: player.x, y: player.y, a: player.a};
-  const prevC = classify(prev.x, prev.y);
+  const prevC = classify(prev.x, prev.y), V = VEH[S.veh];
   S.inBay = prevC.t === 'bay';
   // Space và nút PHANH: chỉ phanh, dừng hẳn thì đứng yên. Phím ↓ / S: phanh, dừng rồi giữ tiếp thì lùi chậm.
   const braking = keys.down || keys.brake;
   if (player.stun > 0) player.stun -= dt;
   else {
-    if (keys.up) player.v += (player.v < 115 ? 115 : 70) * dt;   // quá 38 km/h thì tăng tốc chậm lại
-    if (keys.brake){ const b = 330 * dt; player.v = Math.abs(player.v) <= b ? 0 : player.v - Math.sign(player.v) * b; }
-    else if (keys.down) player.v -= (player.v > 0 ? 330 : 80) * dt;
+    if (keys.up) player.v += (player.v < V.accSw ? V.accLo : V.accHi) * dt;   // xe máy: quá 38 km/h thì tăng tốc chậm lại
+    if (keys.brake){ const b = V.brake * dt; player.v = Math.abs(player.v) <= b ? 0 : player.v - Math.sign(player.v) * b; }
+    else if (keys.down) player.v -= (player.v > 0 ? V.brake : 80) * dt;
   }
   if (S.suspended){ player.v = 0; }
   if ((!keys.up && !braking) || player.stun > 0){
     const fr = 70 * dt; player.v = Math.abs(player.v) <= fr ? 0 : player.v - Math.sign(player.v) * fr;
   }
   // Cua chậm (quay đầu, rẽ gắt): giữ phím rẽ mà không bấm ga thì xe tự giữ khoảng 11 km/h, khỏi phải nhấp nhả GA
-  if ((keys.left || keys.right) && !keys.up && !braking && player.v >= 0 && player.v < 33 && player.stun <= 0 && !S.suspended){
-    player.v = Math.min(33, player.v + 115 * dt);
+  if ((keys.left || keys.right) && !keys.up && !braking && player.v >= 0 && player.v < V.crawl && player.stun <= 0 && !S.suspended){
+    player.v = Math.min(V.crawl, player.v + V.crawlAcc * dt);
   }
-  const vmax = prevC.t === 'off' ? 45 : VMAX;
+  const vmax = prevC.t === 'off' ? 45 : V.vmax;
   if (player.v > vmax) player.v = Math.max(vmax, player.v - 320 * dt);
   player.v = Math.max(player.v, -35);
   if (player.stun <= 0){
     const steer = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
     // Tốc độ góc: đi chậm thì quay vòng hẹp (bán kính khoảng 2,5 m = 10 đơn vị, như xe máy thật); từ 13 km/h trở lên giảm dần về 2,4 rad/s ở 27 km/h
     const sv = Math.abs(player.v);
-    let rate = sv <= 40 ? Math.min(sv / 10, 3.3) : 3.3 - 0.9 * clamp((sv - 40) / 40, 0, 1);
+    // ô tô quay vòng rộng hơn nhiều (bán kính nhỏ nhất khoảng 5,5 m) và càng nhanh càng khó bẻ lái
+    let rate = sv <= V.v1 ? Math.min(sv / V.turnR, V.rMax) : V.rMax - (V.rMax - V.rHi) * clamp((sv - V.v1) / (V.v2 - V.v1), 0, 1);
     if (phoneDriving()) rate *= 0.7;   // một tay cầm điện thoại: lái khó hơn
     if (steer){ S.lastSteer = S.now; player.a = normA(player.a + steer * rate * dt * Math.sign(player.v || 1)); }
     // Trợ lái chờ 1 giây sau khi nhả phím rẽ; đang bật xi-nhan (6 giây đầu, ngoài ô đỗ) thì không giành lái vì có thể đang định rẽ hoặc quay đầu
@@ -676,15 +720,20 @@ function updPlayer(dt){
   }
   const nx = clamp(player.x + Math.cos(player.a) * player.v * dt, 8, W - 8);
   const ny = clamp(player.y + Math.sin(player.a) * player.v * dt, 8, H - 8);
-  if (hitsHouse(nx, ny, 7) || classify(nx, ny).t === 'island'){ player.v *= -0.25; }
+  const blocked = S.veh === 'car'
+    ? bodyPts(nx, ny, player.a).some(q => hitsHouse(q.x, q.y, V.w / 2) || classify(q.x, q.y).t === 'island')
+    : (hitsHouse(nx, ny, 7) || classify(nx, ny).t === 'island');
+  if (blocked){ player.v *= -0.25; }
   else { player.x = nx; player.y = ny; }
 
   // va chạm với NPC (xe đang đỗ trong ô P thì không tính)
   if (!S.inBay) for (const n of npcs){
     if (n.hidden || n.ghostP > 0 || n.ghostT > 0) continue;
-    const d = segDist(player.x, player.y, n), minD = 8 + n.w/2;
+    let d = 1e9, hp = player;
+    for (const q of bodyPts(player.x, player.y, player.a)){ const dq = segDist(q.x, q.y, n); if (dq < d){ d = dq; hp = q; } }
+    const minD = V.hitR + n.w/2;
     if (d >= minD) continue;
-    const ang = Math.atan2(player.y - n.y, player.x - n.x);
+    const ang = Math.atan2(hp.y - n.y, hp.x - n.x);
     player.x += Math.cos(ang) * (minD - d + 1); player.y += Math.sin(ang) * (minD - d + 1);
     if (n.hitCool > 0 || S.now < S.crashCool) continue;
     n.hitCool = 2; n.hitT = 2; n.v = 0; player.v *= -0.3; player.stun = 0.8;
@@ -706,15 +755,20 @@ function updPlayer(dt){
   }
   // người đi bộ trên vỉa hè
   if (!S.inBay) for (const p of peds){
-    if (Math.hypot(p.x - player.x, p.y - player.y) < 2){   // 2 đơn vị = 0,5 m
+    if ((S.veh === 'car' ? segDist(p.x, p.y, player) < player.w / 2 + 1 : Math.hypot(p.x - player.x, p.y - player.y) < 2)){   // xe máy: 2 đơn vị = 0,5 m
       p.stopT = 1.2;
-      if (S.now - S.sidewalkSaidT > 8){ S.sidewalkSaidT = S.now; say(p, fill(pick(LINES.sidewalk))); }
+      if (S.now - S.sidewalkSaidT > 8){ S.sidewalkSaidT = S.now; say(p, fill(pick(linesOf('sidewalk')))); }
       if (!(p.slowT > S.now)){ player.v *= 0.6; p.slowT = S.now + 1.5; }   // chậm lại một lần mỗi lần gặp, để còn lách tránh được
     }
   }
   checkRules(prev, prevC, dt);
 }
 
+// Bậc phạt quá tốc độ: xe máy 3 bậc (5–<10, 10–20, >20); ô tô 4 bậc (5–<10, 10–20, >20–35, >35)
+function speedType(over){
+  if (S.veh === 'car') return over > 35 ? 'speed4' : over > 20 ? 'speed3' : over >= 10 ? 'speed2' : 'speed1';
+  return over > 20 ? 'speed3' : over >= 10 ? 'speed2' : 'speed1';
+}
 function checkRules(prev, prevC, dt){
   const c = classify(player.x, player.y);
   const sp = Math.abs(player.v);
@@ -738,7 +792,7 @@ function checkRules(prev, prevC, dt){
           const over = sp / 3 - si.limit;
           if (over >= 5){
             S.camCool = S.now + 3;
-            violate(over > 20 ? 'speed3' : over >= 10 ? 'speed2' : 'speed1', si.id === 'school' ? 'speedcamschool' : 'speedcam');
+            violate(speedType(over), si.id === 'school' ? 'speedcamschool' : 'speedcam');
           }
         }
         // camera cũng chụp người đang cầm điện thoại khi qua vạch dừng (mỗi cuộc gọi chỉ phạt một lần)
@@ -750,15 +804,15 @@ function checkRules(prev, prevC, dt){
 
   // 1b) Chốt CSGT kiểm tra mũ bảo hiểm và điện thoại; người đi đường nhắc nếu thấy đầu trần
   csgtCheck(prev);
-  if (!S.helmet && sp > 20 && player.stun <= 0) S.noHelmT += dt; else if (S.helmet) S.noHelmT = 0;
+  if (!safetyOn() && sp > 20 && player.stun <= 0) S.noHelmT += dt; else if (safetyOn()) S.noHelmT = 0;
   if (S.noHelmT > 8 && S.now - S.helmSaidT > 45){
     const nb = nearestNPC(player.x, player.y, 200);
-    if (nb){ S.helmSaidT = S.now; say(nb, fill(pick(LINES.helmetnpc))); }
+    if (nb){ S.helmSaidT = S.now; say(nb, fill(pick(linesOf('helmetnpc')))); }
   }
 
   // 2) Phố Chợ là phố đi bộ (biển P.104 cấm xe máy, P.103a cấm ô tô): xe máy chạy vào là bị phạt
   if (c.t === 'ped'){
-    warn('⛔ Phố Chợ là phố đi bộ, có biển cấm xe máy: lùi ra và đi đường khác');
+    warn(S.veh === 'car' ? '⛔ Phố Chợ là phố đi bộ, có biển cấm ô tô: lùi ra và đi đường khác' : '⛔ Phố Chợ là phố đi bộ, có biển cấm xe máy: lùi ra và đi đường khác');
     if (sp > 10 && player.stun <= 0 && !S.pedEp && S.now > S.pedCool){ S.pedEp = true; violate('noentry'); }
     if (S.pedEp) S.faultUntil = Math.max(S.faultUntil, S.now + 1);
   } else if (S.pedEp){ S.pedEp = false; S.pedCool = S.now + 4; }
@@ -865,7 +919,7 @@ function checkRules(prev, prevC, dt){
   if (c.t === 'bay' && sp < 12){
     const d = c.bay.dir;
     if (Math.cos(player.a)*d.x + Math.sin(player.a)*d.y < -0.5 && S.parkDirBay !== c.bay){
-      S.parkDirBay = c.bay; remind('parkdir');
+      S.parkDirBay = c.bay; if (lawOf('parkdir').remind) remind('parkdir'); else violate('parkdir');
     }
   } else if (c.t !== 'bay') S.parkDirBay = null;
 
@@ -972,7 +1026,7 @@ function resize(){
   stage.style.perspectiveOrigin = '50% ' + Math.round(originY * 100) + '%';
   mini.width = Math.round(180 * Math.min(DPR, 2)); mini.height = Math.round(135 * Math.min(DPR, 2));
   // nút hiện kiểu nhìn sẽ chuyển sang khi bấm
-  $('viewBtn').innerHTML = S.view === 'nav' ? '🏍️<span class="lbl"> Sau tay lái</span>' : bike ? '🗺️<span class="lbl"> Bản đồ</span>' : '🧭<span class="lbl"> Dẫn đường</span>';
+  $('viewBtn').innerHTML = S.view === 'nav' ? (S.veh === 'car' ? '🚗<span class="lbl"> Sau vô lăng</span>' : '🏍️<span class="lbl"> Sau tay lái</span>') : bike ? '🗺️<span class="lbl"> Bản đồ</span>' : '🧭<span class="lbl"> Dẫn đường</span>';
 }
 function rr(c, x, y, w, h, r){
   c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
@@ -1156,6 +1210,28 @@ function drawBike(o, body, helmet, glow, sig){
   }
   ctx.restore();
 }
+// Ô tô con của người chơi nhìn từ trên xuống: thân, kính trước/sau, gương, đèn; đèn xi-nhan ở bốn góc
+function drawCar(o, glow, sig){
+  const L = o.len, Wd = o.w, hl = L/2, hw = Wd/2;
+  ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.a);
+  if (glow){ ctx.fillStyle = 'rgba(52,125,246,.22)'; ctx.beginPath(); ctx.ellipse(0, 0, hl + 3, hw + 3, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(0, 0, hl + 3, hw + 3, 0, 0, Math.PI*2); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; rr(ctx, -hl + 1.5, -hw + 1.5, L, Wd, 3); ctx.fill();
+  ctx.fillStyle = '#ff8a3d'; rr(ctx, -hl, -hw, L, Wd, 3); ctx.fill();
+  ctx.fillStyle = '#c0703a'; ctx.fillRect(-hl + 1, -hw - 1.2, 2, 1.2); ctx.fillRect(-hl + 1, hw, 2, 1.2);
+  ctx.fillStyle = '#2b2a33'; ctx.fillRect(hl - 7.5, -hw - 1.3, 1.6, 1.3); ctx.fillRect(hl - 7.5, hw, 1.6, 1.3);   // gương
+  ctx.fillStyle = '#9fd0f0'; rr(ctx, hl - 7, -hw + 1.2, 3.2, Wd - 2.4, 1); ctx.fill();   // kính trước
+  ctx.fillStyle = '#ffb47a'; rr(ctx, -hl + 5, -hw + 1.2, L - 12.5, Wd - 2.4, 1.5); ctx.fill();   // nóc xe
+  ctx.fillStyle = '#9fd0f0'; rr(ctx, -hl + 2.2, -hw + 1.4, 2.4, Wd - 2.8, 1); ctx.fill();   // kính sau
+  ctx.fillStyle = '#fff6cc'; ctx.fillRect(hl - 1, -hw + 0.8, 1, 2); ctx.fillRect(hl - 1, hw - 2.8, 1, 2);
+  ctx.fillStyle = '#e5484d'; ctx.fillRect(-hl, -hw + 0.8, 1, 2); ctx.fillRect(-hl, hw - 2.8, 1, 2);
+  if (sig && S.blinkOn){
+    const y = sig * hw;
+    ctx.fillStyle = 'rgba(255,170,0,.35)'; ctx.beginPath(); ctx.arc(hl - 1, y, 4.5, 0, Math.PI*2); ctx.arc(-hl + 1, y, 4.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#ffae00'; ctx.beginPath(); ctx.arc(hl - 1, y, 1.8, 0, Math.PI*2); ctx.arc(-hl + 1, y, 1.8, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
 function drawBus(o){
   ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.a);
   ctx.fillStyle = 'rgba(0,0,0,.18)'; rr(ctx, -21, -6, 46, 16, 4); ctx.fill();
@@ -1176,6 +1252,7 @@ function drawAgents(){
     if (n.kind === 'bus') drawBus(n); else drawBike(n, n.color, n.helmet, false);
     ctx.globalAlpha = 1;
   }
+  if (S.veh === 'car'){ drawCar(player, true, S.turn); return; }   // ô tô: bản 0.12 chưa có vô lăng, nên góc sau tay lái vẫn vẽ xe
   if (S.view === 'bike') return;   // góc nhìn sau tay lái: xe của mình là ghi đông ở mép dưới màn hình
   drawBike(player, '#ff8a3d', S.helmet ? '#ffffff' : '#3a2e2a', true, S.turn);   // đầu trần thì vẽ tóc sẫm thay vì mũ trắng
   ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.a); ctx.fillStyle = '#c0703a'; ctx.fillRect(-11, -4, 6, 8); ctx.restore();
@@ -1432,10 +1509,10 @@ function updHUD(){
   setHTML('navMain', n.main); setHTML('navSub', n.sub);
   setHTML('money', `💰 <b>${fmt(S.money)}</b>${S.money < 0 ? ' (nợ phạt)' : ''}`);
   const mc = 'chip' + (S.money < 0 ? ' neg' : ''); if (hudCache.mc !== mc){ hudCache.mc = mc; $('money').className = mc; }
-  setHTML('pts', `🪪<span class="lbl"> Điểm GPLX</span> <b>${S.pts}/12</b>`);
+  setHTML('pts', `🪪<span class="lbl"> GPLX</span> ${VEH[S.veh].lic} <b>${S.pts}/12</b>`);
   setHTML('streak', `⭐<span class="lbl"> Chuỗi sạch</span> <b>${S.streak}</b>`);
   const kmhF = Math.abs(player.v) / 3, over = kmhF - S.spdLimit;
-  setHTML('speed', `🏍️ <b>${Math.round(kmhF)}</b> km/h<span class="lim"> · tối đa ${S.spdLimit}</span>${S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1)}`);
+  setHTML('speed', `${S.veh === 'car' ? '🚗' : '🏍️'} <b>${Math.round(kmhF)}</b> km/h<span class="lim"> · tối đa ${S.spdLimit}</span>${S.veh === 'car' ? (player.v < -1 ? ' · số lùi' : '') : S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1)}`);
   { const sc = 'chip' + (over >= 5 ? ' over' : over > 0 ? ' near' : ''); if (hudCache.sc !== sc){ hudCache.sc = sc; $('speed').className = sc; } }
   // đèn xi-nhan trên thanh thông tin và trên ghi đông
   { const L = S.turn < 0 && S.blinkOn, R = S.turn > 0 && S.blinkOn, sk = (S.turn || 0) + '|' + (S.blinkOn ? 1 : 0);
@@ -1444,8 +1521,9 @@ function updHUD(){
       $('sigL').style.opacity = L ? '1' : '.25'; $('sigR').style.opacity = R ? '1' : '.25';
       $('sigCkL').setAttribute('opacity', L ? '1' : '0'); $('sigCkR').setAttribute('opacity', R ? '1' : '0'); } }
   // mũ bảo hiểm và cuộc gọi: chip trên cùng và hai nút lớn (nút nằm cạnh bản đồ nhỏ)
-  { const hk = S.helmet ? '' : '🪖 Chưa đội mũ';
-    if (hudCache.helm !== hk){ hudCache.helm = hk; $('helmchip').style.display = hk ? 'inline-block' : 'none'; $('helmchip').textContent = hk; $('helmBtn').style.display = hk ? 'block' : 'none'; } }
+  { const car = S.veh === 'car', hk = safetyOn() ? '' : car ? '💺 Chưa thắt dây an toàn' : '🪖 Chưa đội mũ';
+    if (hudCache.helm !== hk){ hudCache.helm = hk; $('helmchip').style.display = hk ? 'inline-block' : 'none'; $('helmchip').textContent = hk; $('helmBtn').style.display = hk ? 'block' : 'none';
+      $('helmBtn').innerHTML = car ? '💺 Thắt dây an toàn <span class="key">(H)</span>' : '🪖 Đội mũ <span class="key">(H)</span>'; } }
   { const c = S.call, drv = phoneDriving();
     const ck = !c ? '' : c.state === 'ring' ? 'ring' : 'talk' + Math.ceil(c.t) + (drv ? 'd' : 'p');
     if (hudCache.call !== ck){ hudCache.call = ck;
@@ -1465,7 +1543,8 @@ function updHUD(){
     else if (over > 0) w = '⚠️ Hơi quá giới hạn ' + S.spdLimit + ' km/h một chút, nhả ga nhé';
     else if (phoneDriving()) w = '📵 Đang cầm điện thoại khi lái: qua chốt CSGT hoặc camera ngã tư là bị phạt. Tấp vào ô P đi!';
     else if (S.call && S.call.state === 'ring') w = '📞 Khách gọi! Muốn nghe thì tấp vào ô P rồi bấm "Nghe máy" (vừa lái vừa nghe là vi phạm)';
-    else if (!S.helmet) w = '💡 Bạn chưa đội mũ bảo hiểm: bấm nút 🪖 Đội mũ' + (isTouch ? '' : ' (phím H)') + ' kẻo qua chốt CSGT bị phạt';
+    else if (!safetyOn()) w = S.veh === 'car' ? '💡 Bạn chưa thắt dây an toàn: bấm nút 💺' + (isTouch ? '' : ' (phím H)') + ' kẻo qua chốt CSGT bị phạt'
+                                              : '💡 Bạn chưa đội mũ bảo hiểm: bấm nút 🪖 Đội mũ' + (isTouch ? '' : ' (phím H)') + ' kẻo qua chốt CSGT bị phạt';
     else {   // sắp rẽ hoặc quay đầu mà chưa bật xi-nhan đúng bên: nhắc
       const i = S.route && S.route.instr;
       if (i && (i.type === 'left' || i.type === 'right' || i.type === 'uturn') && (i.type === 'uturn' || i.dist <= 240)){
@@ -1475,7 +1554,7 @@ function updHUD(){
     }
   }
   // đồng hồ trên ghi đông (góc nhìn sau tay lái): kim quay 0–80 km/h (xe chạy tối đa 55 km/h); số chuyển đỏ khi chạy quá giới hạn
-  if (S.view === 'bike'){
+  if (S.view === 'bike' && S.veh === 'bike'){
     const kmh = Math.round(Math.abs(player.v) / 3), ov = over >= 5 ? 2 : over > 0 ? 1 : 0, ck = kmh + '|' + (S.sound.bike === 'ga' ? '' : S.gear || 1) + '|' + ov + '|' + S.spdLimit;
     if (hudCache.ck !== ck){ hudCache.ck = ck;
       $('needle').setAttribute('transform', 'rotate(' + (-128 + Math.min(kmh, 80) / 80 * 256).toFixed(1) + ' 200 74)');
@@ -1488,8 +1567,9 @@ function updHUD(){
   if (hudCache.flash !== fo){ hudCache.flash = fo; flashEl.style.opacity = fo; }
 }
 function renderBook(){
-  $('bookList').innerHTML = LAW_ORDER.map(k => {
-    const L = LAW[k], c = S.stats[k] || 0;
+  const car = S.veh === 'car';
+  $('bookList').innerHTML = `<p class="fine">Đang xem luật cho <b>${VEH[S.veh].name}</b> (bằng lái hạng ${VEH[S.veh].lic}, ${S.pts}/12 điểm). Đổi xe ở nút ❔ để xem luật của xe kia.</p>` + (car ? LAW_ORDER_CAR : LAW_ORDER).map(k => {
+    const L = lawOf(k), c = S.stats[k] || 0;
     return `<div class="lawitem"><span class="cnt ${c ? 'nz' : 'z'}">${c ? 'Bạn đã mắc ' + c + ' lần' : 'Chưa mắc lần nào 👍'}</span>`+
       `<b>${L.name}</b><br>${L.remind ? L.range : 'Phạt ' + L.range}${L.pts ? ', trừ ' + L.pts + ' điểm GPLX' : ''}<br>💡 ${L.tip}<br><span class="fine">${L.ref}</span></div>`;
   }).join('') + `<p class="fine">Số người bạn làm kẹt xe và đã phải đền: ${S.stats.affected || 0}. Tổng số đơn đã giao: ${S.trips}.</p>`;
@@ -1536,9 +1616,9 @@ function setupInput(){
   $('callBtn').addEventListener('pointerdown', e => { answerCall(); e.preventDefault(); });
   isTouch = ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   if (isTouch) document.body.classList.add('touch');
-  $('go').addEventListener('click', () => { S.xungho = $('xungho').value; S.assist = !!$('assist').checked; save(); closeOverlay('start');
+  $('go').addEventListener('click', () => { S.xungho = $('xungho').value; S.assist = !!$('assist').checked; setVehicle($('veh').value); save(); closeOverlay('start');
     SND.init(); if (S.suspended) showSuspend(); else SND.announceTrip(); });
-  $('helpBtn').addEventListener('click', () => openOverlay('start'));
+  $('helpBtn').addEventListener('click', () => { $('veh').value = S.veh; openOverlay('start'); });
   // âm thanh: trình duyệt chỉ cho phát tiếng sau khi người chơi bấm hoặc gõ phím
   // iPhone chỉ cho bật tiếng khi nhấc tay khỏi màn hình (touchend) hoặc bấm (click), không phải lúc vừa chạm xuống
   const unlock = () => { SND.init(); syncSound(); };
@@ -1568,6 +1648,8 @@ function setupInput(){
 load();
 $('xungho').value = S.xungho;
 $('assist').checked = S.assist;
+$('veh').value = S.veh;
+player.len = VEH[S.veh].len; player.w = VEH[S.veh].w; document.body.classList.toggle('car', S.veh === 'car');
 makeNPCs();
 newTrip();
 setupInput();
@@ -1581,4 +1663,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};

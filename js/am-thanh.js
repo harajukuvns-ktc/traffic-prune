@@ -201,7 +201,7 @@ const SND = (function(){
   function update(dt){
     if (!ac) return;
     const on = S.sound.on && !S.paused;
-    const sp = Math.abs(player.v), t = ac.currentTime, bike = S.sound.bike || 'so';
+    const sp = Math.abs(player.v), t = ac.currentTime, bike = S.veh === 'car' ? 'ga' : (S.sound.bike || 'so');   // ô tô tạm dùng tiếng đều kiểu số tự động (bản 0.12.1 làm tiếng riêng)
     const m = engineModel(sp, keys.up, bike);
     S.gear = m.gear;
     // Xe số: nốt nền 34–92 Hz, có tiếng bành bạch của máy một xy-lanh.
