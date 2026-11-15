@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 0.12.4)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.0)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,7 +50,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 0.12.4)
+## Cách chơi (bản 1.0)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
 - **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
@@ -70,7 +70,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Chọn xe:** ngay đầu màn hình mở đầu có ô **Bạn lái**: 🏍️ xe máy (bằng A1) hoặc 🚗 ô tô (bằng B). Muốn đổi thì bấm nút ❔ rồi chọn lại. Tiền dùng chung, nhưng **mỗi xe một bằng lái riêng, mỗi bằng 12 điểm**: ô ở góc trên ghi "GPLX A1" hoặc "GPLX B". Hết điểm bằng nào thì chỉ không lái được xe đó; xe kia vẫn lái bình thường.
 - **Lái ô tô:** xe to, tăng tốc chậm hơn, tối đa 70 km/h, quay vòng rộng. **Rẽ ở ngã tư thì giảm còn khoảng 10–15 km/h**, không thì xe văng sang làn ngược chiều. Ô tô khó quay đầu trên đường hẹp, nên chỉ đường sẽ dẫn bạn **đi vòng** (vòng xuyến hoặc vòng quanh khối phố); muốn tự quay đầu thì lùi, tiến vài lần (giữ ↓ hoặc nút ▼ sau khi dừng để lùi). Ô tô thì **thắt dây an toàn** (nút 💺, phím H) thay cho đội mũ. Phố đi bộ có biển cấm ô tô. Mức phạt ô tô **cao hơn xe máy nhiều**: vượt đèn đỏ 18–20 triệu, cầm điện thoại 4–6 triệu, quá tốc độ có 4 bậc (vượt từ 10 km/h đã bị trừ điểm). Ô tô đỗ ngược chiều trong ô P là **bị phạt** (xe máy chỉ bị nhắc). 📘 Sổ tay và bài kiểm tra hiện luật của xe đang lái.
 - **Mũ bảo hiểm:** mỗi buổi chơi xe bắt đầu **đầu trần** (ô đỏ "🪖 Chưa đội mũ" ở góc trên). Bấm nút vàng **🪖 Đội mũ** (phím **H**) ở góc phải, dưới bản đồ nhỏ; đội một lần là dùng cho cả buổi chơi. Có hai **chốt CSGT** cố định (chòi xanh, chú CSGT áo vàng, cọc tiêu cam và vạch đứt cam ngang đường): một trên Đường Hoa Sữa giữa Phố Chợ và Đường Cầu Vồng, một trên Đường Cầu Vồng giữa hai ngã tư. Đầu trần chạy qua chốt là bị thổi còi, giữ xe khoảng 2 giây và phạt 500.000đ (không trừ điểm). Đã đội mũ thì chú CSGT cho đi. Đầu trần chạy lâu thì người đi đường cũng nhắc.
-- **Khách gọi điện:** cứ 2–3 chuyến thì điện thoại đổ chuông (ô "📞 Khách đang gọi…", nút xanh nhấp nháy **📞 Nghe máy**, hoặc phím **C**). Có 12 giây để nghe; không nghe thì khách gọi lại sau, không mất gì. **Tấp vào ô P rồi mới nghe**: hết cuộc gọi khách vui và boa 5.000đ (từ bản 0.12.1; trước đó 20.000đ). **Vừa chạy vừa nghe (hoặc đứng giữa đường, kể cả dừng đèn đỏ) là vừa lái vừa cầm điện thoại**: xe lái khó hơn, trợ lái tắt, và nếu qua chốt CSGT hoặc qua vạch dừng ngã tư có camera lúc đó thì bị phạt 900.000đ và trừ 4 điểm GPLX (mỗi cuộc gọi phạt một lần). Điện thoại gắn trên xe để xem bản đồ thì không bị coi là vi phạm.
+- **Khách gọi điện:** cứ 2–3 chuyến thì điện thoại đổ chuông (ô "📞 Khách đang gọi…", nút xanh nhấp nháy **📞 Nghe máy**, hoặc phím **C**). Có 12 giây để nghe; không nghe thì khách gọi lại sau, không mất gì. **Tấp vào ô P rồi mới nghe**: hết cuộc gọi bạn được **+3 điểm văn hóa** (từ bản 1.0 không còn tiền boa). **Vừa chạy vừa nghe (hoặc đứng giữa đường, kể cả dừng đèn đỏ) là vừa lái vừa cầm điện thoại**: xe lái khó hơn, trợ lái tắt, và nếu qua chốt CSGT hoặc qua vạch dừng ngã tư có camera lúc đó thì bị phạt 900.000đ và trừ 4 điểm GPLX (mỗi cuộc gọi phạt một lần). Điện thoại gắn trên xe để xem bản đồ thì không bị coi là vi phạm.
 - **Phạt:** vượt đèn đỏ, chạy quá tốc độ, không đội mũ bảo hiểm khi qua chốt, cầm điện thoại khi lái, đi vào phố đi bộ có biển cấm xe máy, rẽ hoặc quay đầu không xi-nhan, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
 - **Nhắc nhở (không phạt tiền):** đỗ trong ô P mà đầu xe quay ngược chiều đi. Luật yêu cầu đỗ sát lề bên phải theo chiều đi, nhưng với xe máy không có mức phạt riêng, nên game chỉ nhắc. Chuyến đó không được tính là chuyến sạch.
 - **Đền:** ai bị bạn làm kẹt xe hoặc đụng phải thì được đền tiền từ ví của bạn. Người bị ảnh hưởng hiện mặt 😤.
@@ -79,6 +79,17 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 1.0 đổi gì so với bản 0.12.4
+
+1. **Hai thanh điểm:** ngoài điểm GPLX (luật) giờ có **🎭 điểm văn hóa** từ 0 đến 100, bắt đầu 70, dùng chung cho xe máy và ô tô. Văn hóa **không phạt tiền** và **không tự hồi**, chỉ tăng bằng hành vi tốt.
+2. **Bị trừ:** làm kẹt xe (−3 mỗi xe), leo vỉa hè gặp người đi bộ (−5), dừng giữa đường làm người khác chờ (−3), **bám đuôi** (−2), quên tắt xi-nhan (−1), **không nhường người đi bộ qua vạch** (−5).
+3. **Được cộng:** dừng lại nhường người đi bộ qua vạch (+3), tấp vào ô P rồi mới nghe điện thoại (+3, thay cho tiền boa 5.000đ), chuyến giao hàng không làm ai phải chờ (+1).
+4. **Khách chấm theo văn hóa:** từ 80 điểm khách chấm 5 sao và boa thêm 10–20% cước; từ 40 đến 79 bình thường; dưới 40 khách chỉ chấm 1–2 sao và nhắc khéo.
+5. **Người đi bộ qua vạch:** trước hai đầu Phố Chợ (trên Đường Hoa Sữa và Đường Me Chua) có vạch ngựa vằn và người đi bộ băng qua. Xe NPC dừng nhường; bạn cũng nên dừng lại. Chạy sầm sầm qua vạch khi người đang đi thì bị trừ điểm văn hóa.
+6. Xem giải thích ở đầu 📘 Sổ tay.
+
+**Nhờ bạn chơi thử:** điểm trừ có oan không (nhất là bám đuôi)? Người đi bộ qua vạch có đủ dễ thấy để dừng không? Điểm văn hóa không tự hồi thì có bị tụt mãi không?
 
 ## Bản 0.12.4 đổi gì so với bản 0.12.3
 
@@ -124,7 +135,7 @@ Trên điện thoại, vô lăng và đồng hồ ô tô giờ nhỏ gọn và n
 
 1. Mũ bảo hiểm: nút 🪖 Đội mũ (phím H), đội một lần cho cả buổi chơi; đầu trần qua chốt CSGT bị phạt 500.000đ.
 2. Hai chốt CSGT cố định (Đường Hoa Sữa và Đường Cầu Vồng).
-3. Khách gọi điện: nút 📞 Nghe máy (phím C); đỗ trong ô P rồi nghe thì được boa, vừa lái vừa nghe bị phạt 900.000đ và trừ 4 điểm tại chốt hoặc camera.
+3. Khách gọi điện: nút 📞 Nghe máy (phím C); đỗ trong ô P rồi nghe thì được cộng điểm văn hóa (từ bản 1.0), vừa lái vừa nghe bị phạt 900.000đ và trừ 4 điểm tại chốt hoặc camera.
 4. Hai câu hỏi mới trong bài kiểm tra phục hồi điểm; điện thoại cầm ngang gọn hơn.
 
 **Nhờ bạn chơi thử:** hai nút 🪖 và 📞 ở góc phải có dễ bấm trên điện thoại không? Chốt CSGT có dễ thấy từ xa không? Bị giữ xe 2 giây có bực quá không? Cứ 2–3 chuyến có một cuộc gọi như vậy thì nhiều hay ít?

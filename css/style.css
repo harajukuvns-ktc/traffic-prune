@@ -19,6 +19,7 @@
   .chip b{font-weight:700}
   .chip .lim{font-size:11px;opacity:.75}
   .chip.near{background:#ffd666}
+  .chip.good{background:#c9f0d6}
   .chip.over{background:#e5484d;color:#fff}
   #money.neg{color:var(--bad)}
   #warn{display:none;background:#fff3cd;border-left:5px solid #f5a623;border-radius:11px;padding:6px 10px;font-size:13.5px;line-height:1.35;box-shadow:0 2px 6px rgba(0,0,0,.12)}

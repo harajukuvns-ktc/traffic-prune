@@ -6,7 +6,8 @@ const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fail
 const run = sec => { for (let i = 0; i < sec/dt; i++) step(dt); };
 const reset = () => { if (S.veh !== 'bike') TP.setVehicle('bike'); for (const k in keys) keys[k] = false; S.pts = 12; S.suspended = false; S.paused = false; S.stats = {}; S.faultUntil = -1; S.sideEp = S.wwEp = S.ringEp = false;
   S.wrongT = 0; S.solidT = 0; S.okT = 5; S.pedEp = false; S.pedCool = -99; S.spdSec = ''; S.spdSaid = false; S.camCool = -99; S.lastSteer = -99; S.spdT = 0; S.spdMax = 0; S.spdLimit = 40; S.turn = 0; S.sigAcc = 0; S.sigInJ = false; S.sigEp = false; S.sigStraightT = 0; S.turnBegan = false; S.sigRunT = 0; S.ringWrongT = 0; S.bubble = null; S.assist = true; S.crashCool = -1; player.stun = 0; S.parkDirBay = null;
-  S.helmet = true; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callAt = -1; S.callIn = 99; S.statsBy.car = {}; S.ptsBy.car = 12; S.belt = false; };
+  S.helmet = true; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callAt = -1; S.callIn = 99; S.cult = 70; S.statsBy.car = {};
+  for (const p of TP.peds) if (p.cross){ p.y = p.y0; p.dir = 1; p.wait = 999; p.stopT = 0; } /* người qua vạch đứng chờ ở lề, để các bài thử cũ không bị họ chen vào */ S.ptsBy.car = 12; S.belt = false; };
 const clearNear = (x, y, r) => { for (const q of npcs) if (Math.hypot(q.x - x, q.y - y) < r){ q.hidden = true; q.respawnT = 99; } };
 const dest = name => DESTS.find(d => d.name.includes(name));
 S.paused = false;
@@ -435,7 +436,7 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   reset(); const bay = BAYS[9]; clearNear(bay.cx, bay.cy, 400); player.x = bay.cx; player.y = bay.cy; player.a = Math.atan2(bay.dir.y, bay.dir.x); player.v = 0; S.money = 5000000;
   S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
   let everDriving = false; for (let i = 0; i < 9/dt; i++){ step(dt); if (phoneDriving()) everDriving = true; }
-  ok(S.call === null && !everDriving && S.stats.callOk === 1 && S.money === 5005000 && S.pts === 12, `nghe máy khi đỗ trong ô P: được boa 5.000đ (tiền ${S.money})`);
+  ok(S.call === null && !everDriving && S.stats.callOk === 1 && S.money === 5000000 && S.cult === 73 && S.pts === 12, `nghe máy khi đỗ trong ô P: không còn tiền boa mà được +3 văn hóa (tiền ${S.money}, văn hóa ${S.cult})`);
   // h) cầm điện thoại khi chạy qua chốt: phạt 900.000đ, trừ 4 điểm, chỉ một lần mỗi cuộc gọi
   reset(); S.call = {state: 'ring', t: 12, ringT: 0, drove: false, fined: false, warned: false, dT: 0}; answerCall();
   go(940, 320, 0, 20, 1.2); ok(phoneDriving() && S.stats.phone === 1 && S.pts === 8 && 5000000 - S.money === 900000, `vừa lái vừa nghe qua chốt: phạt 900.000đ, trừ 4 điểm (điểm ${S.pts}, tiền ${S.money})`);
@@ -591,6 +592,67 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(wr > 60 && wl < -60 && Math.abs(S.wheel) < 10, `vô lăng xoay theo hướng lái (phải ${wr.toFixed(0)}°, trái ${wl.toFixed(0)}°, nhả ${S.wheel.toFixed(0)}°)`);
   S.view = 'nav'; keys.left = keys.right = keys.up = keys.rev = false;
   TP.setVehicle('bike');
+}
+
+// ===== 20. Điểm văn hóa (bản 1.0a) =====
+{
+  console.log('\n== 20. Điểm văn hóa ==');
+  reset(); ok(S.cult === 70, 'điểm văn hóa bắt đầu ở 70');
+  TP.cultAdd(-5, 't'); ok(S.cult === 65, 'trừ 5 điểm còn 65');
+  S.cult = 3; TP.cultAdd(-5, 't'); ok(S.cult === 0, 'điểm văn hóa không xuống dưới 0');
+  S.cult = 98; TP.cultAdd(3, 't'); ok(S.cult === 100, 'điểm văn hóa không vượt quá 100');
+  const R = TP.cultRating;
+  S.cult = 100; const r100 = R(10000); S.cult = 80; const r80 = R(10000); S.cult = 79; const r79 = R(10000); S.cult = 39; const r39 = R(10000); S.cult = 10; const r10 = R(10000);
+  ok(r100.stars === 5 && r100.tip >= 1500 && r100.tip <= 2500 && r80.stars === 5 && r80.tip >= 500 && r80.tip <= 1500, `từ 80 điểm: 5 sao và boa thêm 10–20% cước (80: ${r80.tip}đ, 100: ${r100.tip}đ trên cước 10.000đ)`);
+  ok(r79.stars === 4 && r79.tip === 0 && r39.stars === 2 && r39.tip === 0 && r10.stars === 1, `40–79: 4 sao không boa; dưới 40: 2 sao; dưới 20: 1 sao`);
+  // người đi bộ trên vỉa hè: leo vỉa hè gặp người đi bộ −5
+  reset(); const p0 = TP.peds[0]; player.x = p0.x; player.y = p0.y; player.v = 0; S.sidewalkSaidT = -99; step(dt);
+  ok(S.cult === 65, `đụng người đi bộ trên vỉa hè: −5 văn hóa (còn ${S.cult})`);
+  // chuyến giao hàng không làm phiền ai: +1; chuyến đã làm phiền: không cộng
+  const giao = (cult, hurt) => { reset(); S.cult = cult; const d = DESTS[0];
+    S.trip = {dest: d, fx: d.bay.cx - 200, fy: d.bay.cy, clean: false, t0: S.now, len: 800, hurt}; const m0 = S.money;
+    player.x = d.bay.cx; player.y = d.bay.cy; player.v = 0; player.a = Math.atan2(d.bay.dir.y, d.bay.dir.x); step(dt); return S.money - m0; };
+  giao(70, false); ok(S.cult === 71, 'chuyến không làm ai phải chờ: +1 văn hóa');
+  giao(70, true); ok(S.cult === 70, 'chuyến có làm phiền người khác: không được +1');
+  const g70 = giao(70, true), g90 = giao(90, true), g30 = giao(30, true);
+  ok(g90 > g70 && g30 === g70, `văn hóa 90 được boa thêm (${g90}đ so với ${g70}đ), văn hóa 30 không boa thêm`);
+  // làm kẹt xe (cùng kịch bản chạy ngược làn như mục 11): ai bị ảnh hưởng thì người chơi bị trừ 3 văn hóa mỗi xe
+  reset(); S.assist = false; for (const q of npcs) if (q.hidden) q.respawnT = 0;
+  player.x = 11; player.y = 11; player.v = 0; run(25);   // cho NPC trở lại đường như kịch bản ở mục 11
+  reset(); S.assist = false; S.cult = 100;
+  player.x = 950; player.y = 320; player.a = Math.PI; player.v = 18;
+  for (let i = 0; i < 30/dt; i++){ keys.up = true; step(dt); if (Math.abs(player.v) > 18) player.v = 18; }
+  keys.up = false;
+  const aff = S.stats.affected || 0;
+  ok(aff >= 1 && S.cult <= 97 && S.cult >= 100 - 3 * aff - 20, `làm kẹt xe thì mất điểm văn hóa (${aff} xe bị ảnh hưởng, văn hóa còn ${S.cult}/100)`);
+
+  // ===== bản 1.0b: người đi bộ qua vạch, nhường và bám đuôi =====
+  const cr = TP.peds.find(p => p.cross && p.hy === 300);
+  const dungCr = () => { reset(); for (const q of npcs){ q.hidden = true; q.respawnT = 999; } S.cult = 70; S.assist = false;
+    cr.y = 300; cr.dir = 1; cr.wait = 0; cr.cyc++; cr.stopT = 0; };   // người đang đứng giữa lòng đường, bắt đầu qua
+  // a) xe đang chạy rồi dừng lại trước vạch: được +3 một lần
+  dungCr(); player.x = 740; player.y = 320; player.a = 0; player.v = 60; S.lastMoveT = S.now; cr.x = 800;
+  for (let i = 0; i < 3/dt; i++){ keys.brake = true; step(dt); cr.y = 300; cr.wait = 99; } keys.brake = false;
+  ok(S.cult === 73, `dừng lại cho người đang qua vạch: +3 văn hóa (còn ${S.cult}/100)`);
+  // b) xe đỗ sẵn gần vạch không được cộng
+  dungCr(); player.x = 760; player.y = 320; player.a = 0; player.v = 0; S.lastMoveT = -99; cr.wait = 99; run(2);
+  ok(S.cult === 70, 'xe đỗ sẵn gần vạch (không vừa dừng lại vì người đi bộ) không được cộng điểm');
+  // c) lao qua vạch khi người đang qua: −5 một lần cho mỗi lượt qua
+  dungCr(); player.x = 740; player.y = 322; player.a = 0; player.v = 90; cr.x = 800; cr.wait = 99;
+  for (let i = 0; i < 2/dt; i++){ keys.up = true; step(dt); cr.y = 300; cr.wait = 99; } keys.up = false;
+  ok(S.cult === 65, `lao qua vạch khi người đang qua: −5 văn hóa, chỉ một lần mỗi lượt (còn ${S.cult}/100)`);
+  // d) xe NPC dừng nhường người qua vạch
+  reset(); const nv = npcs.find(n => !n.hidden && n.route.pts.length > 2) || npcs[0];
+  for (const q of npcs){ if (q !== nv){ q.hidden = true; q.respawnT = 999; } }
+  nv.hidden = false; nv.x = 700; nv.y = 320; nv.a = 0; nv.v = 90; nv.idx = 1; nv.route = {loop: false, pts: [{x: 0, y: 320}, {x: 1500, y: 320}]}; nv.idx = 1;
+  cr.x = 800; cr.y = 320; cr.wait = 99; cr.dir = 1;
+  run(4); ok(nv.x < 800 - 8, `xe NPC dừng nhường người đang qua vạch (xe ở x=${nv.x.toFixed(0)}, vạch ở x=800)`);
+  // e) bám đuôi: chạy sát xe phía trước bị −2, nhắc một lần mỗi 10 giây
+  reset(); for (const q of npcs){ q.hidden = true; q.respawnT = 999; } S.cult = 70; S.assist = false;
+  const lead = npcs[0]; lead.hidden = false; lead.route = {loop: false, pts: [{x: 0, y: 320}, {x: 1500, y: 320}]}; lead.idx = 1; lead.x = 480; lead.y = 320; lead.a = 0; lead.v = 100; lead.vmax = 100;
+  player.x = 440; player.y = 320; player.a = 0; player.v = 100;
+  for (let i = 0; i < 4/dt; i++){ keys.up = true; player.v = 100; lead.v = 100; step(dt); } keys.up = false;   // hai xe cùng chạy 33 km/h, cách nhau khoảng 5 m
+  ok(S.cult <= 68 && S.cult >= 64, `bám đuôi xe phía trước: bị trừ văn hóa (còn ${S.cult}/100, nhắc không quá một lần mỗi 10 giây)`);
 }
 
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');

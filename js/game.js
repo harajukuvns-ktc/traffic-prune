@@ -11,7 +11,7 @@ const SAVE_KEY = 'trafficPrune.v1';
 const VIEWS = ['nav', 'bike', 'map'];
 const S = {
   now: 0, paused: true, xungho: 'anh', view: 'nav', assist: true,
-  money: 5000000, pts: 12, streak: 0, trips: 0, stats: {},
+  money: 5000000, pts: 12, streak: 0, trips: 0, stats: {}, cult: 70,   // cult: điểm văn hóa 0–100 (bản 1.0), dùng chung cho cả hai xe
   faultUntil: -1, epId: 0, epAffected: 0, epJamSaid: false,
   trip: null, route: null, routeT: 0, bubble: null, floats: [], flash: 0, lawT: 0, ut: null, ta: null, warnT: 0, warnText: '',
   wrongT: 0, okT: 0, solidT: 0, sideEp: false, ringWrongT: 0, ringEp: false, wwEp: false,
@@ -19,7 +19,7 @@ const S = {
   sound: {on: true, fx: 0.7, voice: 0.9, npc: 0.8, bike: 'so'}, gear: 1,
   // xi-nhan: turn = -1 (trái), 0 (tắt), 1 (phải); không tự tắt. sigAcc: tổng góc đã quay; sigEp: đã xét lỗi lượt rẽ này
   turn: 0, sigInJ: false, blinkT: 0, sigOnT: -99, sigAcc: 0, sigStraightT: 0, sigEp: false, turnBegan: false, turnStartT: -99, sigRunT: 0, sigOffSaidT: -99, blinkOn: false,
-  pedEp: false, pedCool: -99,
+  pedEp: false, pedCool: -99, tailT: 0, tailCool: -99, lastMoveT: -99,
   // tốc độ: spdSec = đoạn đường đang đi, spdSaid = đoạn này đã nhắc nhở rồi, spdT = thời gian đã chạy quá, spdMax = mức vượt lớn nhất, spdLimit = giới hạn hiện tại (km/h)
   // camCool = mốc thời gian chống bị camera chụp hai lần liền
   spdSec: '', spdSaid: false, spdT: 0, spdMax: 0, spdLimit: 40, camCool: -99,
@@ -72,6 +72,11 @@ function makeNPCs(){
       peds.push({route, idx:p.idx, x:p.x, y:p.y, v:16 + rnd()*8, stopT:0, name: PED_NAMES[Math.floor(rnd()*PED_NAMES.length)],
         color:['#e76f51','#2a9d8f','#e9c46a','#8e7dbe','#f4a261'][Math.floor(rnd()*5)]});
     } }
+  // Người đi bộ qua đường ở vạch trước hai đầu Phố Chợ (bản 1.0b): đứng chờ rồi băng qua Đường Hoa Sữa / Đường Me Chua; xe phải nhường
+  for (const h of HR){
+    peds.push({cross: true, hy: h.y, x: 800, y: h.y - 52, y0: h.y - 52, y1: h.y + 52, dir: 1, wait: 2 + rnd() * 6, cyc: 0, v: 22, stopT: 0,
+      name: PED_NAMES[Math.floor(rnd()*PED_NAMES.length)], color: ['#e76f51','#2a9d8f','#e9c46a','#8e7dbe','#f4a261'][Math.floor(rnd()*5)]});
+  }
   pb.forEach((b, i) => {
     if (!b) return;
     const m = 20;
@@ -89,7 +94,7 @@ function load(){
   try {
     const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
     if (d){ S.xungho = d.xungho || 'anh'; S.money = d.money ?? 5000000; S.pts = d.pts ?? 12;
-      S.streak = d.streak || 0; S.trips = d.trips || 0; S.stats = d.stats || {};
+      S.streak = d.streak || 0; S.trips = d.trips || 0; S.stats = d.stats || {}; S.cult = clamp(d.cult ?? 70, 0, 100);
       S.view = VIEWS.includes(d.view) ? d.view : 'nav'; S.assist = d.assist !== false;
       if (d.sound) S.sound = {on: d.sound.on !== false, fx: clamp(+d.sound.fx || 0, 0, 1), voice: clamp(+d.sound.voice || 0, 0, 1), npc: d.sound.npc == null ? 0.8 : clamp(+d.sound.npc || 0, 0, 1), bike: d.sound.bike === 'ga' ? 'ga' : 'so'};
       if (d.ptsBy) S.ptsBy = {bike: d.ptsBy.bike ?? 12, car: d.ptsBy.car ?? 12}; else S.ptsBy = {bike: S.pts, car: 12};
@@ -101,12 +106,12 @@ function load(){
 }
 function save(){
   S.ptsBy[S.veh] = S.pts; S.statsBy[S.veh] = S.stats;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({xungho:S.xungho, money:S.money, pts:S.pts, streak:S.streak, trips:S.trips,
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({xungho:S.xungho, money:S.money, pts:S.pts, streak:S.streak, trips:S.trips, cult:S.cult,
     stats:S.statsBy.bike, view:S.view, assist:S.assist, sound:S.sound, veh:S.veh, ptsBy:S.ptsBy, statsBy:S.statsBy})); } catch(e){}
 }
 function resetAll(){
   try { localStorage.removeItem(SAVE_KEY); } catch(e){}
-  S.money = 5000000; S.pts = 12; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.ut = null; S.ta = null; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99; S.lastSteer = -99;
+  S.money = 5000000; S.pts = 12; S.cult = 70; S.streak = 0; S.trips = 0; S.stats = {}; S.suspended = false; S.turn = 0; S.ut = null; S.ta = null; S.spdSec = ''; S.spdSaid = false; S.spdT = 0; S.camCool = -99; S.lastSteer = -99;
   S.belt = false; S.ptsBy = {bike: 12, car: 12}; S.statsBy = {bike: {}, car: {}}; S.statsBy[S.veh] = S.stats;
   S.helmet = false; S.noHelmT = 0; S.helmSaidT = -99; S.csgtT = {}; S.call = null; S.callIn = 2; S.callAt = -1;
   player.x = START.x; player.y = START.y; player.a = START.a; player.v = 0;
@@ -265,6 +270,24 @@ function warn(text){ S.warnText = text; S.warnT = 0.6; }
 // Lỗi chỉ nhắc nhở (LAW[type].remind): không phạt tiền, không trừ điểm, chuyến không còn sạch
 // Luật và lời thoại theo loại xe đang lái (ô tô: LAW_CAR, lời thoại có đuôi 'car' nếu có)
 function lawOf(type){ return (S.veh === 'car' ? LAW_CAR : LAW)[type]; }
+// Điểm văn hóa (bản 1.0): 0–100, bắt đầu 70, KHÔNG tự hồi, chỉ tăng bằng hành vi tốt; không phạt tiền (văn hóa không phải luật).
+// Hành vi xấu đánh dấu chuyến đang chạy là "có làm phiền người khác" (S.trip.hurt) nên không được cộng điểm "chuyến không làm ai phải chờ".
+const CULT = {jam: -3, sidewalk: -5, tailgate: -2, stopblock: -3, sigoff: -1, yield: 3, phone: 3, trip: 1, nogive: -5};
+function cultAdd(delta, why){
+  if (!delta) return;
+  const before = S.cult;
+  S.cult = clamp(S.cult + delta, 0, 100);
+  if (delta < 0 && S.trip) S.trip.hurt = true;
+  if (S.cult !== before) floatText(player.x, player.y - 14, '🎭 ' + (delta > 0 ? '+' : '−') + Math.abs(delta) + ' văn hóa' + (why ? ': ' + why : ''), delta > 0 ? '#2f9e6b' : '#b5651d');
+  save();
+}
+// Khách chấm sao theo điểm văn hóa: từ 80 trở lên 5 sao và boa thêm 10–20% cước; 40–79 bình thường 4 sao; dưới 40 chỉ 1–2 sao
+function cultRating(base){
+  const c = S.cult;
+  if (c >= 80) return {stars: 5, tip: Math.round(base * (0.1 + 0.1 * (c - 80) / 20) / 500) * 500};
+  if (c >= 40) return {stars: 4, tip: 0};
+  return {stars: c >= 20 ? 2 : 1, tip: 0};
+}
 function linesOf(key){ return (S.veh === 'car' && LINES[key + 'car']) || LINES[key]; }
 function remind(type, speaker){
   const law = lawOf(type);
@@ -318,7 +341,7 @@ function compensate(n, amount, note){
    6b. MŨ BẢO HIỂM, ĐIỆN THOẠI, CHỐT CSGT (bản 0.11)
    ========================================================= */
 const CSGT_SPK = {name: 'Chú CSGT', follow: true};
-const CALL_RING = 12, CALL_TALK = 8, CALL_TIP = 5000;   // tiền boa thật chỉ vài nghìn đồng; sẽ đổi thành điểm văn hóa ở bản 1.0
+const CALL_RING = 12, CALL_TALK = 8;   // từ bản 1.0 nghe máy trong ô P được cộng điểm văn hóa thay cho tiền boa
 // Đồ bảo hộ: xe máy là mũ bảo hiểm, ô tô là dây an toàn
 function safetyOn(){ return S.veh === 'car' ? S.belt : S.helmet; }
 function putOnHelmet(){
@@ -341,8 +364,8 @@ function endCall(){
   const c = S.call; S.call = null;
   if (!c) return;
   if (!c.drove){   // nghe máy khi đang đỗ trong ô P: khách vui, boa thêm
-    S.money += CALL_TIP; S.stats.callOk = (S.stats.callOk || 0) + 1;
-    floatText(player.x, player.y, '+' + fmt(CALL_TIP) + ' khách boa', '#2f9e6b');
+    S.stats.callOk = (S.stats.callOk || 0) + 1;
+    cultAdd(CULT.phone, 'tấp vào ô đỗ rồi mới nghe máy');
     SND.reward(1);
     say({name: 'Khách đặt hàng', follow: true}, fill(pick(LINES.phoneok)));
     save();
@@ -462,14 +485,18 @@ function arrive(){
     pay += bonus;
     if (S.streak % 5 === 0 && S.pts < 12){ S.pts++; }
   }
+  // khách chấm sao và boa thêm theo điểm văn hóa (bản 1.0); chuyến không làm ai phải chờ được +1 văn hóa sau khi chấm
+  const rate = cultRating(base); pay += rate.tip;
+  if (!t.hurt) cultAdd(CULT.trip, 'chuyến không làm ai phải chờ');
   S.money += pay; S.trips++;
   SND.reward(t.clean ? S.streak : 0);
   const cust = {name: 'Khách ở ' + t.dest.name, x: t.dest.bay.cx, y: t.dest.bay.cy};
   // vừa đỗ ngược chiều ngay tại điểm giao: khách nhắc luôn, bảng thông báo ghi kèm căn cứ
   const wrongPark = S.parkDirBay === t.dest.bay;
-  say(cust, fill(pick(linesOf(wrongPark ? 'parkdir' : t.clean ? 'praise' : 'meh'))));
+  say(cust, fill(pick(linesOf(wrongPark ? 'parkdir' : rate.stars <= 2 ? 'cultlow' : t.clean ? 'praise' : 'meh'))));
   showLaw(`<b>📦 Giao hàng thành công tới ${t.dest.name}</b><br>Tiền công ${fmt(base)} (quãng đường quy đổi ${fp.km.toFixed(1).replace('.', ',')} km)` +
     (t.clean ? ` + thưởng đi sạch ${fmt(bonus)} (chuỗi ${S.streak} chuyến sạch)` : ` (chuyến có vi phạm hoặc bị nhắc nên không có thưởng)`) +
+    `<br>Khách chấm ${'⭐'.repeat(rate.stars)}${rate.tip ? ' và boa thêm ' + fmt(rate.tip) + ' vì bạn đi có văn hóa' : rate.stars <= 2 ? ' vì điểm văn hóa của bạn đang thấp (' + S.cult + '/100)' : ''}` +
     (wrongPark ? `<br>⚠️ ${lawOf('parkdir').name}: ${lawOf('parkdir').remind ? lawOf('parkdir').range.toLowerCase() : 'phạt ' + lawOf('parkdir').range}. 💡 ${lawOf('parkdir').tip}<br><small>${lawOf('parkdir').ref}</small>` : '') +
     (t.clean && S.streak % 5 === 0 ? `<br>🪪 5 chuyến sạch liên tiếp: được hồi 1 điểm GPLX.` : ''), true);
   floatText(player.x, player.y, '+' + fmt(pay), '#2f9e6b');
@@ -668,6 +695,12 @@ function updNPC(n, dt){
     const lim = stopLimit(f - (n.len + o.len)/2 - 6);
     if (lim < allowed){ allowed = lim; blocker = o; }
   }
+  // người đi bộ đang qua vạch ở hai đầu Phố Chợ: xe NPC dừng nhường (không tính là bị xe nào chặn)
+  for (const p of peds){
+    if (!crossOnRoad(p)) continue;
+    const rx = p.x - n.x, ry = p.y - n.y, f = rx*ux + ry*uy, l = Math.abs(rx*uy - ry*ux);
+    if (f > 0 && f < 100 && l < 16) allowed = Math.min(allowed, stopLimit(f - 14));
+  }
   n.blockedBy = (blocker && allowed < n.vmax * 0.5) ? blocker : null;
 
   if (n.hitT > 0){ n.hitT -= dt; allowed = 0; }
@@ -684,7 +717,16 @@ function updNPC(n, dt){
   n.x += ux * step; n.y += uy * step;
   n.a += normA(Math.atan2(uy, ux) - n.a) * Math.min(1, dt * 10);
 }
+// Người đang ở trên mặt đường (hoặc sắp bước xuống) tại vạch qua đường: xe phải nhường
+const crossOnRoad = p => p.cross && Math.abs(p.y - p.hy) < HALF + 6;
+function updCrosser(p, dt){
+  if (p.wait > 0){ p.wait -= dt; return; }
+  const ty = p.dir > 0 ? p.y1 : p.y0, st = Math.min(p.v * dt, Math.abs(ty - p.y));
+  p.y += Math.sign(ty - p.y) * st;
+  if (Math.abs(ty - p.y) < 0.5){ p.dir = -p.dir; p.wait = 5 + Math.random() * 8; p.cyc++; }
+}
 function updPed(p, dt){
+  if (p.cross){ if (p.stopT > 0){ p.stopT -= dt; return; } updCrosser(p, dt); return; }
   if (p.stopT > 0){ p.stopT -= dt; return; }
   const t = p.route.pts[p.idx], dx = t.x - p.x, dy = t.y - p.y, d = Math.hypot(dx, dy);
   if (d < 2){ p.idx = (p.idx + 1) % p.route.pts.length; return; }
@@ -854,10 +896,36 @@ function updPlayer(dt){
   if (!S.inBay) for (const p of peds){
     if ((S.veh === 'car' ? segDist(p.x, p.y, player) < player.w / 2 + 1 : Math.hypot(p.x - player.x, p.y - player.y) < 2)){   // xe máy: 2 đơn vị = 0,5 m
       p.stopT = 1.2;
-      if (S.now - S.sidewalkSaidT > 8){ S.sidewalkSaidT = S.now; say(p, fill(pick(linesOf('sidewalk')))); }
+      if (p.cross){   // đụng người đang qua vạch: không nhường người đi bộ
+        if (p.hitCyc !== p.cyc){ p.hitCyc = p.cyc; say(p, fill(pick(LINES.crossbump))); cultAdd(CULT.nogive, 'không nhường người đi bộ'); }
+      } else
+      if (S.now - S.sidewalkSaidT > 8){ S.sidewalkSaidT = S.now; say(p, fill(pick(linesOf('sidewalk')))); cultAdd(CULT.sidewalk, 'leo vỉa hè'); }
       if (!(p.slowT > S.now)){ player.v *= 0.6; p.slowT = S.now + 1.5; }   // chậm lại một lần mỗi lần gặp, để còn lách tránh được
     }
   }
+  // Người đi bộ đang qua vạch ở hai đầu Phố Chợ: dừng lại nhường được +3; lao vào vạch khi họ đang qua là không nhường (−5), mỗi lượt qua tính một lần
+  { const ca = Math.cos(player.a), sa = Math.sin(player.a), spd = Math.abs(player.v);
+    if (spd > 24) S.lastMoveT = S.now;   // đang chạy: để biết người chơi vừa dừng lại vì người đi bộ chứ không phải đang đỗ sẵn
+    for (const p of peds){
+      if (!crossOnRoad(p) || S.inBay) continue;
+      const dxp = p.x - player.x, dyp = p.y - player.y, f = dxp*ca + dyp*sa, l = Math.abs(dxp*sa - dyp*ca);
+      if (l < 22 && f > 0 && f < 70 && spd < 12 && S.now - S.lastMoveT < 4 && p.yieldCyc !== p.cyc){ p.yieldCyc = p.cyc; say(p, fill(pick(LINES.crossthanks))); cultAdd(CULT.yield, 'nhường người đi bộ'); SND.reward(1); }
+      if (Math.abs(player.x - p.x) < 34 && Math.abs(player.y - p.hy) < HALF && spd > 24 && p.hitCyc !== p.cyc && p.failCyc !== p.cyc && p.yieldCyc !== p.cyc){
+        p.failCyc = p.cyc; say(p, fill(pick(LINES.crossbump))); cultAdd(CULT.nogive, 'không nhường người đi bộ');
+      }
+    }
+    // Bám đuôi: xe người chơi chạy từ 20 km/h trở lên mà cách xe phía trước dưới 0,6 giây (liên tục 1,5 giây) thì bị nhắc, trừ văn hóa; mỗi 10 giây một lần
+    let best = null, bg = 1e9;
+    for (const n of npcs){
+      if (n.hidden || n.ghostT > 0) continue;
+      const rx = n.x - player.x, ry = n.y - player.y, f = rx*ca + ry*sa, l = Math.abs(rx*sa - ry*ca);
+      if (f <= 0 || l > 12) continue;
+      const gap = f - (n.len + player.len) / 2; if (gap < bg){ bg = gap; best = n; }
+    }
+    if (best && player.v > 60 && bg > 0 && bg / player.v < 0.6 && best.v > 15 && !S.inBay) S.tailT += dt; else S.tailT = Math.max(0, S.tailT - dt);
+    if (S.tailT > 1.5 && S.now - S.tailCool > 10){
+      S.tailT = 0; S.tailCool = S.now; say(best, fill(pick(LINES.tailgate))); cultAdd(CULT.tailgate, 'bám đuôi');
+    } }
   checkRules(prev, prevC, dt);
 }
 
@@ -960,7 +1028,7 @@ function checkRules(prev, prevC, dt){
   if (onRoad && sp < 3 && player.stun <= 0 && !reasonToStop()) S.stopT += dt; else S.stopT = 0;
   if (S.stopT > 4 && S.now - S.stopSaidT > 20){
     const blocked = npcs.find(n => !n.hidden && n.blockedBy === player && n.waitT > 1.5);
-    if (blocked){ S.stopSaidT = S.now; say(blocked, fill(pick(LINES.stopping))); }
+    if (blocked){ S.stopSaidT = S.now; say(blocked, fill(pick(LINES.stopping))); cultAdd(CULT.stopblock, 'dừng giữa đường làm người khác chờ'); }
   }
 
   // 5b) Tốc độ giữa hai ngã tư: chỉ NHẮC NHỞ, không phạt và không làm mất "chuyến sạch" (quyết định ngày 14/11/2026).
@@ -1008,6 +1076,7 @@ function checkRules(prev, prevC, dt){
       if (S.sigRunT > 10 && S.now - S.sigOffSaidT > 30){
         S.sigOffSaidT = S.now; S.sigRunT = 0;
         say(nearestNPC(player.x, player.y, 280) || {name:'Loa phường', follow:true}, fill(pick(LINES.signaloff)));
+        cultAdd(CULT.sigoff, 'quên tắt xi-nhan');
       }
     } else if (rate > 0.3) S.sigRunT = 0;
   }
@@ -1037,6 +1106,7 @@ function updJam(dt){
     n.affEp = S.epId; S.epAffected++;
     S.stats.affected = (S.stats.affected || 0) + 1;
     compensate(n, n.kind === 'bus' ? 100000 : 50000, 'đền kẹt xe');
+    if (S.epAffected <= 3) cultAdd(CULT.jam, 'làm kẹt xe');
     if (S.epAffected >= 3 && !S.epJamSaid){ S.epJamSaid = true; say(n, fill(pick(LINES.jam))); }
   }
 }
@@ -1214,6 +1284,9 @@ function drawGround(){
     ctx.moveTo(L.x + 1, L.y + sd); ctx.lineTo(L.x + HALF, L.y + sd);
     ctx.moveTo(L.x - HALF, L.y - sd); ctx.lineTo(L.x - 1, L.y - sd); ctx.stroke();
   }
+  // vạch người đi bộ qua đường ở hai đầu Phố Chợ (bản 1.0b): các sọc trắng song song với chiều xe chạy như vạch ở ngã tư, xe phải nhường người đang qua
+  ctx.fillStyle = 'rgba(255,255,255,.7)';
+  for (const h of HR) for (let i = -3; i <= 3; i++) ctx.fillRect(800 - 14, h.y + i*11 - 3, 28, 6);
   // vạch nhường đường ở cửa vào vòng xuyến
   ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.beginPath();
   ctx.moveTo(1160, RB.y - RB.rOut - 2); ctx.lineTo(1200, RB.y - RB.rOut - 2);
@@ -1612,6 +1685,7 @@ function updHUD(){
   setHTML('money', `💰 <b>${fmt(S.money)}</b>${S.money < 0 ? ' (nợ phạt)' : ''}`);
   const mc = 'chip' + (S.money < 0 ? ' neg' : ''); if (hudCache.mc !== mc){ hudCache.mc = mc; $('money').className = mc; }
   setHTML('pts', `🪪<span class="lbl"> GPLX</span> ${VEH[S.veh].lic} <b>${S.pts}/12</b>`);
+  { const ck = S.cult + '|' + (S.cult >= 80 ? 2 : S.cult < 40 ? 0 : 1); if (hudCache.cult !== ck){ hudCache.cult = ck; setHTML('cult', `🎭<span class="lbl"> Văn hóa</span> <b>${S.cult}</b>`); $('cult').className = 'chip' + (S.cult >= 80 ? ' good' : S.cult < 40 ? ' near' : ''); } }
   setHTML('streak', `⭐<span class="lbl"> Chuỗi sạch</span> <b>${S.streak}</b>`);
   const kmhF = Math.abs(player.v) / 3, over = kmhF - S.spdLimit;
   setHTML('speed', `${S.veh === 'car' ? '🚗' : '🏍️'} <b>${Math.round(kmhF)}</b> km/h<span class="lim"> · tối đa ${S.spdLimit}</span>${S.veh === 'car' ? (player.v < -1 ? ' · số lùi' : '') : S.sound.bike === 'ga' ? '' : ' · số ' + (S.gear || 1)}`);
@@ -1684,7 +1758,8 @@ function updHUD(){
 }
 function renderBook(){
   const car = S.veh === 'car';
-  $('bookList').innerHTML = `<p class="fine">Đang xem luật cho <b>${VEH[S.veh].name}</b> (bằng lái hạng ${VEH[S.veh].lic}, ${S.pts}/12 điểm). Đổi xe ở nút ❔ để xem luật của xe kia.</p>` + (car ? LAW_ORDER_CAR : LAW_ORDER).map(k => {
+  const cultBlock = `<div class="lawitem"><span class="cnt ${S.cult >= 80 ? 'z' : S.cult < 40 ? 'nz' : 'z'}">${S.cult}/100</span><b>🎭 Điểm văn hóa giao thông</b><br>Bắt đầu 70, dùng chung cho cả hai xe, không phạt tiền và không tự hồi: chỉ tăng bằng hành vi tốt. Từ 80 trở lên khách chấm 5 sao và boa thêm 10–20% cước; dưới 40 khách chỉ chấm 1–2 sao.<br>➖ Làm kẹt xe −3 mỗi xe (tối đa 3 xe mỗi lần), leo vỉa hè gặp người đi bộ −5, dừng giữa đường làm người khác chờ −3, bám đuôi −2, quên tắt xi-nhan −1.<br>➕ Nhường người đi bộ qua vạch +3, tấp vào ô P rồi mới nghe điện thoại +3, chuyến đi không làm ai phải chờ +1.<br><span class="fine">Văn hóa là điều ai cũng mong ở nhau chứ không phải điều luật: người đi đúng luật vẫn có thể thiếu văn hóa.</span></div>`;
+  $('bookList').innerHTML = cultBlock + `<p class="fine">Đang xem luật cho <b>${VEH[S.veh].name}</b> (bằng lái hạng ${VEH[S.veh].lic}, ${S.pts}/12 điểm). Đổi xe ở nút ❔ để xem luật của xe kia.</p>` + (car ? LAW_ORDER_CAR : LAW_ORDER).map(k => {
     const L = lawOf(k), c = S.stats[k] || 0;
     return `<div class="lawitem"><span class="cnt ${c ? 'nz' : 'z'}">${c ? 'Bạn đã mắc ' + c + ' lần' : 'Chưa mắc lần nào 👍'}</span>`+
       `<b>${L.name}</b><br>${L.remind ? L.range : 'Phạt ' + L.range}${L.pts ? ', trừ ' + L.pts + ' điểm GPLX' : ''}<br>💡 ${L.tip}<br><span class="fine">${L.ref}</span></div>`;
@@ -1794,4 +1869,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};

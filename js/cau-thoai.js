@@ -152,6 +152,26 @@ const LINES = {
     '{X} đi chuẩn quá, CSGT mà thấy chắc chỉ muốn vẫy tay chào.'
   ],
   meh: ['Hàng tới rồi, cảm ơn {x}! Chuyến này hơi… nhiều chuyện. Lần sau đi sạch là được thưởng thêm đó.'],
+  // khách chấm sao thấp khi điểm văn hóa dưới 40 (bản 1.0)
+  cultlow: [
+    'Hàng tới rồi. Tôi chấm {x} ít sao thôi, vì cả phố đều biết {x} đi đường kiểu gì.',
+    'Cảm ơn {x}. Nhưng đi đường mà cứ như cả phố là của riêng mình thì tôi chấm sao hơi tiếc tay.',
+    'Giao đúng hàng là tốt. Còn cách {x} đối xử với mọi người trên đường thì khách chỉ biết… nhắn nhẹ vậy thôi.'
+  ],
+  // người đi bộ qua vạch (bản 1.0b)
+  crossbump: [
+    'Ấy ấy! Vạch người đi bộ là của người đi bộ chứ {x} ơi, tôi qua đường chứ có phải qua… cua đâu!',
+    'Giật cả mình! Thấy người ta đang qua vạch mà {x} vẫn rồ ga, tôi suýt làm quen với vỉa hè bằng… mặt.'
+  ],
+  crossthanks: [
+    'Cảm ơn {x} đã dừng cho tôi qua nha! Đường phố mà ai cũng như {x} thì đẹp quá.',
+    '{X} dừng nhường tôi, tôi nhớ ơn lắm. Chúc {x} một đường toàn đèn xanh!'
+  ],
+  tailgate: [
+    '{X} ơi, bám đuôi sát vậy tôi tưởng mình đang cõng thêm một chiếc xe nữa. Giữ khoảng cách cho an toàn nha!',
+    'Phía sau sát rạt thế này, tôi phanh cái là {x} thành người quen của… cốp xe tôi luôn.'
+  ],
+  cultbad: ['{X} ơi, đi đường cũng là sống chung với nhau. Nhường nhau một chút là ai cũng về nhà sớm hơn.'],
   again: ['Lần thứ {n} rồi đó {x}. ', 'Lại là {x}! Lần thứ {n} rồi nha. ']
 };
 
