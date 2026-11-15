@@ -154,6 +154,8 @@ const SND = (function(){
     const key = i.type + '|' + (i.street || '') + '|' + (i.exitNo || '') + '|' + (i.side || '');
     let what = '';
     if (i.type === 'left' || i.type === 'right') what = (i.type === 'left' ? 'rẽ trái' : 'rẽ phải') + ' vào ' + i.street;
+    else if (i.type === 'bearleft' || i.type === 'bearright') what = (i.type === 'bearleft' ? 'đi chếch trái' : 'đi chếch phải') + ' vào ' + i.street;
+    else if (i.type === 'straight') what = 'đi thẳng vào ' + i.street;
     else if (i.type === 'ring') what = 'vào vòng xuyến, ra ở lối thứ ' + i.exitNo + ', ' + i.street;
     else if (i.type === 'ringexit') what = 'ra khỏi vòng xuyến vào ' + i.street;
     else if (i.type === 'uturn') what = 'quay đầu xe khi đường trống';

@@ -525,7 +525,7 @@ function segName(a, b){ const s = SEGS[segIdx(a, b)]; return s ? s.name : ''; }
 function lanePt(pos, d, off){ return {x: pos.x - d.y*off, y: pos.y + d.x*off}; }
 function along(p, d, k){ return {x: p.x + d.x*k, y: p.y + d.y*k}; }
 
-function computeRoute(){
+function computeRouteOld(){
   const t = S.trip; if (!t) return null;
   const dest = t.dest, ds = SEGS[dest.seg], dp = dest.bay.proj, bayC = {x: dest.bay.cx, y: dest.bay.cy};
   const P0 = {x: player.x, y: player.y}, hd = {x: Math.cos(player.a), y: Math.sin(player.a)};
@@ -639,6 +639,207 @@ function computeRoute(){
   for (let i = 1; i < pts.length; i++) remain += dist(pts[i-1], pts[i]);
   return {pts, instr, remain};
 }
+
+/* ---------------------------------------------------------
+   8b. CHỈ ĐƯỜNG TRÊN MAP (bản 1.1, bước 3): chạy trên đồ thị nút/đường do dungBanDo() dựng, đường góc bất kỳ, đường cong,
+   vòng xuyến bao nhiêu lối ra cũng được. Kết quả cùng dạng với bộ cũ ({pts, instr, remain}); computeRouteOld giữ tới bước 7.
+   Hướng rẽ theo góc giữa đường đang đi và đường sắp vào: dưới 30° đi thẳng, 30–60° đi chếch, 60–143° rẽ, trên 143° quay đầu
+   (người dùng chốt 18:40 ngày 15/11/2026).
+   --------------------------------------------------------- */
+const NAV_ANG = {straight: Math.PI/6, bear: Math.PI/3, uturn: 2.5};
+const ROUTE = {useMap: true};
+// đường xe đang lái được đi: không phải phố đi bộ, không có biển cấm loại xe này
+const roadOk = r => r.veh && !(S.veh === 'car' && r.noCar) && !(S.veh !== 'car' && r.noBike);
+// hướng ra khỏi nút id theo đường r (nhánh của nút)
+const armOut = (r, id) => r.a === id ? r.dirA : r.dirB;
+const otherEnd = (r, id) => r.a === id ? r.b : r.a;
+function mapTrim(nd){
+  if (nd.kind === 'ring') return nd.ring.rOut + 4;
+  if (nd.kind === 'end') return 0;
+  return Math.max(0, ...nd.arms.filter(a => a.road.veh).map(a => a.half));
+}
+const laneOff = r => r.oneway ? 0 : r.half / 2;
+// chiếu điểm lên các đường được đi, lấy đường gần nhất
+function projAllowed(p, M){
+  let best = null;
+  for (const r of M.roads){ if (!roadOk(r)) continue;
+    for (const g of r.seg){
+      const t = clamp((p.x - g.p.x)*g.d.x + (p.y - g.p.y)*g.d.y, 0, g.l);
+      const q = {x: g.p.x + g.d.x*t, y: g.p.y + g.d.y*t}, dd = dist(p, q);
+      if (!best || dd < best.dd - 1e-9) best = {road: r, s: g.s0 + t, pt: q, dir: g.d, dd};
+    } }
+  return best;
+}
+// các điểm uốn của đường cong nằm giữa quãng s0 và s1 (theo chiều đi), đã dời sang làn bên phải
+function bendPts(r, s0, s1){
+  const out = [], sg = s1 >= s0 ? 1 : -1;
+  for (let i = 1; i < r.seg.length; i++){ const g = r.seg[i];
+    if ((g.s0 - s0) * sg > 1e-6 && (s1 - g.s0) * sg > 1e-6){
+      const pa = r.seg[i-1].d, pb = g.d, dd = unit({x: 0, y: 0}, {x: (pa.x + pb.x)*sg, y: (pa.y + pb.y)*sg});
+      out.push(lanePt(g.p, dd, laneOff(r))); } }
+  return sg > 0 ? out : out.reverse();
+}
+// góc (trên màn hình) của điểm trong vòng xuyến nơi xe vào / ra theo nhánh có hướng out
+function ringAng(nd, out, enter){
+  const off = 20, k = Math.sqrt(Math.max(0, nd.ring.rLane*nd.ring.rLane - off*off)), sg = enter ? 1 : -1;
+  return Math.atan2(out.y*k - sg*out.x*off, out.x*k + sg*out.y*off);
+}
+function ringArcAt(nd, a, b){
+  while (b >= a) b -= 2*Math.PI;
+  const n = Math.max(2, Math.ceil((a - b) / 0.22)), pts = [];
+  for (let i = 1; i <= n; i++){ const th = a + (b - a) * i / n; pts.push({x: nd.x + nd.ring.rLane*Math.cos(th), y: nd.y + nd.ring.rLane*Math.sin(th)}); }
+  return pts;
+}
+// thứ tự lối ra khi đi vòng ngược chiều kim đồng hồ (góc màn hình giảm dần) từ nhánh vào tới nhánh ra
+function ringExitNo(nd, inRoad, outRoad){
+  const ang = r => Math.atan2(armOut(r, nd.id).y, armOut(r, nd.id).x);
+  const a0 = ang(inRoad), down = r => { let d = a0 - ang(r); while (d <= 1e-9) d += 2*Math.PI; return d; };
+  const exits = nd.arms.map(a => a.road).filter(r => roadOk(r) && !(r.oneway && r.b === nd.id));
+  const target = down(outRoad);
+  return exits.filter(r => down(r) <= target + 1e-9).length || exits.length;
+}
+function destOnMap(dest, M){
+  let best = null;
+  for (const r of M.roads){ if (!r.veh) continue;
+    for (const g of r.seg){
+      const p = dest.bay.proj, t = clamp((p.x - g.p.x)*g.d.x + (p.y - g.p.y)*g.d.y, 0, g.l);
+      const dd = Math.hypot(p.x - g.p.x - g.d.x*t, p.y - g.p.y - g.d.y*t);
+      if (!best || dd < best.dd) best = {road: r, s: g.s0 + t, dd};
+    } }
+  return best;
+}
+
+function computeRouteMap(M){
+  M = M || MAP;
+  const t = S.trip; if (!t) return null;
+  const dest = t.dest, dm = destOnMap(dest, M), ds = dm.road, dS = dm.s, dp = dest.bay.proj, bayC = {x: dest.bay.cx, y: dest.bay.cy};
+  const P0 = {x: player.x, y: player.y}, hd = {x: Math.cos(player.a), y: Math.sin(player.a)};
+  const NODE = M.nodes, G = M.graph.N;
+  let atNode = null;
+  for (const id in G){ const nd = NODE[id]; if (nd.kind === 'end') continue;
+    if (dist(P0, nd) <= (nd.kind === 'ring' ? nd.ring.rOut : mapTrim(nd) + 2)) atNode = id; }
+  const cost = {}, prevN = {}, prevR = {}, startInfo = {}, cands = [];
+  for (const id in G) cost[id] = Infinity;
+  const UTC = VEH[S.veh].utCost;
+  let st = null, UT = UTC;
+  const addStart = (id, c, uturn, road) => { if (c < cost[id]){ cost[id] = c; prevN[id] = null; prevR[id] = null; startInfo[id] = {uturn, road}; } };
+  if (atNode) addStart(atNode, 0, false, null);
+  else {
+    st = projAllowed(P0, M); if (!st) return null;
+    const r = st.road, fwd = hd.x*st.dir.x + hd.y*st.dir.y;
+    if (M.lineAt(r, st.s) === 'solid') UT = UTC + 200;
+    addStart(r.b, r.len - st.s + (fwd < -0.2 ? UT : 0), fwd < -0.2, r);
+    if (!r.oneway) addStart(r.a, st.s + (fwd > 0.2 ? UT : 0), fwd > 0.2, r);
+    if (r === ds){
+      const al = dS - st.s, sgn = al >= 0 ? 1 : -1, dd = M.pointAt(r, dS).dir, td = {x: dd.x*sgn, y: dd.y*sgn};
+      if (!(r.oneway && sgn < 0) && sameDir(td, dest.bay.dir)){ const ut = fwd * sgn < -0.2;
+        cands.push({type:'direct', cost: Math.abs(al) + (ut ? UT : 0), uturn: ut, sgn}); }
+    }
+  }
+  const done = {};
+  for (;;){
+    let u = null;
+    for (const id in G) if (!done[id] && cost[id] < Infinity && (u === null || cost[id] < cost[u])) u = id;
+    if (u === null) break;
+    done[u] = true;
+    for (const arm of NODE[u].arms){ const r = arm.road; if (!roadOk(r)) continue;
+      if (r.oneway && r.b === u) continue;
+      const v = otherEnd(r, u);
+      // từ nút xuất phát mà quay ngược lại đúng đường vừa đi là quay đầu ở nút giao (trừ vòng xuyến)
+      const c = cost[u] + r.len + (NODE[u].kind !== 'ring' && prevN[u] == null && startInfo[u] && startInfo[u].road === r ? UTC : 0);
+      if (c < cost[v]){ cost[v] = c; prevN[v] = u; prevR[v] = r; }
+    }
+  }
+  const back = (node, r) => (NODE[node].kind !== 'ring' && (prevR[node] || (startInfo[node] && startInfo[node].road)) === r ? UTC : 0);
+  const dDir = M.pointAt(ds, dS).dir;
+  if (roadOk(ds) && sameDir(dDir, dest.bay.dir))
+    cands.push({type:'via', node: ds.a, road: ds, cost: cost[ds.a] + dS + back(ds.a, ds)});
+  if (roadOk(ds) && !ds.oneway && sameDir({x: -dDir.x, y: -dDir.y}, dest.bay.dir))
+    cands.push({type:'via', node: ds.b, road: ds, cost: cost[ds.b] + (ds.len - dS) + back(ds.b, ds)});
+  cands.sort((x, y) => x.cost - y.cost);
+  const cand = cands[0];
+  if (!cand || !(cand.cost < Infinity)) return null;
+
+  const pts = [P0]; let instr = null, travel = hd;
+  const arriveInstr = (d, tr) => { const rr = {x: -tr.y, y: tr.x};
+    return {type:'arrive', dist: d, side: (rr.x*(bayC.x - dp.x) + rr.y*(bayC.y - dp.y)) > 0 ? 'phải' : 'trái'}; };
+
+  if (cand.type === 'direct'){
+    const r = st.road, d0 = M.pointAt(r, dS).dir, d = {x: d0.x*cand.sgn, y: d0.y*cand.sgn}, sd = st.dir, sdd = {x: sd.x*cand.sgn, y: sd.y*cand.sgn};
+    if (cand.uturn) pts.push(lanePt(along(st.pt, sdd, 25), sdd, laneOff(r)));
+    pts.push(...bendPts(r, st.s, dS));
+    pts.push(lanePt(dp, d, laneOff(r))); pts.push(bayC); travel = d;
+    instr = cand.uturn ? {type:'uturn', dist: 0} : arriveInstr(Math.abs(dS - st.s), d);
+  } else {
+    // chuỗi nút từ điểm xuất phát tới nút trước điểm giao, kèm đường đi vào mỗi nút
+    const chain = []; let id = cand.node;
+    while (id){ chain.unshift({id, rin: prevR[id] || null}); id = prevN[id]; }
+    const root = chain[0].id, info = startInfo[root] || {uturn: false, road: null};
+    if (!atNode) chain[0].rin = info.road;
+    const sTo = (r, node) => r.a === node ? 0 : r.len;   // quãng s của nút trên đường r
+    if (!atNode){
+      const r = info.road, sR = sTo(r, root), sg = sR > st.s ? 1 : -1, d = {x: st.dir.x*sg, y: st.dir.y*sg};
+      pts.push(lanePt(along(st.pt, d, Math.min(25, Math.abs(sR - st.s))), d, laneOff(r)));
+      pts.push(...bendPts(r, st.s + sg*25, sR));
+    }
+    for (let k = 0; k < chain.length; k++){
+      const cur = chain[k].id, nd = NODE[cur], rin = chain[k].rin, rout = k + 1 < chain.length ? chain[k+1].rin : cand.road;
+      const hasIn = rin && !(atNode && k === 0), tr = mapTrim(nd);
+      if (hasIn){ if (k > 0) pts.push(...bendPts(rin, sTo(rin, chain[k-1].id), sTo(rin, cur)));
+        const din = armOut(rin, cur), d = {x: -din.x, y: -din.y};
+        pts.push(lanePt(along(nd, d, -tr), d, laneOff(rin))); }
+      const d2 = armOut(rout, cur);
+      if (nd.kind === 'ring'){
+        const a0 = hasIn ? ringAng(nd, armOut(rin, cur), true) : Math.atan2(P0.y - nd.y, P0.x - nd.x);
+        pts.push(...ringArcAt(nd, a0, ringAng(nd, d2, false)));
+      }
+      pts.push(lanePt(along(nd, d2, tr), d2, laneOff(rout)));
+      if (k === chain.length - 1){
+        pts.push(...bendPts(rout, sTo(rout, cur), dS));
+        const dd = M.pointAt(rout, dS).dir, sg = rout.a === cur ? 1 : -1; travel = {x: dd.x*sg, y: dd.y*sg};
+        pts.push(lanePt(dp, travel, laneOff(rout))); pts.push(bayC);
+      }
+    }
+    // lời chỉ dẫn kế tiếp
+    if (info.uturn) instr = {type:'uturn', dist: 0};
+    else {
+      let acc = 0;
+      for (let k = 0; k < chain.length && !instr; k++){
+        const cur = chain[k].id, nd = NODE[cur], rin = chain[k].rin, rout = k + 1 < chain.length ? chain[k+1].rin : cand.road;
+        const d2 = armOut(rout, cur);
+        // quãng đường tới nút: chặng đầu tính thẳng từ xe như bộ cũ, các chặng sau theo chiều dài đường
+        const leg = k === 0 ? dist(P0, nd) : rin.len;
+        const dNode = Math.max(0, leg - mapTrim(nd));
+        let inDir;
+        if (atNode && k === 0) inDir = hd;
+        else { const o = armOut(rin, cur); inDir = {x: -o.x, y: -o.y}; if (k === 0 && dist(st.pt, nd) < 1) inDir = hd; }
+        if (nd.kind === 'ring'){
+          if (rin && !(atNode && k === 0)) instr = {type:'ring', dist: acc + dNode, exitNo: ringExitNo(nd, rin, rout), street: rout.name};
+          else instr = {type:'ringexit', dist: 0, street: rout.name};
+          break;
+        }
+        const ang = Math.atan2(inDir.x*d2.y - inDir.y*d2.x, inDir.x*d2.x + inDir.y*d2.y), aa = Math.abs(ang);
+        if (aa < NAV_ANG.straight){
+          // ngã năm, ngã ba lệch: còn nhánh khác cũng gần hướng thẳng thì đọc rõ tên đường để khỏi nhầm
+          const rival = nd.junction && nd.arms.some(a => a.road !== rout && a.road !== rin && roadOk(a.road) && !(a.road.oneway && a.road.b === cur) &&
+            Math.abs(Math.atan2(inDir.x*a.out.y - inDir.y*a.out.x, inDir.x*a.out.x + inDir.y*a.out.y)) < NAV_ANG.bear);
+          if (rival){ instr = {type:'straight', dist: acc + dNode, street: rout.name}; break; }
+          acc += leg; continue;
+        }
+        const side = ang > 0 ? 'right' : 'left';
+        instr = {type: aa > NAV_ANG.uturn ? 'uturn' : aa < NAV_ANG.bear ? 'bear' + side : side, dist: acc + dNode, street: rout.name};
+      }
+      if (!instr){
+        const last = chain[chain.length - 1].id;
+        instr = arriveInstr(acc + Math.abs(dS - sTo(cand.road, last)), travel);
+      }
+    }
+  }
+  let remain = 0;
+  for (let i = 1; i < pts.length; i++) remain += dist(pts[i-1], pts[i]);
+  return {pts, instr, remain};
+}
+function computeRoute(){ return ROUTE.useMap ? computeRouteMap() : computeRouteOld(); }
 
 /* =========================================================
    9. CẬP NHẬT NPC
@@ -1691,6 +1892,8 @@ const ICONS = {
   straight: '<path d="M12 21V4M6 10l6-6 6 6"/>',
   left: '<path d="M16 21V11H6M10 7l-4 4 4 4"/>',
   right: '<path d="M8 21V11h10M14 7l4 4-4 4"/>',
+  bearleft: '<path d="M14 21v-7L8 8M8 14V8h6"/>',
+  bearright: '<path d="M10 21v-7l6-6M10 8h6v6"/>',
   uturn: '<path d="M17 21V10a5 5 0 0 0-10 0v7M3 13l4 4 4-4"/>',
   ring: '<circle cx="12" cy="11" r="4.5"/><path d="M12 21v-5.5M12 6.5V2M9 4.5L12 2l3 2.5"/>',
   park: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 17V7.5h3a2.8 2.8 0 0 1 0 5.6h-3"/>'
@@ -1705,6 +1908,9 @@ function navText(){
   else if (i.type === 'uturn'){ icon = 'uturn'; main = m >= 15 ? pre + 'Quay đầu xe ở nút giao phía trước (bấm ↩)' : 'Quay đầu xe ở đoạn vạch đứt, khi đường trống (bấm ↩)'; }
   else if (i.type === 'left'){ icon = 'left'; main = pre + 'Rẽ trái vào ' + i.street; }
   else if (i.type === 'right'){ icon = 'right'; main = pre + 'Rẽ phải vào ' + i.street; }
+  else if (i.type === 'bearleft'){ icon = 'bearleft'; main = pre + 'Đi chếch trái vào ' + i.street; }
+  else if (i.type === 'bearright'){ icon = 'bearright'; main = pre + 'Đi chếch phải vào ' + i.street; }
+  else if (i.type === 'straight'){ icon = 'straight'; main = pre + 'Đi thẳng vào ' + i.street; }
   else if (i.type === 'ring'){ icon = 'ring'; main = pre + 'Vào vòng xuyến, ra ở lối thứ ' + i.exitNo + ' (' + i.street + ')'; }
   else if (i.type === 'ringexit'){ icon = 'ring'; main = 'Ra khỏi vòng xuyến vào ' + i.street; }
   else if (m > 25){ icon = 'straight'; main = m + ' m · Đi thẳng, điểm giao ở bên ' + i.side; }
@@ -1762,8 +1968,8 @@ function updHUD(){
                                               : '💡 Bạn chưa đội mũ bảo hiểm: bấm nút 🪖 Đội mũ' + (isTouch ? '' : ' (phím H)') + ' kẻo qua chốt CSGT bị phạt';
     else {   // sắp rẽ hoặc quay đầu mà chưa bật xi-nhan đúng bên: nhắc
       const i = S.route && S.route.instr;
-      if (i && (i.type === 'left' || i.type === 'right' || i.type === 'uturn') && (i.type === 'uturn' || i.dist <= 240)){
-        const want = i.type === 'right' ? 1 : -1;
+      if (i && /^(left|right|bearleft|bearright|uturn)$/.test(i.type) && (i.type === 'uturn' || i.dist <= 240)){
+        const want = /right$/.test(i.type) ? 1 : -1;
         if (S.turn !== want) w = '💡 Bật xi-nhan ' + (want > 0 ? 'phải' : 'trái') + ' trước khi ' + (i.type === 'uturn' ? 'quay đầu' : 'rẽ') + ' (' + (isTouch ? 'nút xi-nhan nhỏ phía trên nút mũi tên' : 'phím ' + (want > 0 ? 'E' : 'Q')) + ')';
       }
     }
@@ -1905,4 +2111,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {BLOCKS, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};

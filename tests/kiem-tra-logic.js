@@ -750,5 +750,58 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(!e3 && NEN.tiles.size === 0, 'không có canvas thật (Node): render() quay về bộ vẽ cũ, không tạo mảnh');
 }
 
+// ===== 23. Bản 1.1 bước 3: chỉ đường trên MAP (computeRouteMap) =====
+{
+  const {computeRouteOld, computeRouteMap, dungBanDo, setVehicle, ROUTE} = TP;
+  const saved = {x: player.x, y: player.y, a: player.a, trip: S.trip, veh: S.veh};
+  ok(ROUTE.useMap && computeRoute === TP.computeRoute, 'game đang dùng bộ chỉ đường mới');
+  // đối chiếu với bộ cũ: mọi điểm giao × điểm xuất phát (các ô đỗ và vài chỗ giữa đường, trong vòng xuyến, mép bản đồ) × 4 hướng × 2 loại xe
+  const starts = DESTS.map(d => [d.bay.cx, d.bay.cy]).concat([[600,320],[700,280],[1220,600],[1180,740],[420,600],[380,700],[1000,880],[1300,920],[200,320],[1200,300],[400,900],[1200,860],[800,320],[50,880],[1580,320],[400,50],[1220,1150]]);
+  let n = 0, khac = 0, md = 0, mr = 0, vd = '';
+  const key = r => r && [r.instr.type, r.instr.street || '', r.instr.exitNo || '', r.instr.side || ''].join('|');
+  for (const veh of ['bike', 'car']){ setVehicle(veh);
+    for (const b of DESTS) for (const [x, y] of starts) for (const ang of [0, Math.PI/2, Math.PI, -Math.PI/2]){
+      player.x = x; player.y = y; player.a = ang; S.trip = {dest: b, fx: x, fy: y, clean: true, t0: S.now};
+      const o = computeRouteOld(), m = computeRouteMap(); n++;
+      if (!o || !m || key(o) !== key(m)){ khac++; if (!vd) vd = `${veh} (${x},${y}) → ${b.name}: ${key(o)} / ${key(m)}`; continue; }
+      md = Math.max(md, Math.abs(o.instr.dist - m.instr.dist)); mr = Math.max(mr, Math.abs(o.remain - m.remain));
+    } }
+  ok(khac === 0 && md < 4 && mr < 4, `chỉ đường mới khớp bộ cũ ở ${n} trường hợp (khác ${khac}; lệch lớn nhất: khoảng cách chỉ dẫn ${md.toFixed(2)}, quãng còn lại ${mr.toFixed(2)} đơn vị)${vd ? ' · ' + vd : ''}`);
+
+  // bản đồ thử: ngã năm có đèn (có đại lộ chéo), vòng xuyến 3 lối, đường cong, hẻm cấm ô tô, phố một chiều
+  const RD = (id, a, b, name, more) => Object.assign({id, a, b, name, cap:'normal', half:40, lanes:1, limit:40}, more || {});
+  const T = dungBanDo([
+    {id:'O', x:1000, y:1000, kind:'light', light:{off:0}},
+    {id:'W', x:200, y:1000, kind:'end'}, {id:'S', x:1000, y:1800, kind:'end'}, {id:'N', x:1000, y:400, kind:'plain'},
+    {id:'NE', x:1500, y:600, kind:'end'}, {id:'R', x:1800, y:1000, kind:'ring', ring:{rOut:100, rIn:48, rLane:76}},
+    {id:'RE', x:2400, y:1000, kind:'end'}, {id:'RS', x:1800, y:1600, kind:'end'}, {id:'N1', x:1000, y:0, kind:'end'}, {id:'NW', x:400, y:400, kind:'end'}
+  ], [
+    RD('ow','W','O','Đường Tây'), RD('os','O','S','Đường Nam'), RD('on','O','N','Đường Bắc'), RD('cheo','O','NE','Đại lộ Chéo'), RD('oe','O','R','Đường Đông'),
+    RD('re','R','RE','Đường Xa'), RD('cong','R','RS','Đường Cong', {via:{x:2100, y:1400}}), RD('n1','N','N1','Đường Bắc'),
+    RD('hem','N','NW','Hẻm Nhỏ', {cap:'alley', half:20, limit:20, noCar:true}), RD('mot','RS','S','Phố Một Chiều', {oneway:true})
+  ], {bays: []});
+  const bayOn = (r, s, right) => { const p = T.pointAt(T.road(r), s), d = right ? p.dir : {x: -p.dir.x, y: -p.dir.y};
+    return {name: 'thử', bay: {proj: {x: p.x, y: p.y}, cx: p.x - d.y*30, cy: p.y + d.x*30, dir: d}}; };
+  const go = (x, y, a, dest, veh) => { setVehicle(veh || 'bike'); player.x = x; player.y = y; player.a = a; S.trip = {dest, fx: x, fy: y, clean: true, t0: S.now}; return computeRouteMap(T); };
+  const trenDuong = r => { for (let i = 1; i < r.pts.length - 1; i++){ const a = r.pts[i-1], b = r.pts[i];
+    for (let k = 0; k <= 10; k++) if (T.classify(a.x + (b.x - a.x)*k/10, a.y + (b.y - a.y)*k/10).t === 'off') return false; } return true; };
+  let r = go(400, 1020, 0, bayOn('cheo', 300, true));
+  ok(r && r.instr.type === 'bearleft' && r.instr.street === 'Đại lộ Chéo' && trenDuong(r), `ngã năm, từ Đường Tây vào đại lộ chéo (lệch 39°): ${r && r.instr.type}`);
+  r = go(400, 1020, 0, bayOn('oe', 400, true));
+  ok(r && r.instr.type === 'straight' && r.instr.street === 'Đường Đông', `ngã năm, đi thẳng mà có đại lộ chéo gần hướng thẳng: đọc rõ tên đường (${r && r.instr.type})`);
+  r = go(400, 1020, 0, bayOn('on', 300, true)); const r2 = go(400, 1020, 0, bayOn('os', 300, true));
+  ok(r && r2 && r.instr.type === 'left' && r2.instr.type === 'right', `ngã năm: rẽ trái lên Đường Bắc, rẽ phải xuống Đường Nam (${r && r.instr.type} / ${r2 && r2.instr.type})`);
+  r = go(1020, 1600, -Math.PI/2, bayOn('cheo', 300, true));
+  ok(r && r.instr.type === 'bearright', `từ Đường Nam đi lên đại lộ chéo (lệch 51°): chếch phải (${r && r.instr.type})`);
+  r = go(1300, 1020, 0, bayOn('cong', 300, true)); const r3 = go(1300, 1020, 0, bayOn('re', 300, true));
+  ok(r && r3 && r.instr.type === 'ring' && r.instr.exitNo === 1 && r3.instr.exitNo === 2 && trenDuong(r),
+     `vòng xuyến 3 lối: đường cong là lối thứ ${r && r.instr.exitNo}, Đường Xa là lối thứ ${r3 && r3.instr.exitNo}; vạch chỉ đường bám theo đường cong`);
+  r = go(1020, 700, -Math.PI/2, bayOn('hem', 300, true)); const rc = go(1020, 700, -Math.PI/2, bayOn('hem', 300, true), 'car');
+  ok(r && r.instr.type === 'left' && rc === null, 'xe máy được dẫn vào hẻm; ô tô không bao giờ được dẫn vào hẻm cấm ô tô');
+  r = go(1300, 1020, 0, bayOn('mot', 300, true)); const rm = go(1300, 1020, 0, bayOn('mot', 300, false));
+  ok(r && trenDuong(r) && rm === null, 'phố một chiều: dẫn đi xuôi chiều; không dẫn đi ngược chiều');
+  setVehicle(saved.veh); player.x = saved.x; player.y = saved.y; player.a = saved.a; S.trip = saved.trip; S.route = computeRoute();
+}
+
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');
 process.exit(fails ? 1 : 0);
