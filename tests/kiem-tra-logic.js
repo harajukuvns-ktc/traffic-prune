@@ -1,5 +1,7 @@
 const {TP} = require('./harness.js');
-const {S, player, npcs, keys, step, lightOf, LIGHTS, RB, DESTS, computeRoute, navText, render, classify, BAYS, HALF, OW} = TP;
+const {S, player, npcs, keys, step, lightOf, DESTS, computeRoute, navText, render, classify, BAYS, HALF} = TP;
+// đèn và vòng xuyến của khu phố lấy từ bản đồ dữ liệu (bộ cũ LIGHTS, RB đã xoá ở bản 1.1 bước 7)
+const LIGHTS = TP.MAP.lights, RB = TP.MAP.rings[0];
 const dt = 1/60;
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ĐẠT ' : 'LỖI ') + m); if (!c) fails++; };
@@ -177,7 +179,7 @@ ok(r.instr.type !== 'arrive' && /Quay đầu/.test(navText().main), `điểm gia
 // mọi ô đỗ nằm trên lòng đường, sát mép vỉa hè, không lấn lên vỉa hè
 ok(BAYS.every(b => { const c = classify(b.cx, b.cy); return c.t === 'bay'; }) &&
    BAYS.every(b => b.w > b.h ? Math.abs((b.side === 'S' ? b.y + b.h : b.y) - (b.proj.y + (b.side === 'S' ? HALF : -HALF))) < 0.5
-                             : Math.abs((b.side === 'E' ? b.x + b.w : b.x) - (b.proj.x + (b.side === 'E' ? 1 : -1) * (b.proj.x === OW.x ? 22 : HALF))) < 0.5),
+                             : Math.abs((b.side === 'E' ? b.x + b.w : b.x) - (b.proj.x + (b.side === 'E' ? 1 : -1) * TP.MAP.road(b.road).half)) < 0.5),
    'ô đỗ kẻ trên lòng đường, sát mép vỉa hè');
 // Đỗ trong ô P: đúng chiều thì không nhắc; ngược chiều thì chỉ nhắc (không phạt tiền, không trừ điểm), chuyến không sạch
 { const D = DESTS.find(d => d.bay.side === 'S');
@@ -291,7 +293,7 @@ S.pts = 12; S.suspended = false;
   ok(g.every(m => m.gear === 0) && g[1].rpm > g[0].rpm && g[2].rpm > g[1].rpm, 'xe tay ga: không có số, vòng tua tăng đều'); }
 
 // 13) Biển hạn chế tốc độ; giữa đường chỉ nhắc, camera ở vạch dừng ngã tư có đèn mới phạt nguội (bản 0.10.2)
-{ const {SPEED_SIGNS, SCHOOL, LAW, speedInfo} = TP;
+{ const {SPEED_SIGNS, LAW, MAP} = TP; const speedInfo = (c0, x, y) => MAP.speedInfo(MAP.classify(x, y));   // giới hạn tại điểm (x, y)
   const cnt = () => ({s1: S.stats.speed1 || 0, s2: S.stats.speed2 || 0, s3: S.stats.speed3 || 0, red: S.stats.red || 0, pts: S.pts, money: S.money});
   // chạy với tốc độ giữ nguyên (km/h) từ (x,y) theo hướng a trong sec giây
   const drive = (x, y, a, kmh, sec) => { reset(); clearNear(x, y, 600); player.x = x; player.y = y; player.a = a; player.v = 0; S.money = 5000000; S.spdSec = '';
@@ -306,7 +308,7 @@ S.pts = 12; S.suspended = false;
   ok(SPEED_SIGNS.filter(b => b.kind === 'limit' && b.v === 30).length === 2 && SPEED_SIGNS.filter(b => b.kind === 'child').length === 2, 'khối Phố Bánh Mì có 2 biển 30 km/h và 2 biển "Trẻ em" (một biển mỗi chiều, đặt ngay sau ngã tư)');
   ok(SPEED_SIGNS.filter(b => b.v === 40).length >= 12, `đường thường có biển 40 km/h (${SPEED_SIGNS.filter(b => b.v === 40).length} biển)`);
   ok(SPEED_SIGNS.every(b => classify(b.x, b.y).t === 'off'), 'mọi biển tốc độ đặt trên vỉa hè, không nằm giữa lòng đường');
-  ok(speedInfo({t:'h', Y:300}, 600, 300).limit === 40 && speedInfo({t:'v', X:400}, 400, 620).limit === 30 && speedInfo({t:'v', X:400}, 400, 400).limit === 30 && speedInfo({t:'v', X:400}, 400, 880).limit === 30 && speedInfo({t:'v', X:400}, 400, 200).limit === 40,
+  ok(speedInfo({t:'h', Y:300}, 600, 300).limit === 40 && speedInfo({t:'v', X:400}, 400, 620).limit === 30 && speedInfo({t:'v', X:400}, 400, 400).limit === 30 && speedInfo({t:'v', X:400}, 400, 855).limit === 30 && speedInfo({t:'v', X:400}, 400, 200).limit === 40,
      'giới hạn đúng: đường thường 40, cả khối Phố Bánh Mì giữa hai ngã tư 30');
   // giữ ga hết cỡ thì tối đa 55 km/h
   reset(); clearNear(500, 320, 700); player.x = 450; player.y = 320; player.a = 0; player.v = 0; keys.up = true; run(4); keys.up = false;
@@ -655,37 +657,20 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(S.cult <= 68 && S.cult >= 64, `bám đuôi xe phía trước: bị trừ văn hóa (còn ${S.cult}/100, nhắc không quá một lần mỗi 10 giây)`);
 }
 
-// 21) Bản 1.1: bộ máy bản đồ dạng dữ liệu phải cho kết quả y hệt bộ cũ trên khu hiện tại
+// 21) Bản 1.1: bộ máy bản đồ dạng dữ liệu. Bộ cũ viết tay đã xoá ở bước 7; khu hiện tại phải cho kết quả y hệt bản mẫu
+//     tests/ban-mau-1.1.json (chụp lúc bộ cũ và bộ mới còn chạy song song và đã khớp nhau: phân loại từng điểm, đoạn tốc độ,
+//     vạch giữa, chỉ đường 1.872 trường hợp, vị trí ô đỗ, biển, cột đèn, nhãn). Cố ý đổi khu phố thì tạo lại bằng tao-ban-mau.js.
 {
-  const {MAP, dungBanDo, N, SEGS, DEAD, CORNERS, speedInfo, lineType, LIGHTS: L1} = TP;
-  const W = 1600, Hh = 1200, key = c => c.t + (c.X != null ? ':' + c.X : '') + (c.Y != null ? ':' + c.Y : '') + (c.bay ? ':' + BAYS.indexOf(c.bay) : '');
-  let diff = 0, n = 0, ex = '';
-  const secMap = {};  let secBad = 0, limBad = 0;
-  for (let x = -20; x <= W + 20; x += 2) for (let y = -20; y <= Hh + 20; y += 2){
-    const a = TP.classifyOld(x, y), b = MAP.classify(x, y); n++;   // bộ cũ giữ lại là classifyOld (game đã dùng bộ mới từ bước 5)
-    if (key(a) !== key(b)){ diff++; if (diff <= 3) ex += ` (${x},${y}: cũ ${key(a)}, mới ${key(b)})`; continue; }
-    const si = speedInfo(a, x, y), sj = MAP.speedInfo(b);
-    if (!!si !== !!sj){ secBad++; continue; }
-    if (si){ if (si.limit !== sj.limit) limBad++;
-      if (secMap[si.id] == null) secMap[si.id] = sj.id; else if (secMap[si.id] !== sj.id) secBad++; }
-  }
-  ok(diff === 0, `phân loại điểm (classify) cũ và mới khớp nhau trên ${n} điểm (sai khác ${diff})${ex}`);
-  const vals = Object.values(secMap);
-  ok(secBad === 0 && limBad === 0 && new Set(vals).size === vals.length, `đoạn tốc độ và giới hạn tốc độ khớp nhau (${vals.length} đoạn, lệch ${secBad + limBad})`);
-  let lb = 0, ln = 0;
-  for (const r of MAP.roads){ if (!r.veh || r.kieu.t === 'road') continue;
-    for (let s = 0; s <= r.len; s += 1){ const p = MAP.pointAt(r, s); ln++;
-      const old = r.kieu.t === 'h' ? lineType('h', r.kieu.Y, p.x) : lineType('v', r.kieu.X, p.y);
-      if (old !== MAP.lineAt(r, s)) lb++; } }
-  ok(lb === 0, `vạch giữa đường (liền / đứt / không có) khớp nhau trên ${ln} điểm (sai khác ${lb})`);
-  const eKey = sg => [sg.a, sg.b].sort().join('-') + ':' + sg.name;
-  const g = MAP.graph;
-  ok(Object.keys(N).length === Object.keys(g.N).length && Object.keys(N).every(id => g.N[id] && g.N[id].x === N[id].x && g.N[id].y === N[id].y) &&
-     JSON.stringify(Object.keys(DEAD).sort()) === JSON.stringify(Object.keys(g.DEAD).sort()) &&
-     JSON.stringify(SEGS.map(eKey).sort()) === JSON.stringify(g.SEGS.map(eKey).sort()), `đồ thị chỉ đường tự sinh khớp bản viết tay (${g.SEGS.length} đoạn, ${Object.keys(g.N).length} nút)`);
-  ok(L1.length === MAP.lights.length && L1.every(L => MAP.lights.some(M => M.x === L.x && M.y === L.y && M.off === L.off)), `đèn tín hiệu tự sinh khớp (${MAP.lights.length} đèn)`);
-  const cKey = c => [c.ex, c.ey, c.cx, c.cy].map(v => Math.round(v*1000)/1000).join(',');
-  ok(CORNERS.length === MAP.corners.length && CORNERS.every(c => MAP.corners.some(d => cKey(c) === cKey(d))), `góc vỉa hè bo cong tự sinh khớp (${MAP.corners.length} góc)`);
+  const {MAP, dungBanDo} = TP;
+  const BM = require('./ban-mau.js'), mau = require('./ban-mau-1.1.json');
+  const khac = BM.soSanh(mau, BM.chupKhuPho(TP));
+  ok(khac.length === 0, `khu phố hiện tại khớp bản mẫu: ${mau.phanLoai.n} điểm phân loại, ${mau.vachGiua.n} mẫu vạch giữa, ${mau.chiDuong.length} trường hợp chỉ đường, ` +
+     `${mau.oDo.length} ô đỗ, ${mau.bienChiDan.length} biển chỉ dẫn, ${mau.bienTocDo.length} biển tốc độ, ${mau.cotDen.length} cột đèn` + (khac.length ? ' · KHÁC: ' + khac.join(' | ') : ''));
+  ok(MAP.lights.length === 3 && MAP.rings.length === 1 && MAP.corners.length === 16 && Object.keys(MAP.graph.N).length === 14 && MAP.graph.SEGS.length === 14,
+     `khu hiện tại: 3 đèn, 1 vòng xuyến, ${MAP.corners.length} góc vỉa hè bo cong, đồ thị chỉ đường ${Object.keys(MAP.graph.N).length} nút / ${MAP.graph.SEGS.length} đoạn`);
+  // ô đỗ khai báo theo đường: đường chéo chưa đặt được ô (bản 1.2) thì báo lỗi rõ ràng, không lặng lẽ đặt sai
+  let loi = ''; try { TP.datODo(dungBanDo([{id:'P', x:0, y:0, kind:'end'}, {id:'Q', x:300, y:300, kind:'end'}], [{id:'c', a:'P', b:'Q', name:'Chéo', cap:'normal', half:40, lanes:1, limit:40}], {bays: []}), {road:'c', s:100, ben:'phai'}); } catch (e){ loi = e.message; }
+  ok(/chéo/.test(loi), 'ô đỗ trên đường chéo: báo chưa làm (bản 1.2), không đặt sai chỗ');
 
   // Bản đồ thử có đường chéo, ngã ba lệch và một đoạn đường cong (không đưa vào bản đồ chơi ở 1.1)
   const T = dungBanDo([
@@ -747,27 +732,14 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   ok(!err && r2.bad.length === 0 && r2.cnt.stroke > 5, 'vẽ nền bản đồ thử (đường chéo, cong, hẻm, ngã ba lệch, ngã tư có đèn) chạy được' + (err ? ' (' + err.message + ')' : ''));
   // quản lý mảnh: trong Node không có canvas thật nên game phải quay về bộ vẽ cũ, không được lỗi
   let e3 = null; try { render(0.016); } catch (e){ e3 = e; }
-  ok(!e3 && NEN.tiles.size === 0, 'không có canvas thật (Node): render() quay về bộ vẽ cũ, không tạo mảnh');
+  ok(!e3 && NEN.tiles.size === 0, 'không có canvas thật (Node): render() bỏ qua vẽ nền, không lỗi, không tạo mảnh');
 }
 
 // ===== 23. Bản 1.1 bước 3: chỉ đường trên MAP (computeRouteMap) =====
 {
-  const {computeRouteOld, computeRouteMap, dungBanDo, setVehicle, ROUTE} = TP;
+  const {computeRouteMap, dungBanDo, setVehicle} = TP;
   const saved = {x: player.x, y: player.y, a: player.a, trip: S.trip, veh: S.veh};
-  ok(ROUTE.useMap && computeRoute === TP.computeRoute, 'game đang dùng bộ chỉ đường mới');
-  // đối chiếu với bộ cũ: mọi điểm giao × điểm xuất phát (các ô đỗ và vài chỗ giữa đường, trong vòng xuyến, mép bản đồ) × 4 hướng × 2 loại xe
-  const starts = DESTS.map(d => [d.bay.cx, d.bay.cy]).concat([[600,320],[700,280],[1220,600],[1180,740],[420,600],[380,700],[1000,880],[1300,920],[200,320],[1200,300],[400,900],[1200,860],[800,320],[50,880],[1580,320],[400,50],[1220,1150]]);
-  let n = 0, khac = 0, md = 0, mr = 0, vd = '';
-  const key = r => r && [r.instr.type, r.instr.street || '', r.instr.exitNo || '', r.instr.side || ''].join('|');
-  for (const veh of ['bike', 'car']){ setVehicle(veh);
-    for (const b of DESTS) for (const [x, y] of starts) for (const ang of [0, Math.PI/2, Math.PI, -Math.PI/2]){
-      player.x = x; player.y = y; player.a = ang; S.trip = {dest: b, fx: x, fy: y, clean: true, t0: S.now};
-      const o = computeRouteOld(), m = computeRouteMap(); n++;
-      if (!o || !m || key(o) !== key(m)){ khac++; if (!vd) vd = `${veh} (${x},${y}) → ${b.name}: ${key(o)} / ${key(m)}`; continue; }
-      md = Math.max(md, Math.abs(o.instr.dist - m.instr.dist)); mr = Math.max(mr, Math.abs(o.remain - m.remain));
-    } }
-  ok(khac === 0 && md < 4 && mr < 4, `chỉ đường mới khớp bộ cũ ở ${n} trường hợp (khác ${khac}; lệch lớn nhất: khoảng cách chỉ dẫn ${md.toFixed(2)}, quãng còn lại ${mr.toFixed(2)} đơn vị)${vd ? ' · ' + vd : ''}`);
-
+  // (đối chiếu với bộ chỉ đường cũ ở 1.872 trường hợp nay nằm trong bản mẫu, mục 21)
   // bản đồ thử: ngã năm có đèn (có đại lộ chéo), vòng xuyến 3 lối, đường cong, hẻm cấm ô tô, phố một chiều
   const RD = (id, a, b, name, more) => Object.assign({id, a, b, name, cap:'normal', half:40, lanes:1, limit:40}, more || {});
   const T = dungBanDo([
@@ -807,7 +779,7 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
 {
   const {MAP, NPC_GEN, npcNewRoute, npcLoopRoute, BUS_LOOPS, dungBanDo} = TP;
   TP.makeNPCs();   // các mục trên có gán tuyến tay cho vài xe; dựng lại đàn xe như lúc vào game
-  ok(NPC_GEN.on && npcs.length === 29 && npcs.every(n => n.route.gen) && npcs.filter(n => n.kind === 'bus').length === 2,
+  ok(npcs.length === 29 && npcs.every(n => n.route.gen) && npcs.filter(n => n.kind === 'bus').length === 2,
      `NPC chạy tuyến tự sinh: ${npcs.length} xe, ${npcs.filter(n => n.kind === 'bus').length} xe buýt chạy vòng`);
   // 300 tuyến ngẫu nhiên: nằm trên mặt đường (bỏ qua phần ngoài mép bản đồ), không qua phố đi bộ, đúng làn bên phải
   const trenDuong = (M, r) => { let off = 0, ped = 0, trai = 0;

@@ -43,9 +43,9 @@ let uid = 0;
    Xe máy vào từ một đầu đường ở mép bản đồ, đi tới một đầu đường khác theo đường ngắn nhất; khoảng một nửa số tuyến
    là "đi thẳng một mạch" (ở mỗi nút chọn nhánh gần hướng thẳng nhất), còn lại chọn ngẫu nhiên điểm ra (người dùng chốt 19:36 ngày 15/11/2026).
    Xe buýt chạy vòng cố định khai báo bằng danh sách nút (BUS_LOOPS). Mỗi tuyến mang sẵn các mốc: vạch dừng ở ngã tư có đèn
-   (stop: đèn và pha của nhánh), chỗ nhường ở cửa vòng xuyến (yieldAt). NPC_GEN.on = false thì quay về ROUTES cũ (xoá ở bước 7).
+   (stop: đèn và pha của nhánh), chỗ nhường ở cửa vòng xuyến (yieldAt). Tuyến viết tay ROUTES cũ đã xoá ở bước 7.
    --------------------------------------------------------- */
-const NPC_GEN = {on: true, seed: 20261115, straightShare: 0.5};
+const NPC_GEN = {seed: 20261115, straightShare: 0.5};
 const BUS_LOOPS = [['A','C','F','D'], ['C','A','D','F']];
 function npcRand(){ NPC_GEN.seed = (NPC_GEN.seed * 16807) % 2147483647; return (NPC_GEN.seed - 1) / 2147483646; }
 const npcRoadOk = (r, kind) => r.veh && !(kind === 'bus' ? r.noCar : r.noBike);
@@ -189,34 +189,7 @@ function makeNPCsGen(){
   }
   makePeds();
 }
-function makeNPCs(){
-  if (NPC_GEN.on) return makeNPCsGen();
-
-  npcs.length = 0;
-  ROUTES.forEach(route => {
-    const {L} = pathLen(route.pts, route.loop);
-    const count = route.n + (route.bus || 0);
-    for (let k = 0; k < count; k++){
-      const isBus = k < (route.bus || 0);
-      let s = route.loop ? (L * k / count) : (L * (k + 0.35) / (count + 0.6));
-      let p = pointAt(route, s);
-      if (Math.hypot(p.x - START.x, p.y - START.y) < 70){ s += 120; p = pointAt(route, s); }   // đừng xếp xe NPC chồng lên ô đỗ lúc người chơi xuất phát
-      const n = {
-        id: ++uid, route, idx: p.idx, x: p.x, y: p.y, a: 0, v: 0,
-        kind: isBus ? 'bus' : 'bike', len: isBus ? 46 : 18, w: isBus ? 16 : 8,
-        vmax: isBus ? 72 : 90 + rnd()*35, acc: isBus ? 60 : 110,
-        color: isBus ? '#f2c94c' : ['#4a90e2','#7b61ff','#2bb3a3','#e86a92','#6c7a89','#59a14f','#b07aa1'][Math.floor(rnd()*7)],
-        helmet: ['#ffffff','#ff5a5f','#ffd166','#06d6a0','#118ab2','#222'][Math.floor(rnd()*6)],
-        name: isBus ? 'Bác tài xe buýt' : NPC_NAMES[Math.floor(rnd()*NPC_NAMES.length)],
-        blockedBy: null, waitT: 0, ghostT: 0, ghostP: 0, hitT: 0, yieldWait: 0, hidden: false, respawnT: 0,
-        affEp: -1, hitCool: 0
-      };
-      const t = route.pts[n.idx]; n.a = Math.atan2(t.y - n.y, t.x - n.x);
-      npcs.push(n);
-    }
-  });
-  makePeds();
-}
+function makeNPCs(){ return makeNPCsGen(); }
 function makePeds(){
   // Người đi bộ trên vỉa hè (đi vòng quanh khối phố, phía trong các ô đỗ xe)
   peds.length = 0;
@@ -303,7 +276,7 @@ function chainRoot(n){
   return c;
 }
 function ringBusy(theta, self, minV, rg){
-  rg = rg || MAP.rings[0] || RB;   // vòng xuyến nào (mặc định vòng xuyến đầu tiên của MAP); tuyến tự sinh và luật vòng xuyến truyền vào
+  rg = rg || MAP.rings[0];   // vòng xuyến nào (mặc định vòng xuyến đầu tiên của MAP); tuyến tự sinh và luật vòng xuyến truyền vào
   for (const o of vehicles()){
     if (o === self) continue;
     if (o === player && S.inBay) continue;
@@ -321,14 +294,6 @@ function segDist(px, py, o){
   const dx = bx - ax, dy = by - ay, L2 = dx*dx + dy*dy || 1;
   const t = clamp(((px-ax)*dx + (py-ay)*dy) / L2, 0, 1);
   return Math.hypot(px - (ax + dx*t), py - (ay + dy*t));
-}
-// Đèn tín hiệu phía trước một xe đang đi theo hướng (ux, uy)
-function approach(o, ux, uy, L){
-  if (ux > 0.7 && Math.abs(o.y - L.y) < HALF && o.x < L.x - HALF) return {dist: L.x - HALF - o.x, axis:'EW'};
-  if (ux < -0.7 && Math.abs(o.y - L.y) < HALF && o.x > L.x + HALF) return {dist: o.x - (L.x + HALF), axis:'EW'};
-  if (uy > 0.7 && Math.abs(o.x - L.x) < HALF && o.y < L.y - HALF) return {dist: L.y - HALF - o.y, axis:'NS'};
-  if (uy < -0.7 && Math.abs(o.x - L.x) < HALF && o.y > L.y + HALF) return {dist: o.y - (L.y + HALF), axis:'NS'};
-  return null;
 }
 // Đèn phía trước người chơi (bản 1.1 bước 5): xét vạch dừng của từng nhánh (MAP.stopLines), đường góc bất kỳ
 function playerLightAhead(maxD){
@@ -728,148 +693,18 @@ function arrive(){
 /* =========================================================
    8. CHỈ ĐƯỜNG (kiểu ứng dụng dẫn đường)
    ========================================================= */
-const UTURN_COST = 250;
-function projOn(p, a, b){
-  const dx = b.x - a.x, dy = b.y - a.y, L2 = dx*dx + dy*dy || 1;
-  const t = clamp(((p.x - a.x)*dx + (p.y - a.y)*dy) / L2, 0, 1);
-  return {x: a.x + dx*t, y: a.y + dy*t};
-}
-function nearestSeg(p){
-  let best = 0, bd = 1e9;
-  SEGS.forEach((s, i) => { const d = dist(p, projOn(p, N[s.a], N[s.b])); if (d < bd){ bd = d; best = i; } });
-  return best;
-}
 function sameDir(a, b){ return a.x*b.x + a.y*b.y > 0.5; }
-function trimOf(id){ return id === 'F' ? R_OFF : DEAD[id] ? 0 : HALF; }
-function segOff(a, b){ const s = SEGS[segIdx(a, b)]; return s && s.oneway ? 0 : 20; }
-function segName(a, b){ const s = SEGS[segIdx(a, b)]; return s ? s.name : ''; }
 // điểm trên làn bên phải của hướng đi d, tại vị trí tim đường pos
 function lanePt(pos, d, off){ return {x: pos.x - d.y*off, y: pos.y + d.x*off}; }
 function along(p, d, k){ return {x: p.x + d.x*k, y: p.y + d.y*k}; }
 
-function computeRouteOld(){
-  const t = S.trip; if (!t) return null;
-  const dest = t.dest, ds = SEGS[dest.seg], dp = dest.bay.proj, bayC = {x: dest.bay.cx, y: dest.bay.cy};
-  const P0 = {x: player.x, y: player.y}, hd = {x: Math.cos(player.a), y: Math.sin(player.a)};
-  let atNode = null;
-  for (const id in N){ if (DEAD[id]) continue; if (dist(P0, N[id]) <= (id === 'F' ? RB.rOut : HALF + 2)) atNode = id; }
-  const cost = {}, prev = {}, startInfo = {}, cands = [];
-  for (const id in N) cost[id] = Infinity;
-  const UTC = VEH[S.veh].utCost;
-  let si = -1, pr = null, UT = UTC;
-  const addStart = (id, c, uturn, other) => { if (c < cost[id]){ cost[id] = c; prev[id] = null; startInfo[id] = {uturn, other}; } };
-  if (atNode) addStart(atNode, 0, false, null);
-  else {
-    si = nearestSeg(P0); const s = SEGS[si], a = N[s.a], b = N[s.b];
-    pr = projOn(P0, a, b);
-    const dab = unit(a, b), fwd = hd.x*dab.x + hd.y*dab.y;
-    const horiz = a.y === b.y;
-    if (lineType(horiz ? 'h' : 'v', horiz ? a.y : a.x, horiz ? pr.x : pr.y) === 'solid') UT = UTC + 200;
-    addStart(s.b, dist(pr, b) + (fwd < -0.2 ? UT : 0), fwd < -0.2, s.a);
-    if (!s.oneway) addStart(s.a, dist(pr, a) + (fwd > 0.2 ? UT : 0), fwd > 0.2, s.b);
-    if (si === dest.seg){
-      const al = (dp.x - pr.x)*dab.x + (dp.y - pr.y)*dab.y, sgn = al >= 0 ? 1 : -1;
-      const td = {x: dab.x * sgn, y: dab.y * sgn};
-      if (!(s.oneway && sgn < 0) && sameDir(td, dest.bay.dir)){ const ut = fwd * sgn < -0.2;
-        cands.push({type:'direct', cost: Math.abs(al) + (ut ? UT : 0), uturn: ut, sgn}); }
-    }
-  }
-  const done = {};
-  for (;;){
-    let u = null;
-    for (const id in N) if (!done[id] && cost[id] < Infinity && (u === null || cost[id] < cost[u])) u = id;
-    if (u === null) break;
-    done[u] = true;
-    for (const s of SEGS){
-      let v = null;
-      if (s.a === u) v = s.b; else if (s.b === u && !s.oneway) v = s.a;
-      if (!v) continue;
-      // từ nút xuất phát mà quay ngược lại đúng đoạn vừa đi là quay đầu ở nút giao (trừ vòng xuyến): tính thêm chi phí quay đầu
-      const c = cost[u] + dist(N[u], N[v]) + (u !== 'F' && prev[u] == null && startInfo[u] && startInfo[u].other === v ? UTC : 0);
-      if (c < cost[v]){ cost[v] = c; prev[v] = u; }
-    }
-  }
-  // tới nút rồi quay ngược lại đúng đoạn vừa đi cũng tính là quay đầu
-  const back = (node, next) => (node !== 'F' && (prev[node] || (startInfo[node] && startInfo[node].other)) === next ? UTC : 0);
-  // chỉ nhận hướng tiếp cận trùng chiều xe chạy của ô đỗ (đỗ bên phải theo chiều đi)
-  if (sameDir(unit(N[ds.a], N[ds.b]), dest.bay.dir))
-    cands.push({type:'via', node: ds.a, next: ds.b, cost: cost[ds.a] + dist(N[ds.a], dp) + back(ds.a, ds.b)});
-  if (!ds.oneway && sameDir(unit(N[ds.b], N[ds.a]), dest.bay.dir))
-    cands.push({type:'via', node: ds.b, next: ds.a, cost: cost[ds.b] + dist(N[ds.b], dp) + back(ds.b, ds.a)});
-  cands.sort((x, y) => x.cost - y.cost);
-  const cand = cands[0];
-  if (!cand || !(cand.cost < Infinity)) return null;
-
-  const pts = [P0]; let travel = hd, instr = null;
-  const arriveInstr = (d, tr) => { const r = {x: -tr.y, y: tr.x};
-    return {type:'arrive', dist: d, side: (r.x*(bayC.x - dp.x) + r.y*(bayC.y - dp.y)) > 0 ? 'phải' : 'trái'}; };
-
-  if (cand.type === 'direct'){
-    const s = SEGS[si], from = cand.sgn > 0 ? N[s.a] : N[s.b], to = cand.sgn > 0 ? N[s.b] : N[s.a];
-    const d = unit(from, to), off = s.oneway ? 0 : 20;
-    if (cand.uturn) pts.push(lanePt(along(pr, d, 25), d, off));
-    pts.push(lanePt(dp, d, off)); pts.push(bayC); travel = d;
-    instr = cand.uturn ? {type:'uturn', dist: 0} : arriveInstr(dist(pr, dp), d);
-  } else {
-    const chain = []; let id = cand.node;
-    while (id){ chain.unshift(id); id = prev[id]; }
-    const root = chain[0], info = startInfo[root] || {uturn:false, other:null};
-    let prevId = info.other;
-    if (!atNode){
-      const d = unit(N[prevId], N[root]);
-      pts.push(lanePt(along(pr, d, Math.min(25, dist(pr, N[root]))), d, segOff(prevId, root)));
-    }
-    // dựng đường vẽ
-    for (let k = 0; k < chain.length; k++){
-      const cur = chain[k], n = N[cur], nextId = chain[k+1] || cand.next;
-      if (prevId && !(atNode && k === 0)){
-        const d = unit(N[prevId], n);
-        pts.push(lanePt(along(n, d, -trimOf(cur)), d, segOff(prevId, cur)));
-      }
-      const d2 = unit(n, N[nextId]);
-      if (cur === 'F'){
-        const a0 = (prevId && !(atNode && k === 0)) ? ENTRY[RING_SIDE[prevId]] : Math.atan2(P0.y - RB.y, P0.x - RB.x);
-        for (const q of arc(a0, EXITA[RING_SIDE[nextId]])) pts.push(q);
-      }
-      pts.push(lanePt(along(n, d2, trimOf(cur)), d2, segOff(cur, nextId)));
-      prevId = cur;
-      if (k === chain.length - 1){ pts.push(lanePt(dp, d2, segOff(cur, nextId))); pts.push(bayC); travel = d2; }
-    }
-    // lời chỉ dẫn kế tiếp
-    if (info.uturn) instr = {type:'uturn', dist: 0};
-    else {
-      let acc = 0, curP = P0, inDir = atNode ? hd : unit(pr, N[root]);
-      if (!atNode && dist(pr, N[root]) < 1) inDir = hd;
-      let fromId = info.other;
-      for (let k = 0; k < chain.length && !instr; k++){
-        const cur = chain[k], n = N[cur], nextId = chain[k+1] || cand.next, d2 = unit(n, N[nextId]);
-        const dNode = Math.max(0, dist(curP, n) - trimOf(cur));
-        if (cur === 'F'){
-          const from = fromId && !(atNode && k === 0) ? RING_SIDE[fromId] : null, to = RING_SIDE[nextId];
-          if (from) instr = {type:'ring', dist: acc + dNode, exitNo: ((RING_CCW.indexOf(to) - RING_CCW.indexOf(from) + 4) % 4) || 4, street: segName(cur, nextId)};
-          else instr = {type:'ringexit', dist: 0, street: segName(cur, nextId)};
-          break;
-        }
-        const ang = Math.atan2(inDir.x*d2.y - inDir.y*d2.x, inDir.x*d2.x + inDir.y*d2.y);
-        if (Math.abs(ang) < 0.6){ acc += dist(curP, n); curP = n; inDir = d2; fromId = cur; continue; }
-        instr = {type: Math.abs(ang) > 2.5 ? 'uturn' : (ang > 0 ? 'right' : 'left'), dist: acc + dNode, street: segName(cur, nextId)};
-      }
-      if (!instr) instr = arriveInstr(acc + dist(curP, dp), travel);
-    }
-  }
-  let remain = 0;
-  for (let i = 1; i < pts.length; i++) remain += dist(pts[i-1], pts[i]);
-  return {pts, instr, remain};
-}
-
 /* ---------------------------------------------------------
    8b. CHỈ ĐƯỜNG TRÊN MAP (bản 1.1, bước 3): chạy trên đồ thị nút/đường do dungBanDo() dựng, đường góc bất kỳ, đường cong,
-   vòng xuyến bao nhiêu lối ra cũng được. Kết quả cùng dạng với bộ cũ ({pts, instr, remain}); computeRouteOld giữ tới bước 7.
+   vòng xuyến bao nhiêu lối ra cũng được. Trả về {pts, instr, remain} (bộ chỉ đường cũ đã xoá ở bước 7).
    Hướng rẽ theo góc giữa đường đang đi và đường sắp vào: dưới 30° đi thẳng, 30–60° đi chếch, 60–143° rẽ, trên 143° quay đầu
    (người dùng chốt 18:40 ngày 15/11/2026).
    --------------------------------------------------------- */
 const NAV_ANG = {straight: Math.PI/6, bear: Math.PI/3, uturn: 2.5};
-const ROUTE = {useMap: true};
 // đường xe đang lái được đi: không phải phố đi bộ, không có biển cấm loại xe này
 const roadOk = r => r.veh && !(S.veh === 'car' && r.noCar) && !(S.veh !== 'car' && r.noBike);
 // hướng ra khỏi nút id theo đường r (nhánh của nút)
@@ -1063,20 +898,25 @@ function computeRouteMap(M){
   for (let i = 1; i < pts.length; i++) remain += dist(pts[i-1], pts[i]);
   return {pts, instr, remain};
 }
-function computeRoute(){ return ROUTE.useMap ? computeRouteMap() : computeRouteOld(); }
+function computeRoute(){ return computeRouteMap(); }
 
 /* =========================================================
    9. CẬP NHẬT NPC
    ========================================================= */
+// Tuyến viết tay (bài test gán route không có cờ gen): xét vạch dừng phía trước theo hướng đi (ux, uy), dùng MAP.stopLines
+// như đèn phía trước người chơi (bản 1.1 bước 7 thay cho cách cũ chỉ biết 4 hướng ngang / dọc)
 function lightLimit(n, ux, uy){
   let lim = Infinity;
-  for (const L of LIGHTS){
-    const ap = approach(n, ux, uy, L);
-    if (!ap || ap.dist > 210) continue;
-    const st = lightOf(L, ap.axis, S.now), front = ap.dist - STOPG - n.len/2;
+  for (const sl of MAP.stopLines){
+    if (ux*sl.d.x + uy*sl.d.y <= 0.7) continue;
+    const rx = n.x - sl.sx, ry = n.y - sl.sy;
+    if (Math.abs(rx*sl.d.y - ry*sl.d.x) >= sl.half) continue;
+    const d = -(rx*sl.d.x + ry*sl.d.y);              // tâm xe còn cách vạch dừng
+    if (d > 210 - STOPG) continue;
+    const L = sl.L, st = lightOf(L, sl.phase, S.now), front = d - n.len/2;
     if (front < -1) continue;   // đầu xe đã qua vạch dừng: đi tiếp
     // đèn vàng: chỉ đi tiếp nếu kịp qua vạch trước khi đèn đỏ, không thì dừng
-    const c = ((S.now + L.off) % CYCLE + CYCLE) % CYCLE, remain = (ap.axis === 'NS' ? 10 : 21) - c;
+    const c = ((S.now + L.off) % CYCLE + CYCLE) % CYCLE, remain = (sl.phase === 'NS' ? 10 : 21) - c;
     const makeIt = front <= 1 || (front + 2) / Math.max(n.v, 5) < remain - 0.05;
     if (st === 'red' || (st === 'yellow' && !makeIt)) lim = Math.min(lim, stopLimit(front - 3));
   }
@@ -1683,93 +1523,11 @@ function label(x, y, text, opt){
   });
 }
 
-function drawGroundOld(){
-  ctx.fillStyle = '#e9e1d3'; ctx.fillRect(0, 0, W, H);
-  for (const b of BLOCKS){ ctx.fillStyle = '#cfe6c4'; ctx.fillRect(b.x1 + SIDE, b.y1 + SIDE, b.x2 - b.x1 - 2*SIDE, b.y2 - b.y1 - 2*SIDE); }
-  // đường
-  ctx.fillStyle = '#5b6170';
-  for (const h of HR) ctx.fillRect(-EXT, h.y - HALF, W + 2*EXT, HALF*2);
-  for (const v of VR) ctx.fillRect(v.x - HALF, -EXT, HALF*2, H + 2*EXT);
-  ctx.beginPath(); ctx.arc(RB.x, RB.y, RB.rOut, 0, Math.PI*2); ctx.fill();
-  // bo cong góc vỉa hè: phủ màu đường vào góc vuông rồi vẽ lại cung vỉa hè
-  for (const c of CORNERS){
-    ctx.fillStyle = '#5b6170';
-    ctx.fillRect(Math.min(c.ex, c.ex + c.dx*CURB), Math.min(c.ey, c.ey + c.dy*CURB), CURB, CURB);
-    ctx.fillStyle = '#e9e1d3';
-    ctx.beginPath(); ctx.moveTo(c.cx, c.cy); ctx.arc(c.cx, c.cy, CURB, 0, Math.PI*2); ctx.fill();
-  }
-  // Phố Chợ: phố đi bộ lát gạch (không phải lòng đường cho xe)
-  { const y0 = OW.y1 + HALF, y1 = OW.y2 - HALF;
-    ctx.fillStyle = '#e3d2ad'; ctx.fillRect(OW.x - OW.half, y0, OW.half*2, y1 - y0);
-    ctx.strokeStyle = 'rgba(160,130,90,.45)'; ctx.lineWidth = 1; ctx.beginPath();
-    for (let y = y0; y <= y1; y += 14){ ctx.moveTo(OW.x - OW.half, y); ctx.lineTo(OW.x + OW.half, y); }
-    for (let x = OW.x - OW.half + 11; x < OW.x + OW.half; x += 11){ ctx.moveTo(x, y0); ctx.lineTo(x, y1); }
-    ctx.stroke();
-    ctx.strokeStyle = '#e5484d'; ctx.lineWidth = 3; ctx.setLineDash([8, 6]); ctx.beginPath();   // vạch đỏ đứt ở hai đầu phố
-    ctx.moveTo(OW.x - OW.half, y0); ctx.lineTo(OW.x + OW.half, y0); ctx.moveTo(OW.x - OW.half, y1); ctx.lineTo(OW.x + OW.half, y1);
-    ctx.stroke(); ctx.setLineDash([]); }
-  // ô đỗ xe
-  for (const b of BAYS){
-    ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
-    ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2); ctx.setLineDash([]);
-    ctx.save(); ctx.translate(b.cx, b.cy); ctx.rotate(Math.atan2(b.dir.y, b.dir.x) + Math.PI/2);
-    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('P', 0, 0); ctx.restore();
-  }
-  // đảo vòng xuyến
-  ctx.fillStyle = '#9fd38b'; ctx.beginPath(); ctx.arc(RB.x, RB.y, RB.rIn, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#f2efe6'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(RB.x, RB.y, RB.rIn, 0, Math.PI*2); ctx.stroke();
-  for (let i = 0; i < 10; i++){ const a = i/10*Math.PI*2; ctx.fillStyle = ['#ff6b6b','#ffd43b','#ff8fd1'][i % 3];
-    ctx.beginPath(); ctx.arc(RB.x + Math.cos(a)*28, RB.y + Math.sin(a)*28, 5, 0, Math.PI*2); ctx.fill(); }
-  ctx.fillStyle = '#2f9e6b'; ctx.beginPath(); ctx.arc(RB.x, RB.y, 12, 0, Math.PI*2); ctx.fill();
-
-  // vạch vàng giữa đường: liền gần nút giao, đứt ở giữa đoạn
-  ctx.strokeStyle = '#f5c542'; ctx.lineWidth = 3;
-  for (const cl of CENTER_LINES) for (const r of cl.runs){
-    ctx.setLineDash(r.type === 'broken' ? [14, 12] : []);
-    ctx.beginPath();
-    if (cl.axis === 'h'){ ctx.moveTo(r.a, cl.fixed); ctx.lineTo(r.b, cl.fixed); } else { ctx.moveTo(cl.fixed, r.a); ctx.lineTo(cl.fixed, r.b); }
-    ctx.stroke();
-  }
-  ctx.setLineDash([]);
-  // vạch người đi bộ (trang trí) và vạch dừng nhuộm màu đèn
-  for (const L of LIGHTS){
-    ctx.fillStyle = 'rgba(255,255,255,.62)';
-    for (let i = -3; i <= 3; i++){
-      ctx.fillRect(L.x - CW_FAR, L.y + i*11 - 3, 12, 6); ctx.fillRect(L.x + CW_NEAR, L.y + i*11 - 3, 12, 6);
-      ctx.fillRect(L.x + i*11 - 3, L.y - CW_FAR, 6, 12); ctx.fillRect(L.x + i*11 - 3, L.y + CW_NEAR, 6, 12);
-    }
-    const sd = HALF + STOPG;
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = '#ffffff'; ctx.beginPath();
-    ctx.moveTo(L.x - sd, L.y + 1); ctx.lineTo(L.x - sd, L.y + HALF);
-    ctx.moveTo(L.x + sd, L.y - HALF); ctx.lineTo(L.x + sd, L.y - 1); ctx.stroke();
-    ctx.strokeStyle = '#ffffff'; ctx.beginPath();
-    ctx.moveTo(L.x + 1, L.y + sd); ctx.lineTo(L.x + HALF, L.y + sd);
-    ctx.moveTo(L.x - HALF, L.y - sd); ctx.lineTo(L.x - 1, L.y - sd); ctx.stroke();
-  }
-  // vạch người đi bộ qua đường ở hai đầu Phố Chợ (bản 1.0b): các sọc trắng song song với chiều xe chạy như vạch ở ngã tư, xe phải nhường người đang qua
-  ctx.fillStyle = 'rgba(255,255,255,.7)';
-  for (const h of HR) for (let i = -3; i <= 3; i++) ctx.fillRect(800 - 14, h.y + i*11 - 3, 28, 6);
-  // vạch nhường đường ở cửa vào vòng xuyến
-  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.beginPath();
-  ctx.moveTo(1160, RB.y - RB.rOut - 2); ctx.lineTo(1200, RB.y - RB.rOut - 2);
-  ctx.moveTo(1200, RB.y + RB.rOut + 2); ctx.lineTo(1240, RB.y + RB.rOut + 2);
-  ctx.moveTo(RB.x - RB.rOut - 2, 900); ctx.lineTo(RB.x - RB.rOut - 2, 940);
-  ctx.moveTo(RB.x + RB.rOut + 2, 860); ctx.lineTo(RB.x + RB.rOut + 2, 900); ctx.stroke();
-  // ranh giới khu chơi thử
-  ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 4; ctx.setLineDash([8, 6]); ctx.beginPath();
-  for (const h of HR){ ctx.moveTo(2, h.y - HALF); ctx.lineTo(2, h.y + HALF); ctx.moveTo(W - 2, h.y - HALF); ctx.lineTo(W - 2, h.y + HALF); }
-  for (const v of VR){ ctx.moveTo(v.x - HALF, 2); ctx.lineTo(v.x + HALF, 2); ctx.moveTo(v.x - HALF, H - 2); ctx.lineTo(v.x + HALF, H - 2); }
-  ctx.stroke(); ctx.setLineDash([]);
-}
-
 /* Nền tĩnh vẽ theo mảnh (bản 1.1, bước 2): veNen() trong js/ve-nen.js vẽ nền từ MAP vào từng mảnh 512 × 512 đơn vị
    một lần (khi mảnh đầu tiên lọt vào tầm nhìn); mỗi khung hình chỉ dán các mảnh gần máy quay.
-   NEN.on = false thì quay về bộ vẽ cũ (drawGroundOld, sẽ xoá ở bước 7). */
-const NEN = {on: true, size: 512, pad: 3, k: 0, tiles: new Map(), built: 0, frame: 0, keep: 20};
-const nenOk = () => NEN.on && typeof document.createElement === 'function';
+   Điện thoại giật thì giảm độ nét mảnh (NEN.k, kẹp trong nenSetScale). Không có canvas thật (chạy test bằng Node) thì không vẽ nền. */
+const NEN = {size: 512, pad: 3, k: 0, tiles: new Map(), built: 0, frame: 0, keep: 20};
+const nenOk = () => typeof document.createElement === 'function';
 // k: số điểm ảnh của mảnh cho mỗi đơn vị bản đồ; đổi nhiều (đổi kiểu nhìn, đổi cỡ màn hình) thì vẽ lại mảnh
 function nenSetScale(k){
   k = clamp(k, 0.6, 2);
@@ -1785,7 +1543,7 @@ function nenTile(i, j){
   return t;
 }
 function drawGround(){
-  if (!nenOk()) return drawGroundOld();
+  if (!nenOk()) return;
   nenSetScale(RES * zoom); NEN.frame++;
   const ci = Math.ceil((W + 2*EXT) / NEN.size), cj = Math.ceil((H + 2*EXT) / NEN.size);
   // mảnh nào có hình tròn bao quanh chạm khung vẽ thì dán (đổi toạ độ bản đồ sang toạ độ khung vẽ giống phép biến đổi trong render)
@@ -1992,14 +1750,10 @@ function drawCSGT(){
 }
 function drawUprights(){
   drawCSGT();
-  // cột đèn tín hiệu, mỗi hướng đi vào có một cột bên tay phải người lái
-  for (const L of LIGHTS){
-    const posts = [
-      {x: L.x - HALF - 10, y: L.y + HALF + 10, axis:'EW'}, {x: L.x + HALF + 10, y: L.y - HALF - 10, axis:'EW'},
-      {x: L.x + HALF + 10, y: L.y + HALF + 10, axis:'NS'}, {x: L.x - HALF - 10, y: L.y - HALF - 10, axis:'NS'}
-    ];
-    for (const p of posts){
-      const st = lightOf(L, p.axis, S.now);
+  // cột đèn tín hiệu, mỗi nhánh đi vào có một cột bên tay phải người lái (vị trí tự sinh: trangTri.cotDen trong js/ban-do.js)
+  {
+    for (const p of trangTri.cotDen){
+      const st = lightOf(p.L, p.phase, S.now);
       up(p.x, p.y, () => {
         ctx.fillStyle = '#555'; ctx.fillRect(-1, -14, 2, 14);
         ctx.fillStyle = '#2b2a33'; rr(ctx, -5, -40, 10, 27, 3); ctx.fill();
@@ -2032,10 +1786,8 @@ function drawUprights(){
     rr(ctx, -4, -21.2, 8, 3.2, 1); ctx.fill(); rr(ctx, -2.4, -23.4, 4.6, 2.6, 1); ctx.fill();
     ctx.beginPath(); ctx.arc(-2.3, -17.9, 1, 0, Math.PI*2); ctx.arc(2.3, -17.9, 1, 0, Math.PI*2); ctx.fill();
   };
-  for (const y of [OW.y1 + HALF + 10, OW.y2 - HALF - 10]){
-    banDisc(OW.x - 33, y, iconRider); banDisc(OW.x + 33, y, iconCar);
-    label(OW.x, y + (y < 600 ? 22 : -22), 'PHỐ ĐI BỘ', {size: 12, bold: true, bg: '#1b6fb8', color: '#fff'});
-  }
+  for (const b of trangTri.bienDiBo) banDisc(b.x, b.y, b.icon === 'xe-may' ? iconRider : iconCar);
+  for (const q of trangTri.nhanDiBo) label(q.x, q.y, 'PHỐ ĐI BỘ', {size: 12, bold: true, bg: '#1b6fb8', color: '#fff'});
   // biển hạn chế tốc độ P.127 và biển W.225 "Trẻ em"
   for (const sp of SPEED_SIGNS){
     if (tilted() && Math.hypot(sp.x - player.x, sp.y - player.y) > (S.view === 'bike' ? 420 : 560)) continue;
@@ -2060,22 +1812,17 @@ function drawUprights(){
   // biển chỉ dẫn hướng đi trước các ngã tư
   drawSignboards();
   // biển vòng xuyến trước mỗi cửa vào
-  for (const [x, y] of [[1150, RB.y - 128], [1250, RB.y + 128], [RB.x - 128, 950], [RB.x + 128, 850]])
+  for (const {x, y} of trangTri.bienVong)
     signDisc(x, y, '#2f6fde', () => { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6;
       for (let i = 0; i < 3; i++){ const a0 = i*2.09; ctx.beginPath(); ctx.arc(0, -21, 4, a0, a0 + 1.4); ctx.stroke(); } });
   // biển P ở mỗi ô đỗ
-  for (const b of BAYS){
-    const px = b.w > b.h ? b.x + 6 : (b.side === 'E' ? b.x + b.w + 3 : b.x - 3);
-    const py = b.w > b.h ? (b.side === 'S' ? b.y + b.h + 3 : b.y - 3) : b.y + 6;
+  for (const {x: px, y: py} of trangTri.bienP){
     signSquare(px, py, () => { ctx.fillStyle = '#fff'; ctx.font = '700 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P', 0, -20.5); });
   }
   // tên đường
-  const names = [[HR[0].name, 690, 246], [HR[0].name, 1390, 246], [HR[1].name, 620, 954], [HR[1].name, 1420, 846],
-    [VR[0].name, 346, 640], [VR[0].name, 454, 140], [VR[1].name, 1146, 560], [VR[1].name, 1254, 1100], [OW.name + ' (đi bộ)', 762, 480]];
-  for (const [t, x, y] of names) label(x, y, t, {size: 12, bg: 'rgba(43,42,51,.62)', color: '#fff'});
+  for (const q of trangTri.nhanDuong) label(q.x, q.y, q.t, {size: 12, bg: 'rgba(43,42,51,.62)', color: '#fff'});
   label(925, 395, '🛒 CHỢ HOA SỮA', {size: 14, bold: true, color: '#b5482b'});
-  for (const h of HR){ label(34, h.y, 'Hết khu chơi thử', {size: 11}); label(W - 34, h.y, 'Hết khu chơi thử', {size: 11}); }
-  for (const v of VR){ label(v.x, 22, 'Hết khu chơi thử', {size: 11}); label(v.x, H - 22, 'Hết khu chơi thử', {size: 11}); }
+  for (const q of trangTri.nhanMep) label(q.x, q.y, 'Hết khu chơi thử', {size: 11});
   // tên điểm giao
   const cur = S.trip && S.trip.dest;
   for (const d of DESTS){
@@ -2106,10 +1853,16 @@ function drawMini(){
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.fillStyle = '#cfe6c4'; c.fillRect(0, 0, mw, mh);
   c.fillStyle = '#7d8290';
-  for (const h of HR) c.fillRect(0, (h.y - HALF)*s, mw, HALF*2*s);
-  for (const v of VR) c.fillRect((v.x - HALF)*s, 0, HALF*2*s, mh);
-  c.fillStyle = '#e3d2ad'; c.fillRect((OW.x - OW.half)*s, (OW.y1 + HALF)*s, OW.half*2*s, (OW.y2 - OW.y1 - 2*HALF)*s); c.fillStyle = '#7d8290';
-  c.beginPath(); c.arc(RB.x*s, RB.y*s, RB.rOut*s, 0, Math.PI*2); c.fill();
+  // đường vẽ thành nét dày bằng bề rộng mặt đường, theo đúng hình đường (chéo, cong) của MAP; đường cho xe kéo ra tới mép bản đồ nhỏ
+  c.lineCap = 'butt'; c.lineJoin = 'round';
+  for (const r of MAP.roads){
+    let pts = r.pts;
+    if (!r.veh){ const a = MAP.pointAt(r, r.gapA.gap), b = MAP.pointAt(r, r.len - r.gapB.gap); pts = [a, b]; }
+    c.strokeStyle = r.veh ? '#7d8290' : '#e3d2ad'; c.lineWidth = r.half*2*s;
+    c.beginPath(); c.moveTo(pts[0].x*s, pts[0].y*s); for (let i = 1; i < pts.length; i++) c.lineTo(pts[i].x*s, pts[i].y*s); c.stroke();
+  }
+  c.fillStyle = '#7d8290';
+  for (const g of MAP.rings){ c.beginPath(); c.arc(g.x*s, g.y*s, g.rOut*s, 0, Math.PI*2); c.fill(); }
   const r = S.route;
   if (r && r.pts.length > 1){
     c.strokeStyle = '#347df6'; c.lineWidth = Math.max(2, 26*s); c.lineJoin = 'round'; c.beginPath(); c.moveTo(player.x*s, player.y*s);
@@ -2375,4 +2128,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {useMap, getMap: () => MAP, classifyOld, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, ROUTE, computeRouteOld, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, drawGroundOld, veNen, MAP, NODES, ROADS, dungBanDo, N, SEGS, DEAD, CORNERS, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, turnArmChoice, laneFrame, assistOff, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, LIGHTS, RB, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, lineType, navText, HALF, OW, setSignal, SIGNBOARDS, speedInfo, SPEED_SIGNS, SCHOOL, LAW, VMAX};
+window.__TP = {useMap, getMap: () => MAP, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, veNen, MAP, NODES, ROADS, dungBanDo, BLOCKS, cultAdd, cultRating, CULT, uTurn, turnPath, turnArmChoice, laneFrame, assistOff, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, navText, HALF, setSignal, SIGNBOARDS, SPEED_SIGNS, LAW, VMAX, trangTri, datODo, sinhBienChiDan, sinhBienTocDo, P_SIGNS, lightLimit};

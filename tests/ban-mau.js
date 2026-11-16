@@ -72,4 +72,20 @@ function trangTriCu(TP){
   for (const v of VR) t.nhanMep.push({x: v.x, y: 22}, {x: v.x, y: H - 22});
   return t;
 }
-module.exports = {chupKhuPho, bam};
+// So bản chụp hiện tại với bản mẫu: trả về danh sách khác biệt (rỗng là khớp). Danh sách vật so như tập hợp (không kể thứ tự).
+function soSanh(mau, moi){
+  const khac = [];
+  for (const k of Object.keys(mau)){
+    const a = mau[k], b = moi[k];
+    if (Array.isArray(a)){
+      const tap = ['chiDuong', 'oDo', 'diemGiao'].includes(k);   // ba danh sách này phải đúng cả thứ tự
+      const A = a.map(v => JSON.stringify(v)), B = (b || []).map(v => JSON.stringify(v));
+      if (tap){ let n = 0, vd = ''; for (let i = 0; i < Math.max(A.length, B.length); i++) if (A[i] !== B[i]){ n++; if (!vd) vd = `#${i}: mẫu ${A[i]} / nay ${B[i]}`; }
+        if (n) khac.push(`${k}: lệch ${n}/${A.length} (${vd})`); }
+      else { const sa = [...A].sort(), sb = [...B].sort(); const thieu = sa.filter(x => !sb.includes(x)), thua = sb.filter(x => !sa.includes(x));
+        if (thieu.length || thua.length) khac.push(`${k}: thiếu ${thieu.length} [${thieu.slice(0, 2).join(' ')}], thừa ${thua.length} [${thua.slice(0, 2).join(' ')}]`); }
+    } else if (JSON.stringify(a) !== JSON.stringify(b)) khac.push(`${k}: mẫu ${JSON.stringify(a)} / nay ${JSON.stringify(b)}`);
+  }
+  return khac;
+}
+module.exports = {chupKhuPho, soSanh, bam};
