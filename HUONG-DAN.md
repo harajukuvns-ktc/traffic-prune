@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.0)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.1)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,7 +50,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 1.0)
+## Cách chơi (bản 1.1)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
 - **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
@@ -79,6 +79,15 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 1.1 đổi gì so với bản 1.0
+
+Bên ngoài **gần như không đổi gì**: khu phố, biển báo, đèn, chỉ đường, xe trong phố, mức phạt đều như bản 1.0. Bên trong, Claude đã làm lại toàn bộ "bộ máy bản đồ" để chuẩn bị cho bản đồ to gấp 4 ở bản 1.2: từ nay bản đồ được khai báo bằng danh sách đường và ngã tư, rồi mọi thứ (vạch kẻ, biển, cột đèn, ô đỗ, chỉ đường, tuyến xe, bắt lỗi, trợ lái) tự sinh ra, kể cả với đường chéo, đường cong, ngã năm.
+
+**Nhờ bạn chơi thử trên iPhone:**
+1. Game có **mượt** không, nhất là kiểu nhìn dẫn đường (mặc định)? Mặt đường giờ được vẽ theo từng mảng lớn; nếu thấy giật, khựng hay nóng máy thì báo lại để Claude giảm độ nét nền.
+2. Có chỗ nào **trông khác** bản 1.0 không (biển nằm sai chỗ, vạch kẻ lạ, bản đồ nhỏ ở góc phải khác đi)?
+3. Bật xi-nhan trước ngã tư rồi chỉ giữ ga: xe có tự ôm cua vào đúng làn như trước không?
 
 ## Bản 1.0 đổi gì so với bản 0.12.4
 
