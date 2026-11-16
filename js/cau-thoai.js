@@ -99,6 +99,11 @@ const LINES = {
     'Bác tài ơi, dây an toàn đâu? Qua chốt CSGT là bị thổi còi đó nha.',
     '{X} lái ô tô mà không thắt dây à? Thắt vào đi, phanh gấp là nguy lắm.'
   ],
+  noentryhem: [
+    'Hẻm này cắm biển cấm ô tô đó {x}. Xe to chui vào là kẹt cả xóm!',
+    'Ô tô của {x} vào hẻm thì bà con lấy lối đâu mà đi? Lùi ra đi đường lớn nha.',
+    'Đầu hẻm có biển tròn gạch chéo hình ô tô kìa {x}. Hẻm nhỏ chỉ dành cho xe máy với người đi bộ thôi.'
+  ],
   noentrycar: [
     'Phố đi bộ mà {x} lùa cả ô tô vào? Biển cấm ô tô to tướng ở đầu phố kìa!',
     'Ô tô của {x} chiếm hết lối đi của mấy bác dạo chợ rồi. Lùi ra giùm cái!',

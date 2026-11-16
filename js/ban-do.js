@@ -8,7 +8,7 @@
    2. HẰNG SỐ CHUNG CỦA BẢN ĐỒ
    (Bộ máy bản đồ cũ viết tay theo 2 đường ngang, 2 đường dọc đã xoá ở bản 1.1 bước 7; mọi thứ nay tự sinh từ NODES / ROADS bên dưới.)
    ========================================================= */
-const W = 1600, H = 1200, HALF = 40;     // khu phố hiện tại: rộng 1600, cao 1200 đơn vị; nửa bề rộng một đường thường
+const W = 3200, H = 2400, HALF = 40;     // bản 1.2: bản đồ gấp 4 (rộng 3200, cao 2400 đơn vị; khu phố cũ ở góc trên trái); nửa bề rộng một đường thường
 const CYCLE = 22;                        // chu kỳ đèn tín hiệu (giây)
 const CURB = 18;                         // bán kính bo cong vỉa hè ở góc giao lộ
 // Thứ tự khi xe tiến vào ngã tư: vạch dừng, vạch người đi bộ, rồi tới cột đèn ở góc giao lộ
@@ -19,10 +19,17 @@ const SOLID_LEN = 90;                    // vạch vàng liền dài 90 đơn v�
 const EXT = 600;                         // đường kéo dài ra ngoài khu phố cho đẹp mắt
 const SIDE = 22;                         // bề rộng vỉa hè quanh khối nhà
 
+// Đèn tín hiệu: mỗi đèn chạy theo chu kỳ riêng (L.cycle, mặc định CYCLE = 22 giây, hai pha 'NS' và 'EW').
+// Ngã năm (bản 1.2) có thêm pha thứ ba 'X' cho nhánh chéo, chu kỳ 33 giây. Mỗi pha: 8 giây xanh, 2 giây vàng.
+const PHA_DEN = {NS: 0, EW: 11, X: 22};   // giây bắt đầu xanh của từng pha trong chu kỳ
 function lightOf(L, axis, t){
-  const c = ((t + L.off) % CYCLE + CYCLE) % CYCLE;
-  if (axis === 'NS'){ if (c < 8) return 'green'; if (c < 10) return 'yellow'; return 'red'; }
-  if (c >= 11 && c < 19) return 'green'; if (c >= 19 && c < 21) return 'yellow'; return 'red';
+  const cyc = L.cycle || CYCLE, c = ((t + L.off) % cyc + cyc) % cyc, g0 = PHA_DEN[axis] || 0;
+  if (c >= g0 && c < g0 + 8) return 'green'; if (c >= g0 + 8 && c < g0 + 10) return 'yellow'; return 'red';
+}
+// số giây còn lại tới khi hết đèn vàng của pha (âm hoặc lớn nếu đang đỏ; chỉ dùng khi đèn đang xanh hoặc vàng)
+function lightRemain(L, axis, t){
+  const cyc = L.cycle || CYCLE, c = ((t + L.off) % cyc + cyc) % cyc;
+  return (PHA_DEN[axis] || 0) + 10 - c;
 }
 
 /* =========================================================
@@ -33,28 +40,69 @@ function lightOf(L, axis, t){
    được so với bản mẫu tests/ban-mau-1.1.json (tests mục 21).
    ========================================================= */
 // kind: 'light' (có đèn) | 'priority' (biển ưu tiên) | 'plain' (không biển) | 'ring' (vòng xuyến) | 'end' (mép bản đồ)
+// light: {off: lệch giờ, cycle: chu kỳ (mặc định 22), phase: {mã đường: 'NS' | 'EW' | 'X'} pha riêng của nhánh (không ghi thì theo hướng nhánh)}
+// tam: true = giao lộ sẽ thành KHÔNG ĐÈN ở đợt 1.2b (biển ưu tiên / STOP / không biển); đợt 1.2a tạm có đèn vì xe NPC chưa biết nhường.
 const NODES = [
+  // --- khu phố cũ (góc trên trái) ---
   {id:'A', x:400,  y:300, kind:'light', light:{off:0}},
   {id:'B', x:800,  y:300, kind:'plain'},
   {id:'C', x:1200, y:300, kind:'light', light:{off:7}},
   {id:'D', x:400,  y:900, kind:'light', light:{off:14}},
   {id:'E', x:800,  y:900, kind:'plain'},
   {id:'F', x:1200, y:900, kind:'ring', ring:{rOut:100, rIn:48, rLane:76}},
-  {id:'W1', x:0, y:300, kind:'end'}, {id:'E1', x:1600, y:300, kind:'end'},
-  {id:'W2', x:0, y:900, kind:'end'}, {id:'E2', x:1600, y:900, kind:'end'},
-  {id:'N1', x:400, y:0, kind:'end'}, {id:'S1', x:400, y:1200, kind:'end'},
-  {id:'N2', x:1200, y:0, kind:'end'}, {id:'S2', x:1200, y:1200, kind:'end'}
+  // --- khu đại lộ (trên phải): ngã năm G (đại lộ chéo chạm ngã tư), ngã ba lệch L ---
+  {id:'G', x:2000, y:300, kind:'light', light:{off:3, cycle:33, phase:{cb:'X'}}},
+  {id:'H', x:2800, y:300, kind:'light', light:{off:9}, tam:true},
+  {id:'I', x:2000, y:900, kind:'light', light:{off:17}},
+  {id:'L', x:2500, y:900, kind:'light', light:{off:5, phase:{cb:'NS'}}},
+  {id:'M', x:2800, y:900, kind:'light', light:{off:12}, tam:true},
+  // --- khu chợ và hẻm (dưới trái) ---
+  {id:'R', x:400,  y:1500, kind:'light', light:{off:4}, tam:true},
+  {id:'T', x:800,  y:1500, kind:'plain'},
+  {id:'U', x:1200, y:1500, kind:'light', light:{off:10}},
+  {id:'Z', x:400,  y:1800, kind:'plain'},
+  {id:'ZZ', x:800, y:1800, kind:'plain'},
+  {id:'V', x:400,  y:2100, kind:'light', light:{off:16}, tam:true},
+  {id:'X', x:800,  y:2100, kind:'plain'},
+  {id:'Y', x:1200, y:2100, kind:'light', light:{off:1}, tam:true},
+  // --- khu trường học (dưới phải): vòng xuyến K ---
+  {id:'J', x:2000, y:1500, kind:'light', light:{off:19}},
+  {id:'K', x:2000, y:2100, kind:'ring', ring:{rOut:124, rIn:62, rLane:94}},
+  {id:'O', x:2800, y:1500, kind:'light', light:{off:6}, tam:true},
+  {id:'Q', x:2800, y:2100, kind:'light', light:{off:13}, tam:true},
+  // --- đầu đường ở mép bản đồ ---
+  {id:'W1', x:0, y:300, kind:'end'}, {id:'W2', x:0, y:900, kind:'end'}, {id:'W3', x:0, y:1500, kind:'end'}, {id:'W4', x:0, y:2340, kind:'end'},
+  {id:'E1', x:3200, y:300, kind:'end'}, {id:'E2', x:3200, y:900, kind:'end'}, {id:'E3', x:3200, y:1500, kind:'end'}, {id:'E4', x:3200, y:2100, kind:'end'},
+  {id:'N1', x:400, y:0, kind:'end'}, {id:'N2', x:1200, y:0, kind:'end'}, {id:'N3', x:2000, y:0, kind:'end'},
+  {id:'S2', x:1200, y:2400, kind:'end'}, {id:'S3', x:2000, y:2400, kind:'end'}, {id:'S4', x:2800, y:2400, kind:'end'}
 ];
 // cap: 'big' (đường lớn) | 'normal' (đường thường) | 'alley' (hẻm) | 'ped' (phố đi bộ)
 // half: nửa bề rộng mặt đường; lanes: số làn mỗi chiều; limit: tốc độ tối đa (km/h)
 // noCar / noBike: biển cấm ô tô / xe máy; oneway: chỉ được đi từ a sang b; via: điểm uốn nếu đường cong
 const RD = (id, a, b, name, more) => Object.assign({id, a, b, name, cap:'normal', half:HALF, lanes:1, limit:SPEED_LIMIT}, more || {});
+const HEM = {cap:'alley', half:24, limit:30, noCar:true};   // hẻm: hẹp, không vạch giữa, cấm ô tô
 const ROADS = [
-  RD('hs0','W1','A','Đường Hoa Sữa'), RD('hs1','A','B','Đường Hoa Sữa'), RD('hs2','B','C','Đường Hoa Sữa'), RD('hs3','C','E1','Đường Hoa Sữa'),
-  RD('mc0','W2','D','Đường Me Chua'), RD('mc1','D','E','Đường Me Chua'), RD('mc2','E','F','Đường Me Chua'), RD('mc3','F','E2','Đường Me Chua'),
-  RD('bm0','N1','A','Phố Bánh Mì'), RD('bm1','A','D','Phố Bánh Mì', {limit:30, child:true}), RD('bm2','D','S1','Phố Bánh Mì'),
-  RD('cv0','N2','C','Đường Cầu Vồng'), RD('cv1','C','F','Đường Cầu Vồng'), RD('cv2','F','S2','Đường Cầu Vồng'),
-  RD('pc', 'B','E','Phố Chợ', {cap:'ped', half:22, lanes:0, noCar:true, noBike:true})
+  RD('hs0','W1','A','Đường Hoa Sữa'), RD('hs1','A','B','Đường Hoa Sữa'), RD('hs2','B','C','Đường Hoa Sữa'), RD('hs3','C','G','Đường Hoa Sữa'),
+  RD('hs4','G','H','Đường Hoa Sữa'), RD('hs5','H','E1','Đường Hoa Sữa'),
+  RD('mc0','W2','D','Đường Me Chua'), RD('mc1','D','E','Đường Me Chua'), RD('mc2','E','F','Đường Me Chua'), RD('mc3','F','I','Đường Me Chua'),
+  RD('mc4','I','L','Đường Me Chua'), RD('mc5','L','M','Đường Me Chua'), RD('mc6','M','E2','Đường Me Chua'),
+  RD('bm0','N1','A','Phố Bánh Mì'), RD('bm1','A','D','Phố Bánh Mì', {limit:30, child:true}), RD('bm2','D','R','Phố Bánh Mì'),
+  RD('bm3','R','Z','Phố Bánh Mì'), RD('bm4','Z','V','Phố Bánh Mì'),
+  RD('cv0','N2','C','Đường Cầu Vồng'), RD('cv1','C','F','Đường Cầu Vồng'), RD('cv2','F','U','Đường Cầu Vồng'),
+  RD('cv3','U','Y','Đường Cầu Vồng'), RD('cv4','Y','S2','Đường Cầu Vồng'),
+  RD('pc', 'B','E','Phố Chợ', {cap:'ped', half:22, lanes:0, noCar:true, noBike:true}),
+  // khu đại lộ
+  RD('pv0','N3','G','Đường Phượng Vĩ'), RD('pv1','G','I','Đường Phượng Vĩ'), RD('pv2','I','J','Đường Phượng Vĩ'),
+  RD('cb','G','L','Đại lộ Cây Bàng'),
+  RD('bl1','H','M','Đường Bằng Lăng'), RD('bl2','M','O','Đường Bằng Lăng'), RD('bl3','O','Q','Đường Bằng Lăng'), RD('bl4','Q','S4','Đường Bằng Lăng'),
+  // khu chợ và hẻm
+  RD('hg0','W3','R','Đường Hoa Giấy'), RD('hg1','R','T','Đường Hoa Giấy'), RD('hg2','T','U','Đường Hoa Giấy'), RD('hg3','U','J','Đường Hoa Giấy'),
+  RD('hg4','J','O','Đường Hoa Giấy'), RD('hg5','O','E3','Đường Hoa Giấy'),
+  RD('sm0','V','X','Đường Sao Mai'), RD('sm1','X','Y','Đường Sao Mai'), RD('sm2','Y','K','Đường Sao Mai'), RD('sm3','K','Q','Đường Sao Mai'), RD('sm4','Q','E4','Đường Sao Mai'),
+  RD('hx1','T','ZZ','Hẻm Xôi', HEM), RD('hx2','ZZ','X','Hẻm Xôi', HEM), RD('hc','Z','ZZ','Hẻm Chè', HEM),
+  RD('bk','V','W4','Đường Bờ Kè', {via:{x:400, y:2340}}),
+  // khu trường học: đoạn Phượng Vĩ trước trường tiểu học Bình Minh giới hạn 30 km/h
+  RD('pv3','J','K','Đường Phượng Vĩ', {limit:30, child:true}), RD('pv4','K','S3','Đường Phượng Vĩ')
 ];
 
 function dungBanDo(nodeList, roadList, opt){
@@ -158,7 +206,8 @@ function dungBanDo(nodeList, roadList, opt){
   // Phân loại một điểm trên bản đồ. Đường ngang / dọc trả kiểu {t:'h', Y} / {t:'v', X} (giữ từ bộ cũ), đường góc bất kỳ {t:'road'};
   // kèm road, s, lat, dir khi điểm nằm trên đường.
   M.classify = (x, y) => {
-    for (const b of M.bays) if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return {t:'bay', bay:b};
+    for (const b of M.bays){ const dx = x - b.cx, dy = y - b.cy;   // ô đỗ là hình chữ nhật xoay theo hướng đường (bản 1.2)
+      if (Math.abs(dx*b.dir.x + dy*b.dir.y) <= b.L/2 && Math.abs(dy*b.dir.x - dx*b.dir.y) <= b.D/2) return {t:'bay', bay:b}; }
     for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind !== 'ring') continue;
       const dr = Math.hypot(x - nd.x, y - nd.y);
       if (dr <= nd.ring.rOut) return dr < nd.ring.rIn ? {t:'island', node: id} : {t:'ring', node: id}; }
@@ -189,7 +238,7 @@ function dungBanDo(nodeList, roadList, opt){
   };
   for (const r of M.roads){ r.gapA = endGap(r, 'a'); r.gapB = endGap(r, 'b'); }
   M.lineAt = (r, s) => {
-    if (!r.veh) return 'none';
+    if (!r.veh || r.cap === 'alley') return 'none';   // hẻm không kẻ vạch giữa
     let solid = false;
     for (const [d, e] of [[s, r.gapA], [r.len - s, r.gapB]]){
       if (d <= e.gap + 1e-9) return 'none';
@@ -212,8 +261,8 @@ function dungBanDo(nodeList, roadList, opt){
     if (nd.arms.some(a => a.road.veh)){ M.graph.N[id] = {x: nd.x, y: nd.y}; if (nd.kind === 'end') M.graph.DEAD[id] = 1; } }
   for (const r of M.roads) if (r.veh) M.graph.SEGS.push({a: r.a, b: r.b, name: r.name, road: r});
   M.lights = [];
-  for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind === 'light') M.lights.push({x: nd.x, y: nd.y, off: nd.light.off, node: id}); }
-  // pha đèn của một nhánh: nhánh gần trục dọc màn hình là 'NS', còn lại 'EW' (đủ cho khu cũ; bản 1.2 khai báo pha riêng từng nhánh)
+  for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind === 'light') M.lights.push({x: nd.x, y: nd.y, off: nd.light.off, cycle: nd.light.cycle || CYCLE, node: id}); }
+  // pha đèn của một nhánh: nhánh gần trục dọc màn hình là 'NS', còn lại 'EW'; nút khai báo light.phase[mã đường] thì theo khai báo (ngã năm, nhánh chéo)
   M.armPhase = out => Math.abs(out.y) > Math.abs(out.x) ? 'NS' : 'EW';
   // Vạch dừng của từng nhánh xe ở mỗi nút có đèn (bản 1.1 bước 5): cách tâm nút gap + STOPG theo hướng nhánh.
   // d: hướng xe đi tới nút (ngược với hướng nhánh); sx, sy: điểm giữa vạch dừng trên tim đường; phase: pha đèn của nhánh
@@ -221,7 +270,7 @@ function dungBanDo(nodeList, roadList, opt){
   for (const L of M.lights){ const nd = M.nodes[L.node];
     for (const a of nd.arms){ if (!a.road.veh) continue;
       const g = (a.end === 'a' ? a.road.gapA : a.road.gapB).gap + STOPG;
-      M.stopLines.push({L, node: L.node, road: a.road, half: a.half, d: {x: -a.out.x, y: -a.out.y}, sx: nd.x + a.out.x*g, sy: nd.y + a.out.y*g, phase: M.armPhase(a.out)}); } }
+      M.stopLines.push({L, node: L.node, road: a.road, half: a.half, d: {x: -a.out.x, y: -a.out.y}, sx: nd.x + a.out.x*g, sy: nd.y + a.out.y*g, phase: (nd.light.phase && nd.light.phase[a.road.id]) || M.armPhase(a.out)}); } }
   // Vòng xuyến (để bắt lỗi không nhường, đi ngược vòng; ringBusy nhận một phần tử của danh sách này)
   M.rings = [];
   for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind === 'ring') M.rings.push({node: id, x: nd.x, y: nd.y, rOut: nd.ring.rOut, rIn: nd.ring.rIn, rLane: nd.ring.rLane}); }
@@ -238,23 +287,21 @@ let MAP = dungBanDo(NODES, ROADS, {});
    Xe đỗ trong ô phải hướng theo chiều đi của làn sát lề đó (dir).
    ========================================================= */
 const BAY_L = 70, BAY_D = 16;
-// Ô đỗ trên đường nằm ngang ('S': mép nam, xe hướng đông · 'N': mép bắc, hướng tây) hoặc nằm dọc ('E': mép đông, hướng bắc · 'W': mép tây, hướng nam)
-function bayH(Y, side, x, half){ half = half || HALF; const y = side === 'S' ? Y + half - BAY_D : Y - half;
-  return {x: x - BAY_L/2, y, w: BAY_L, h: BAY_D, cx: x, cy: y + BAY_D/2, side, proj: {x, y: Y},
-          dir: side === 'S' ? {x: 1, y: 0} : {x: -1, y: 0}}; }
-function bayV(X, side, y, half){ half = half || HALF; const x = side === 'E' ? X + half - BAY_D : X - half;
-  return {x, y: y - BAY_L/2, w: BAY_D, h: BAY_L, cx: x + BAY_D/2, cy: y, side, proj: {x: X, y},
-          dir: side === 'E' ? {x: 0, y: -1} : {x: 0, y: 1}}; }
-// Đặt một ô đỗ khai báo {road, s, ben} lên bản đồ M. Ô vẫn là hình chữ nhật thẳng trục nên chỉ đặt được trên đường ngang / dọc;
-// ô đỗ trên đường chéo, đường cong để bản 1.2 (cần ô xoay theo đường).
+// Đặt một ô đỗ khai báo {road, s, ben} lên bản đồ M. Từ bản 1.2 ô là hình chữ nhật xoay theo hướng đường nên đặt được cả trên
+// đường chéo: cx, cy tâm ô; dir chiều xe đỗ (chiều đi của làn sát lề đó); n hướng ra vỉa hè; L dài, D rộng; proj điểm trên tim đường.
+// Ô trên đường ngang / dọc có thêm x, y, w, h (khung thẳng trục) và side ('S' mép nam, 'N' bắc, 'E' đông, 'W' tây) như trước.
+// Đường cong chưa đặt được ô.
 function datODo(M, o){
   const r = M.road(o.road); if (!r) throw new Error('Ô đỗ: không có đường ' + o.road);
+  if (r.via) throw new Error('Ô đỗ trên đường cong chưa làm: ' + o.road);
   const p = M.pointAt(r, o.s), d = p.dir, k = o.ben === 'trai' ? -1 : 1, n = {x: -d.y*k, y: d.x*k};   // n: hướng ra lề có ô
-  let b;
-  if (Math.abs(d.y) < 1e-9) b = bayH(p.y, n.y > 0 ? 'S' : 'N', p.x, r.half);
-  else if (Math.abs(d.x) < 1e-9) b = bayV(p.x, n.x > 0 ? 'E' : 'W', p.y, r.half);
-  else throw new Error('Ô đỗ trên đường chéo / cong chưa làm (bản 1.2): ' + o.road);
-  return Object.assign(b, {road: o.road, s: o.s, ben: o.ben});
+  const e = r.half - BAY_D/2, b = {cx: p.x + n.x*e, cy: p.y + n.y*e, dir: {x: d.x*k, y: d.y*k}, n, L: BAY_L, D: BAY_D, proj: {x: p.x, y: p.y},
+    road: o.road, s: o.s, ben: o.ben};
+  if (Math.abs(d.y) < 1e-9){ Object.assign(b, {x: b.cx - BAY_L/2, y: b.cy - BAY_D/2, w: BAY_L, h: BAY_D, side: n.y > 0 ? 'S' : 'N'}); }
+  else if (Math.abs(d.x) < 1e-9){ Object.assign(b, {x: b.cx - BAY_D/2, y: b.cy - BAY_L/2, w: BAY_D, h: BAY_L, side: n.x > 0 ? 'E' : 'W'}); }
+  for (const kk of ['cx', 'cy']) b[kk] = Math.round(b[kk] * 1e6) / 1e6;
+  b.dir = {x: Math.round(b.dir.x * 1e9) / 1e9 + 0, y: Math.round(b.dir.y * 1e9) / 1e9 + 0};
+  return b;
 }
 const DESTS = [
   {name:'Tiệm bánh mì Cô Ba', icon:'🥖', road:'hs1', s:200, ben:'phai'},
@@ -265,20 +312,39 @@ const DESTS = [
   {name:'Tiệm hoa Bà Tư', icon:'🌸', road:'cv1', s:300, ben:'trai'},
   {name:'Cà phê Hẻm Nhỏ', icon:'☕', road:'mc2', s:150, ben:'trai'},
   {name:'Tiệm sửa xe Út Lành', icon:'🔧', road:'bm2', s:180, ben:'phai'},
-  {name:'Tiệm thuốc Cô Hạnh', icon:'💊', road:'mc3', s:260, ben:'phai'}
+  {name:'Tiệm thuốc Cô Hạnh', icon:'💊', road:'mc3', s:260, ben:'phai'},
+  // khu đại lộ (bản 1.2)
+  {name:'Siêu thị Cây Bàng', icon:'🏬', road:'cb', s:390, ben:'phai'},
+  {name:'Nhà sách Phượng Vĩ', icon:'📚', road:'pv1', s:300, ben:'trai'},
+  {name:'Quán phở Bằng Lăng', icon:'🍜', road:'bl1', s:300, ben:'phai'},
+  {name:'Trạm xăng Hoa Sữa', icon:'⛽', road:'hs4', s:400, ben:'phai'},
+  // khu chợ và hẻm (hẻm cấm ô tô nên không đặt điểm giao trong hẻm)
+  {name:'Tạp hóa Dì Sáu', icon:'🧺', road:'hg1', s:200, ben:'phai'},
+  {name:'Vựa trái cây Chú Bảy', icon:'🍉', road:'hg0', s:200, ben:'trai'},
+  {name:'Lò bánh Sao Mai', icon:'🥐', road:'sm1', s:200, ben:'trai'},
+  {name:'Tiệm may Cô Lụa', icon:'🧵', road:'cv3', s:300, ben:'phai'},
+  // khu trường học
+  {name:'Trường tiểu học Bình Minh', icon:'🎒', road:'pv3', s:200, ben:'phai'},
+  {name:'Phòng khám Bằng Lăng', icon:'🏥', road:'bl3', s:300, ben:'trai'},
+  {name:'Công viên Sao Mai', icon:'🌳', road:'sm3', s:430, ben:'phai'},
+  {name:'Tiệm kem Hoa Giấy', icon:'🍦', road:'hg4', s:400, ben:'trai'}
 ];
 // Ô đỗ không gắn điểm giao (chỗ tấp vào nghe điện thoại, nghỉ)
-const O_DO_THEM = [{road:'hs2', s:200, ben:'trai'}, {road:'cv0', s:120, ben:'phai'}];
+const O_DO_THEM = [{road:'hs2', s:200, ben:'trai'}, {road:'cv0', s:120, ben:'phai'}, {road:'mc4', s:250, ben:'phai'}, {road:'pv2', s:300, ben:'trai'}, {road:'hg3', s:400, ben:'phai'}];
 for (const d of DESTS) d.bay = datODo(MAP, d);
 const BAYS = DESTS.map(d => d.bay).concat(O_DO_THEM.map(o => datODo(MAP, o)));
 MAP.bays = BAYS;
 for (const d of DESTS){   // chỗ ghi tên điểm giao: ngay ngoài ô đỗ, phía vỉa hè
-  const b = d.bay;
-  d.lx = b.side === 'E' ? b.x + b.w + 16 : b.side === 'W' ? b.x - 16 : b.cx;
-  d.ly = b.side === 'S' ? b.y + b.h + 14 : b.side === 'N' ? b.y - 14 : b.cy;
+  const b = d.bay, k = b.side === 'E' || b.side === 'W' ? 16 : 14;
+  d.lx = b.cx + b.n.x*(b.D/2 + k); d.ly = b.cy + b.n.y*(b.D/2 + k);
 }
-// vị trí cột biển P của các ô đỗ (để biển chỉ dẫn, biển tốc độ không chồng lên)
-const P_SIGNS = BAYS.map(b => ({x: b.w > b.h ? b.x + 6 : (b.side === 'E' ? b.x + b.w + 3 : b.x - 3), y: b.w > b.h ? (b.side === 'S' ? b.y + b.h + 3 : b.y - 3) : b.y + 6}));
+// vị trí cột biển P của một ô đỗ: sát mép vỉa hè, ở đầu ô (ô thẳng trục giữ đúng chỗ cũ: đầu bên trái / bên trên)
+function bienPCua(b){
+  if (b.side) return {x: b.w > b.h ? b.x + 6 : (b.side === 'E' ? b.x + b.w + 3 : b.x - 3), y: b.w > b.h ? (b.side === 'S' ? b.y + b.h + 3 : b.y - 3) : b.y + 6};
+  return {x: b.cx + b.n.x*(b.D/2 + 3) - b.dir.x*(b.L/2 - 6), y: b.cy + b.n.y*(b.D/2 + 3) - b.dir.y*(b.L/2 - 6)};
+}
+// (để biển chỉ dẫn, biển tốc độ không chồng lên)
+const P_SIGNS = BAYS.map(bienPCua);
 
 /* =========================================================
    2d. BIỂN BÁO TỰ SINH TỪ BẢN ĐỒ (bản 1.1 bước 7)
@@ -287,7 +353,7 @@ const otherNode = (M, r, id) => M.nodes[r.a === id ? r.b : r.a];
 // Biển chỉ dẫn hướng đi (nền xanh, chữ trắng; dạng chung, không gán số hiệu) trước mỗi nút có từ 3 nhánh (kể cả phố đi bộ),
 // trừ vòng xuyến. Đặt bên phải theo chiều đi, cách mép nút SIGN_BACK (thử lần lượt, chọn chỗ đầu tiên không sát cột biển P
 // hay biển chỉ dẫn khác); mỗi biển ghi tên đường ở các hướng trái / thẳng / phải. Không đặt trên nhánh đi vào từ mép bản đồ hay từ phố đi bộ.
-const SIGN_BACK = [110, 135, 85, 160];   // cách mép nút giao (khu cũ: cách tâm 150, 175, 125, 200)
+const SIGN_BACK = [110, 135, 85, 160, 190, 220];   // cách mép nút giao (khu cũ: cách tâm 150, 175, 125, 200)
 function sinhBienChiDan(M, tranh){
   const list = [];
   for (const id in M.nodes){
@@ -304,13 +370,13 @@ function sinhBienChiDan(M, tranh){
       }
       rows.sort((p, q) => ['trai','thang','phai'].indexOf(p.k) - ['trai','thang','phai'].indexOf(q.k));
       const gap = Math.max((from.end === 'a' ? from.r.gapA : from.r.gapB).gap, from.r.half), side = from.r.half + 8;
-      let pos = null;
+      let pos = null, ok = false;
       for (const back of SIGN_BACK){
         const q = {x: nd.x - hx*(gap + back) - hy*side, y: nd.y - hy*(gap + back) + hx*side};
         if (!pos) pos = q;
-        if (!tranh.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 52) && !list.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 60)){ pos = q; break; }
+        if (M.classify(q.x, q.y).t === 'off' && !tranh.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 52) && !list.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 60)){ pos = q; ok = true; break; }
       }
-      list.push({x: pos.x, y: pos.y, rows, node: id});
+      if (ok || M.classify(pos.x, pos.y).t === 'off') list.push({x: pos.x, y: pos.y, rows, node: id});   // không có chỗ nào trên vỉa hè (góc quá hẹp) thì thôi
     }
   }
   return list;
@@ -320,22 +386,22 @@ const SIGNBOARDS = sinhBienChiDan(MAP, P_SIGNS);
 // khu cũ: khối Phố Bánh Mì có trường mầm non Sơn Ca) đặt biển W.225 "Trẻ em" rồi biển tốc độ của đường.
 function sinhBienTocDo(M, tranhP, tranhChiDan){
   const list = [];
-  const free = (q, r) => !tranhP.some(o => Math.hypot(o.x - q.x, o.y - q.y) < r) && !tranhChiDan.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 60) && !list.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 40);
+  const free = (q, r) => M.classify(q.x, q.y).t === 'off' && !tranhP.some(o => Math.hypot(o.x - q.x, o.y - q.y) < r) && !tranhChiDan.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 60) && !list.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 40);
   const put = (kind, v, nd, d, base, side, backs) => {   // d: chiều xe đi; base: mép nút
-    const rx = -d.y, ry = d.x; let pos = null;
+    const rx = -d.y, ry = d.x; let pos = null, ok = false;
     for (const b of backs){
       const q = {x: nd.x + d.x*(base + b) + rx*side, y: nd.y + d.y*(base + b) + ry*side};
       if (!pos) pos = q;
-      if (free(q, 48)){ pos = q; break; }
+      if (free(q, 48)){ pos = q; ok = true; break; }
     }
-    list.push({kind, v, x: pos.x, y: pos.y});
+    if (ok || M.classify(pos.x, pos.y).t === 'off') list.push({kind, v, x: pos.x, y: pos.y});   // đường cong, góc hẹp: không có chỗ trên vỉa hè thì thôi
   };
   for (const r of M.roads){ if (!r.veh) continue;
     for (const end of ['a', 'b']){
       const nd = M.nodes[r[end]]; if (nd.kind === 'end' || nd.kind === 'ring') continue;
       const d = end === 'a' ? r.dirA : r.dirB, base = Math.max((end === 'a' ? r.gapA : r.gapB).gap, r.half), side = r.half + 8;
       if (r.child){ put('child', 0, nd, d, base, side, [45, 70, 20]); put('limit', r.limit, nd, d, base, side, [100, 125, 150, 80]); }
-      else put('limit', r.limit, nd, d, base, side, [70, 95, 120, 150]);
+      else put('limit', r.limit, nd, d, base, side, [70, 95, 120, 150, 180, 210]);
     } }
   return list;
 }
@@ -346,10 +412,11 @@ const SPEED_SIGNS = sinhBienTocDo(MAP, P_SIGNS, SIGNBOARDS);
 // tự tính từ MAP (hàm datTheoDuong). cabin: chòi cách tim đường bao nhiêu đơn vị, về phía bên phải theo chiều a→b.
 const CSGT = [
   {id: 'hoasua',  road: 'hs2', s: 190, cabin: 52, name: 'Đường Hoa Sữa'},
-  {id: 'cauvong', road: 'cv1', s: 400, cabin: 50, name: 'Đường Cầu Vồng'}
+  {id: 'cauvong', road: 'cv1', s: 400, cabin: 50, name: 'Đường Cầu Vồng'},
+  {id: 'banglang', road: 'bl2', s: 300, cabin: 52, name: 'Đường Bằng Lăng'}   // bản 1.2
 ];
 // Vạch qua đường cho người đi bộ ở hai đầu Phố Chợ (bản 1.0b), khai báo theo đường và quãng s như CSGT
-const CROSSWALKS = [{road: 'hs1', s: 400}, {road: 'mc1', s: 400}];
+const CROSSWALKS = [{road: 'hs1', s: 400}, {road: 'mc1', s: 400}, {road: 'pv3', s: 300}];   // thêm vạch trước trường tiểu học (bản 1.2)
 // Đặt các vật khai báo theo {road, s} (chốt CSGT, vạch qua đường) lên bản đồ M: tính toạ độ, hướng đường d (a→b),
 // pháp tuyến n (bên phải theo chiều a→b) và nửa bề rộng đường. Đường không có trên M thì đánh dấu off.
 function datTheoDuong(M, list){
@@ -367,18 +434,30 @@ for (const p of CSGT) p.cabinPt = {x: p.x + p.n.x*p.cabin, y: p.y + p.n.y*p.cabi
 const NHAN_DUONG = [
   {road:'hs1', s:290, lech:-54}, {road:'hs3', s:190, lech:-54}, {road:'mc1', s:220, lech:54}, {road:'mc3', s:220, lech:-54},
   {road:'bm1', s:340, lech:54}, {road:'bm0', s:140, lech:-54}, {road:'cv1', s:260, lech:54}, {road:'cv2', s:200, lech:-54},
-  {road:'pc', s:180, lech:38}
+  {road:'pc', s:180, lech:38},
+  // bản 1.2
+  {road:'hs4', s:560, lech:-54}, {road:'mc4', s:150, lech:54}, {road:'mc6', s:200, lech:-54}, {road:'pv1', s:150, lech:-54}, {road:'pv2', s:150, lech:54},
+  {road:'cb', s:230, lech:-56}, {road:'bl1', s:160, lech:54}, {road:'bl3', s:160, lech:54}, {road:'hg0', s:120, lech:-54}, {road:'hg2', s:200, lech:-54},
+  {road:'hg3', s:250, lech:-54}, {road:'hg4', s:200, lech:54}, {road:'sm1', s:120, lech:54}, {road:'sm2', s:300, lech:-54}, {road:'sm3', s:260, lech:-54},
+  {road:'bm3', s:150, lech:54}, {road:'cv3', s:160, lech:-54}, {road:'pv3', s:150, lech:-54}, {road:'hx1', s:150, lech:-40}, {road:'hc', s:200, lech:-40}, {road:'bk', s:250, lech:-56}
 ];
 // Các vật trang trí đứng trên bản đồ, tự sinh từ M (vẽ ở drawUprights trong game.js, bản đồ nhỏ ở drawMini)
 function sinhTrangTri(M, bays){
   const t = {bienP: [], cotDen: [], bienVong: [], bienDiBo: [], nhanDiBo: [], nhanDuong: [], nhanMep: []};
   const phai = d => ({x: -d.y, y: d.x});
   // biển P ở mỗi ô đỗ
-  for (const b of bays) t.bienP.push({x: b.w > b.h ? b.x + 6 : (b.side === 'E' ? b.x + b.w + 3 : b.x - 3), y: b.w > b.h ? (b.side === 'S' ? b.y + b.h + 3 : b.y - 3) : b.y + 6});
+  for (const b of bays) t.bienP.push(bienPCua(b));
   // cột đèn: mỗi nhánh đi vào nút có đèn một cột, ở góc bên tay phải người lái, ngay sau mép nút (có camera phạt nguội trên đỉnh)
   for (const sl of M.stopLines){
     const nd = M.nodes[sl.node], g = (sl.road.a === sl.node ? sl.road.gapA : sl.road.gapB).gap, rt = phai(sl.d);
-    t.cotDen.push({x: nd.x - sl.d.x*(g + 10) + rt.x*(sl.half + 10), y: nd.y - sl.d.y*(g + 10) + rt.y*(sl.half + 10), L: sl.L, phase: sl.phase});
+    // góc vỉa hè bên tay phải người lái (giữa nhánh này và nhánh kề): cột đứng sau đỉnh góc 10 đơn vị mỗi chiều theo đường phân giác.
+    // Ngã tư vuông cho đúng chỗ cũ; góc nhọn ở ngã năm, ngã ba lệch thì cột vẫn nằm trên vỉa hè. Không có góc (nhánh kề thẳng hàng): công thức cũ.
+    const cn = M.corners.find(c => c.node === sl.node && c.v.x === -sl.d.x && c.v.y === -sl.d.y);
+    if (cn){ const bl = Math.hypot(cn.u.x + cn.v.x, cn.u.y + cn.v.y) || 1;
+      // khoảng từ đỉnh góc tới mép cung vỉa hè bo cong, cộng thêm cho vào hẳn trong vỉa hè (góc vuông: đúng 10·√2 như cũ)
+      const k = (Math.hypot(cn.cx - cn.ex, cn.cy - cn.ey) - M.curb + (10 * Math.SQRT2 - (M.curb * Math.SQRT2 - M.curb))) / bl;
+      t.cotDen.push({x: cn.ex + (cn.u.x + cn.v.x)*k, y: cn.ey + (cn.u.y + cn.v.y)*k, L: sl.L, phase: sl.phase}); }
+    else t.cotDen.push({x: nd.x - sl.d.x*(g + 10) + rt.x*(sl.half + 10), y: nd.y - sl.d.y*(g + 10) + rt.y*(sl.half + 10), L: sl.L, phase: sl.phase});
   }
   // biển vòng xuyến trước mỗi cửa vào, bên phải người lái
   for (const g of M.rings) for (const a of M.nodes[g.node].arms){ if (!a.road.veh) continue;
@@ -404,7 +483,8 @@ function sinhTrangTri(M, bays){
 const trangTri = sinhTrangTri(MAP, BAYS);
 
 /* =========================================================
-   2e. NHÀ CỬA (khối nhà chữ nhật của khu hiện tại; bản 1.2 tự sinh khối nhà nhiều cạnh giữa các đường)
+   2e. NHÀ CỬA TỰ SINH (bản 1.2): chia bản đồ thành các ô theo những đường thẳng ngang / dọc, mỗi ô xếp một lưới nhà cách mép đường
+   một vỉa hè SIDE; nhà nào chạm đường chéo, đường cong, hẻm hay vòng xuyến thì bỏ. Nhà vẫn là hình chữ nhật thẳng trục.
    ========================================================= */
 let seed = 7;
 function rnd(){ seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
@@ -416,34 +496,63 @@ function darken(hex, f){
   const n = parseInt(hex.slice(1), 16), r = Math.round(((n >> 16) & 255) * f), g = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f);
   return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
-const BLOCKS = [];
-{
-  const bx = [[0,360],[440,1160],[1240,1600]], by = [[0,260],[340,860],[940,1200]];
-  for (const [x1,x2] of bx) for (const [y1,y2] of by){
-    if (x1 === 440 && y1 === 340){ BLOCKS.push({x1:440,x2:778,y1,y2}); BLOCKS.push({x1:822,x2:1160,y1,y2}); }
-    else BLOCKS.push({x1,x2,y1,y2});
-  }
-}
-const HOUSES = [];
 const HOUSE_COLORS = ['#f6c89f','#f4a6a6','#a8d5e2','#cdb4db','#ffd6a5','#b9e4c9','#fbe7a1','#c9d6ff','#f2b5d4'];
-for (const b of BLOCKS){
-  const ax = b.x1 + SIDE, ay = b.y1 + SIDE, aw = b.x2 - b.x1 - 2*SIDE, ah = b.y2 - b.y1 - 2*SIDE;
-  if (aw < 30 || ah < 30) continue;
-  const nx = Math.max(1, Math.round(aw / 120)), ny = Math.max(1, Math.round(ah / 110));
-  const market = (b.x1 === 822 && b.y1 === 340);
-  for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++){
-    const r = {x: ax + i*aw/nx + 5, y: ay + j*ah/ny + 5, w: aw/nx - 10, h: ah/ny - 10};
-    if (MAP.rings.some(g => rectCircleDist(r, g.x, g.y) < g.rOut + 18)) continue;   // chừa chỗ cho vòng xuyến
-    const stall = market && r.x < 1010 && r.y > 380 && r.y < 760;
-    const color = HOUSE_COLORS[Math.floor(rnd()*HOUSE_COLORS.length)];
-    HOUSES.push({...r, stall, color, dark: darken(color, 0.72), awn: Math.floor(rnd()*4)});
+function sinhNha(M){
+  const out = [], ngang = M.roads.filter(r => !r.via && Math.abs(r.dirA.y) < 1e-9), doc = M.roads.filter(r => !r.via && Math.abs(r.dirA.x) < 1e-9);
+  const uniq = a => [...new Set(a)].sort((p, q) => p - q);
+  const xs = uniq([0, M.W, ...doc.map(r => M.nodes[r.a].x)]).filter(v => v >= 0 && v <= M.W);
+  const ys = uniq([0, M.H, ...ngang.map(r => M.nodes[r.a].y)]).filter(v => v >= 0 && v <= M.H);
+  // khoảng lùi ở một cạnh ô: có đường chạy dọc cạnh đó thì lùi nửa bề rộng đường + vỉa hè; mép bản đồ lùi một vỉa hè; không thì 0
+  const lui = (list, truc, v, lo, hi, bien) => {
+    const mid = (lo + hi) / 2;
+    for (const r of list){ const A = M.nodes[r.a], B = M.nodes[r.b];
+      if (truc === 'x' ? (A.x === v && mid > Math.min(A.y, B.y) && mid < Math.max(A.y, B.y)) : (A.y === v && mid > Math.min(A.x, B.x) && mid < Math.max(A.x, B.x))) return r.half + SIDE; }
+    return bien ? SIDE : 0;
+  };
+  const bam = (x, y, k) => { const v = Math.sin(x*12.9898 + y*78.233 + k*37.719) * 43758.5453; return v - Math.floor(v); };
+  // nhà cách tim mọi đường ít nhất nửa bề rộng + vỉa hè (lấy mẫu dọc đường mỗi 8 đơn vị)
+  const mau = [];
+  for (const r of M.roads) for (let q = 0; q <= r.len; q += 8){ const p = M.pointAt(r, q); mau.push({x: p.x, y: p.y, d: r.half + SIDE - 1}); }
+  const cham = h => M.rings.some(g => rectCircleDist(h, g.x, g.y) < g.rOut + 18) ||
+    mau.some(p => p.x > h.x - p.d && p.x < h.x + h.w + p.d && p.y > h.y - p.d && p.y < h.y + h.h + p.d && rectCircleDist(h, p.x, p.y) < p.d);
+  for (let i = 0; i + 1 < xs.length; i++) for (let j = 0; j + 1 < ys.length; j++){
+    const x1 = xs[i], x2 = xs[i+1], y1 = ys[j], y2 = ys[j+1];
+    const ax = x1 + lui(doc, 'x', x1, y1, y2, x1 === 0), bx = x2 - lui(doc, 'x', x2, y1, y2, x2 === M.W);
+    const ay = y1 + lui(ngang, 'y', y1, x1, x2, y1 === 0), by = y2 - lui(ngang, 'y', y2, x1, x2, y2 === M.H);
+    const aw = bx - ax, ah = by - ay;
+    if (aw < 30 || ah < 30) continue;
+    const nx = Math.max(1, Math.round(aw / 120)), ny = Math.max(1, Math.round(ah / 110));
+    for (let a = 0; a < nx; a++) for (let b = 0; b < ny; b++){
+      const h = {x: ax + a*aw/nx + 5, y: ay + b*ah/ny + 5, w: aw/nx - 10, h: ah/ny - 10};
+      if (cham(h)){   // chạm đường chéo / cong / hẻm: thử chia làm bốn nhà nhỏ, giữ những nhà không chạm (cho đỡ trống dọc đường chéo)
+        for (let u = 0; u < 2; u++) for (let v = 0; v < 2; v++){
+          const q = {x: h.x + u*(h.w/2 + 2), y: h.y + v*(h.h/2 + 2), w: h.w/2 - 2, h: h.h/2 - 2};
+          if (q.w < 24 || q.h < 24 || cham(q)) continue;
+          const col = HOUSE_COLORS[Math.floor(bam(q.x, q.y, 1) * HOUSE_COLORS.length)];
+          out.push(Object.assign(q, {stall: false, color: col, dark: darken(col, 0.72), awn: Math.floor(bam(q.x, q.y, 2) * 4)}));
+        }
+        continue;
+      }
+      const stall = h.x > 822 && h.x < 1010 && h.x + h.w < 1160 && h.y > 380 && h.y < 760;   // sạp chợ Hoa Sữa
+      const color = HOUSE_COLORS[Math.floor(bam(h.x, h.y, 1) * HOUSE_COLORS.length)];
+      out.push(Object.assign(h, {stall, color, dark: darken(color, 0.72), awn: Math.floor(bam(h.x, h.y, 2) * 4)}));
+    }
   }
+  return out;
 }
+const HOUSES = sinhNha(MAP);
+MAP.houses = HOUSES;
+// va chạm với nhà của bản đồ đang dùng (bản đồ thử của các bài test không có nhà)
 function hitsHouse(x, y, rad){
-  for (const h of HOUSES)
+  for (const h of MAP.houses || [])
     if (x > h.x - rad && x < h.x + h.w + rad && y > h.y - rad && y < h.y + h.h + rad) return true;
   return false;
 }
+// Các khối phố có người đi bộ dạo vòng quanh trên vỉa hè (khung chữ nhật giữa các đường)
+const KHOI_DI_BO = [
+  {x1:0, x2:360, y1:340, y2:860}, {x1:440, x2:1160, y1:0, y2:260}, {x1:440, x2:778, y1:340, y2:860}, {x1:0, x2:360, y1:0, y2:260}, {x1:1240, x2:1960, y1:0, y2:260},
+  {x1:1240, x2:1960, y1:340, y2:860}, {x1:2040, x2:2760, y1:940, y2:1460}, {x1:1240, x2:1960, y1:1540, y2:2060}, {x1:2040, x2:2760, y1:1540, y2:1960}, {x1:440, x2:776, y1:1540, y2:1776}
+];
 
 /* =========================================================
    3. HÀM DÙNG CHUNG CHO TUYẾN ĐI (xe NPC, người đi bộ): tuyến là chuỗi điểm {pts, loop}

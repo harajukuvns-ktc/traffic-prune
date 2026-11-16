@@ -1,4 +1,4 @@
-// Chụp "bản mẫu" của khu phố đang chơi (bản 1.1 bước 7). Dùng chung cho tao-ban-mau.js (ghi file)
+// Chụp "bản mẫu" của bản đồ đang chơi (bản 1.1 bước 7; bản 1.2 phủ cả bản đồ gấp 4). Dùng chung cho tao-ban-mau.js (ghi file)
 // và kiem-tra-logic.js mục 21 (so với file đã ghi). Mọi số làm tròn 0,01 đơn vị.
 const r2 = v => Math.round(v * 100) / 100;
 // băm FNV-1a 32 bit: đủ để phát hiện một điểm nào đó đổi kết quả
@@ -8,14 +8,16 @@ function bam(list){
   return h.toString(16);
 }
 // các điểm xuất phát khi chụp chỉ đường: ô đỗ của mọi điểm giao và vài chỗ giữa đường, trong vòng xuyến, mép bản đồ
-const DIEM_DI = [[600,320],[700,280],[1220,600],[1180,740],[420,600],[380,700],[1000,880],[1300,920],[200,320],[1200,300],[400,900],[1200,860],[800,320],[50,880],[1580,320],[400,50],[1220,1150]];
+const DIEM_DI = [[600,320],[700,280],[1220,600],[1180,740],[420,600],[380,700],[1000,880],[1300,920],[200,320],[1200,300],[400,900],[1200,860],[800,320],[50,880],[1580,320],[400,50],[1220,1150],
+  // bản 1.2: khu đại lộ (kể cả trên đại lộ chéo, trong ngã năm), khu chợ và hẻm (trong hẻm), khu trường học (trong vòng xuyến thứ hai), mép bản đồ
+  [2000,300],[2250,620],[2600,880],[2820,600],[3150,320],[2020,1200],[820,1650],[600,1790],[380,1960],[150,2330],[1220,1800],[2000,2010],[2400,2120],[2780,1800],[3100,1520]];
 
 function chupKhuPho(TP){
   const {MAP, BAYS, DESTS, S, player, setVehicle, computeRoute} = TP;
   const out = {};
-  // 1) phân loại vị trí và đoạn tốc độ trên lưới 2 đơn vị phủ cả khu phố
+  // 1) phân loại vị trí và đoạn tốc độ trên lưới 3 đơn vị phủ cả bản đồ (bản 1.2: 3200 × 2400)
   const keys = []; let n = 0;
-  for (let x = -20; x <= 1620; x += 2) for (let y = -20; y <= 1220; y += 2){
+  for (let x = -21; x <= MAP.W + 21; x += 3) for (let y = -21; y <= MAP.H + 21; y += 3){
     const c = MAP.classify(x, y), si = MAP.speedInfo(c); n++;
     keys.push([c.t, c.X, c.Y, c.bay ? BAYS.indexOf(c.bay) : '', c.road ? c.road.id : '', c.node || '', si ? si.id + '/' + si.limit + '/' + si.child : ''].join(':'));
   }
@@ -36,11 +38,12 @@ function chupKhuPho(TP){
     } }
   setVehicle(saved.veh); Object.assign(player, {x: saved.x, y: saved.y, a: saved.a}); S.trip = saved.trip; S.route = saved.route;
   // 4) vật đặt trên bản đồ
-  out.oDo = BAYS.map(b => [b.x, b.y, b.w, b.h, b.side, b.cx, b.cy, b.dir.x, b.dir.y, b.proj.x, b.proj.y].map(v => typeof v === 'number' ? r2(v) : v));
+  out.oDo = BAYS.map(b => [b.road, b.s, b.ben, b.side || '', b.cx, b.cy, b.dir.x, b.dir.y, b.n.x, b.n.y, b.proj.x, b.proj.y].map(v => typeof v === 'number' ? r2(v) : v));
+  out.nha = {n: TP.HOUSES.length, bam: bam(TP.HOUSES.map(h => [r2(h.x), r2(h.y), r2(h.w), r2(h.h), h.stall ? 1 : 0].join(':')))};
   out.diemGiao = DESTS.map(d => [d.name, d.icon, r2(d.lx), r2(d.ly)]);
   out.bienChiDan = TP.SIGNBOARDS.map(b => [r2(b.x), r2(b.y), b.node, b.rows.map(q => q.k + ':' + q.name + (q.ped ? ':di-bo' : '')).join(',')]);
   out.bienTocDo = TP.SPEED_SIGNS.map(b => [b.kind, b.v, r2(b.x), r2(b.y)]);
-  const t = TP.trangTri ? TP.trangTri : trangTriCu(TP);
+  const t = TP.trangTri;
   out.bienP = t.bienP.map(p => [r2(p.x), r2(p.y)]);
   out.cotDen = t.cotDen.map(p => [r2(p.x), r2(p.y), p.L.x, p.L.y, p.phase]);
   out.bienVongXuyen = t.bienVong.map(p => [r2(p.x), r2(p.y)]);
@@ -49,28 +52,6 @@ function chupKhuPho(TP){
   out.nhanDuong = t.nhanDuong.map(p => [p.t, r2(p.x), r2(p.y)]);
   out.nhanMep = t.nhanMep.map(p => [r2(p.x), r2(p.y)]);
   return out;
-}
-// Vị trí các vật trang trí theo đúng công thức viết tay của bộ cũ (chỉ dùng để tạo bản mẫu lần đầu, trước khi xoá HR / VR / OW / RB)
-function trangTriCu(TP){
-  const {LIGHTS, OW, RB, HALF, BAYS} = TP, W = 1600, H = 1200, t = {};
-  const HR = [{y:300, name:'Đường Hoa Sữa'}, {y:900, name:'Đường Me Chua'}], VR = [{x:400, name:'Phố Bánh Mì'}, {x:1200, name:'Đường Cầu Vồng'}];   // chép từ js/ban-do.js bản 1.1 bước 6
-  t.bienP = BAYS.map(b => ({x: b.w > b.h ? b.x + 6 : (b.side === 'E' ? b.x + b.w + 3 : b.x - 3), y: b.w > b.h ? (b.side === 'S' ? b.y + b.h + 3 : b.y - 3) : b.y + 6}));
-  t.cotDen = [];
-  for (const L of LIGHTS) t.cotDen.push(
-    {x: L.x - HALF - 10, y: L.y + HALF + 10, L, phase:'EW'}, {x: L.x + HALF + 10, y: L.y - HALF - 10, L, phase:'EW'},
-    {x: L.x + HALF + 10, y: L.y + HALF + 10, L, phase:'NS'}, {x: L.x - HALF - 10, y: L.y - HALF - 10, L, phase:'NS'});
-  t.bienVong = [[1150, RB.y - 128], [1250, RB.y + 128], [RB.x - 128, 950], [RB.x + 128, 850]].map(([x, y]) => ({x, y}));
-  t.bienDiBo = []; t.nhanDiBo = [];
-  for (const y of [OW.y1 + HALF + 10, OW.y2 - HALF - 10]){
-    t.bienDiBo.push({x: OW.x - 33, y, icon: 'xe-may'}, {x: OW.x + 33, y, icon: 'o-to'});
-    t.nhanDiBo.push({x: OW.x, y: y + (y < 600 ? 22 : -22)});
-  }
-  t.nhanDuong = [[HR[0].name, 690, 246], [HR[0].name, 1390, 246], [HR[1].name, 620, 954], [HR[1].name, 1420, 846],
-    [VR[0].name, 346, 640], [VR[0].name, 454, 140], [VR[1].name, 1146, 560], [VR[1].name, 1254, 1100], [OW.name + ' (đi bộ)', 762, 480]].map(([t, x, y]) => ({t, x, y}));
-  t.nhanMep = [];
-  for (const h of HR) t.nhanMep.push({x: 34, y: h.y}, {x: W - 34, y: h.y});
-  for (const v of VR) t.nhanMep.push({x: v.x, y: 22}, {x: v.x, y: H - 22});
-  return t;
 }
 // So bản chụp hiện tại với bản mẫu: trả về danh sách khác biệt (rỗng là khớp). Danh sách vật so như tập hợp (không kể thứ tự).
 function soSanh(mau, moi){

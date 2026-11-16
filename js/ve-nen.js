@@ -19,18 +19,39 @@ function veNen(g, M, o){
   };
   const polyline = pts => { g.beginPath(); g.moveTo(pts[0].x, pts[0].y); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y); };
   const gapOf = (arm) => arm.end === 'a' ? arm.road.gapA.gap : arm.road.gapB.gap;
-  const nodes = Object.keys(M.nodes).map(id => M.nodes[id]);
+  // (bản 1.2) o.box = {x0, y0, x1, y1}: chỉ vẽ những đường, nút, ô đỗ chạm vùng này (mỗi mảnh nền chỉ vẽ phần của mình, bản đồ gấp 4 vẫn nhẹ)
+  const bx = o.box, cham = (x0, y0, x1, y1) => !bx || !(x1 < bx.x0 || x0 > bx.x1 || y1 < bx.y0 || y0 > bx.y1);
+  const ganDiem = (x, y, r) => cham(x - r, y - r, x + r, y + r);
+  const allNodes = Object.keys(M.nodes).map(id => M.nodes[id]);
+  const nodes = allNodes.filter(nd => ganDiem(nd.x, nd.y, (nd.kind === 'ring' ? nd.ring.rOut : 110) + 60));
+  const roads = M.roads.filter(r => {
+    if (!r.hop){ let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const p of r.pts){ x0 = Math.min(x0, p.x); y0 = Math.min(y0, p.y); x1 = Math.max(x1, p.x); y1 = Math.max(y1, p.y); }
+      const m = r.half + (o.SIDE || 0) + 4 + (M.nodes[r.a].kind === 'end' || M.nodes[r.b].kind === 'end' ? EXT_ : 0); r.hop = {x0: x0 - m, y0: y0 - m, x1: x1 + m, y1: y1 + m}; }
+    return cham(r.hop.x0, r.hop.y0, r.hop.x1, r.hop.y1); });
+  const corners = M.corners.filter(c => ganDiem(c.ex, c.ey, 120));
+  const bays = M.bays.filter(b => ganDiem(b.cx, b.cy, 60));
 
   // 1. nền cỏ bên ngoài, vỉa hè trong khu, các khối nhà (mặt cỏ)
   g.fillStyle = NEN_MAU.co; g.fillRect(-EXT_, -EXT_, W_ + 2*EXT_, H_ + 2*EXT_);
   g.fillStyle = NEN_MAU.via; g.fillRect(0, 0, W_, H_);
-  g.fillStyle = NEN_MAU.co;
-  for (const b of o.blocks) g.fillRect(b.x1 + o.SIDE, b.y1 + o.SIDE, b.x2 - b.x1 - 2*o.SIDE, b.y2 - b.y1 - 2*o.SIDE);
-  // (khối nhà tạm lấy từ BLOCKS; bước sau sẽ tự sinh đa giác giữa các đường)
+  // (bản 1.2) cỏ phủ cả khu, chừa một vỉa hè quanh mép; rồi mỗi đường có một dải vỉa hè rộng SIDE hai bên, theo đúng hình đường
+  // (chéo, cong, hẻm). Với đường ngang / dọc kết quả y như cách cũ (khối nhà chữ nhật lùi vào một vỉa hè).
+  g.fillStyle = NEN_MAU.co; g.fillRect(o.SIDE, o.SIDE, W_ - 2*o.SIDE, H_ - 2*o.SIDE);
+  g.strokeStyle = NEN_MAU.via; g.lineCap = 'butt'; g.lineJoin = 'round';
+  for (const r of roads){
+    let pts = r.pts.map(p => ({x: p.x, y: p.y})); const n = pts.length;
+    if (!r.veh){ if (r.len - r.gapB.gap <= r.gapA.gap) continue; pts = [M.pointAt(r, r.gapA.gap), M.pointAt(r, r.len - r.gapB.gap)]; }
+    else {
+      if (M.nodes[r.a].kind === 'end'){ pts[0].x -= r.dirA.x*EXT_; pts[0].y -= r.dirA.y*EXT_; }
+      if (M.nodes[r.b].kind === 'end'){ pts[n-1].x -= r.dirB.x*EXT_; pts[n-1].y -= r.dirB.y*EXT_; }
+    }
+    g.lineWidth = (r.half + o.SIDE)*2; polyline(pts); g.stroke();
+  }
+  // cỏ ngoài khu: phần vỉa hè của đường kéo dài ra ngoài mép bản đồ vẫn giữ (như đường), không cần xoá
 
   // 2. mặt đường: mỗi đường cho xe là một dải rộng 2·half dọc theo đường; đầu đường ở mép bản đồ kéo dài thêm EXT
   g.fillStyle = NEN_MAU.duong; g.strokeStyle = NEN_MAU.duong; g.lineCap = 'butt'; g.lineJoin = 'round';
-  for (const r of M.roads){
+  for (const r of roads){
     if (!r.veh) continue;
     const pts = r.pts.map(p => ({x: p.x, y: p.y})), n = pts.length;
     if (M.nodes[r.a].kind === 'end'){ pts[0].x -= r.dirA.x*EXT_; pts[0].y -= r.dirA.y*EXT_; }
@@ -40,7 +61,7 @@ function veNen(g, M, o){
   // vòng xuyến: hình tròn mặt đường
   for (const nd of nodes) if (nd.kind === 'ring'){ g.beginPath(); g.arc(nd.x, nd.y, nd.ring.rOut, 0, Math.PI*2); g.fill(); }
   // ngã tư lệch: lấp khoảng hở giữa các nhánh (với ngã tư vuông góc thì đã nằm trong mặt đường, không đổi gì)
-  for (const c of M.corners){
+  for (const c of corners){
     const nd = M.nodes[c.node]; if (!nd.junction) continue;
     const p = nd.arms.find(a => a.out === c.u), q = nd.arms.find(a => a.out === c.v);
     g.beginPath(); g.moveTo(nd.x, nd.y);
@@ -48,14 +69,14 @@ function veNen(g, M, o){
     g.closePath(); g.fill();
   }
   // bo cong góc vỉa hè: phủ màu đường vào chỗ góc nhọn rồi vẽ lại cung vỉa hè
-  for (const c of M.corners){
+  for (const c of corners){
     g.fillStyle = NEN_MAU.duong; g.beginPath(); g.moveTo(c.ex, c.ey);
     g.lineTo(c.ex + c.u.x*c.tn, c.ey + c.u.y*c.tn); g.lineTo(c.cx, c.cy); g.lineTo(c.ex + c.v.x*c.tn, c.ey + c.v.y*c.tn); g.closePath(); g.fill();
     g.fillStyle = NEN_MAU.via; g.beginPath(); g.arc(c.cx, c.cy, M.curb, 0, Math.PI*2); g.fill();
   }
 
   // 3. phố đi bộ lát gạch (đường cap 'ped'): nằm giữa mép hai đường mà nó nối vào
-  for (const r of M.roads){
+  for (const r of roads){
     if (r.veh) continue;
     const s0 = r.gapA.gap, s1 = r.len - r.gapB.gap, d = r.seg[0].d, a = M.pointAt(r, s0), b = M.pointAt(r, s1), L = s1 - s0;
     if (L <= 0) continue;
@@ -74,10 +95,17 @@ function veNen(g, M, o){
   }
 
   // 4. ô đỗ xe kẻ vạch trên lòng đường
-  for (const b of M.bays){
-    g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(b.x, b.y, b.w, b.h);
-    g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.5; g.setLineDash([5, 4]);
-    g.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2); g.setLineDash([]);
+  for (const b of bays){
+    if (b.side){   // ô thẳng trục: vẽ như cũ
+      g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(b.x, b.y, b.w, b.h);
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.5; g.setLineDash([5, 4]);
+      g.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2); g.setLineDash([]);
+    } else {       // ô trên đường chéo: xoay theo hướng đường
+      g.save(); g.translate(b.cx, b.cy); g.rotate(Math.atan2(b.dir.y, b.dir.x));
+      g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(-b.L/2, -b.D/2, b.L, b.D);
+      g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.5; g.setLineDash([5, 4]);
+      g.strokeRect(-b.L/2 + 1, -b.D/2 + 1, b.L - 2, b.D - 2); g.setLineDash([]); g.restore();
+    }
     g.save(); g.translate(b.cx, b.cy); g.rotate(Math.atan2(b.dir.y, b.dir.x) + Math.PI/2);
     g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '700 11px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText('P', 0, 0); g.restore();
@@ -102,8 +130,8 @@ function veNen(g, M, o){
     if (nd.kind === 'ring') return e.gap;
     return nd.junction ? e.gap + (CW_FAR - HALF) + 6 : 0;
   };
-  for (const r of M.roads){
-    if (!r.veh) continue;
+  for (const r of roads){
+    if (!r.veh || r.cap === 'alley') continue;   // hẻm không kẻ vạch giữa
     const st = dungVach(r, 'a'), en = r.len - dungVach(r, 'b');
     if (en <= st) continue;
     // liền: từ nút đến cách tâm nút (nửa bề rộng + solidLen), tính từ mép ngã tư như hàm lineAt

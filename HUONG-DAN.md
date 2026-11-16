@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.1)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.2, đợt a)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -50,7 +50,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 2. Trên điện thoại mở `http://192.168.1.5:8000`, thay bằng IP của bạn.
 3. Nếu không vào được, có thể tường lửa Windows đang chặn. Khi Windows hỏi có cho Python truy cập mạng không, chọn **Allow**.
 
-## Cách chơi (bản 1.1)
+## Cách chơi (bản 1.2, đợt a)
 
 - **Màn hình dẫn đường:** bản đồ xoay theo hướng xe, giống ứng dụng dẫn đường trên điện thoại. Vạch chấm xanh nhạt có mũi tên nhỏ là lối đi được gợi ý; vạch mảnh nên không che làn đường. Bảng xanh lá phía trên báo chỗ rẽ sắp tới, ví dụ "140 m · Rẽ phải vào Đường Cầu Vồng". Nút đầu tiên ở góc phải đổi kiểu nhìn, mỗi lần bấm chuyển sang kiểu kế tiếp: dẫn đường → **🏍️ sau tay lái** → **🗺️ bản đồ** từ trên xuống → quay lại dẫn đường. Game nhớ kiểu bạn chọn.
 - **Góc nhìn sau tay lái:** máy quay hạ thấp, sát ngay sau xe. Bạn không thấy xe mình nữa mà thấy ghi đông và đồng hồ tốc độ ở mép dưới màn hình; xe của bạn nằm ngay dưới đồng hồ. Ô P và xe ở ngay bên cạnh sẽ khó thấy hơn, nên hãy nhìn bảng chỉ dẫn và bản đồ nhỏ.
@@ -58,7 +58,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Cua chậm và quay đầu:** giữ nút rẽ mà không bấm GA thì xe tự chạy chậm khoảng 11 km/h, nên quay đầu chỉ cần giữ một nút rẽ. Đi chậm thì xe quay gắt hơn (khoảng 2,5 m, như xe máy thật). Trợ lái giữ làn chờ 1 giây sau khi bạn nhả nút rẽ mới nắn xe lại, và không nắn trong vài giây đầu sau khi bạn bật xi-nhan.
 - **Trợ lái giữ làn:** khi bạn thả phím rẽ ra, xe tự chạy thẳng theo làn bên phải. Bạn chỉ cần bấm rẽ ở ngã tư, khi vào ô đỗ hoặc khi muốn vượt. Tắt được ở màn hình mở đầu (nút ❔).
 - **Giao hàng:** tới nơi thì tấp vào **ô đỗ xe có biển P** của điểm giao (đang nhấp nháy xanh) và dừng hẳn lại. Dừng ngoài lòng đường không tính.
-- **Ô đỗ xe P:** có 11 ô, kẻ vạch trắng ngay trên lòng đường, sát vỉa hè bên phải theo chiều xe chạy, giống ngoài đời. Muốn đỗ vào ô ở lề bên kia thì phải quay đầu để đỗ đúng chiều; chỉ đường sẽ dẫn bạn như vậy. Đỗ trong ô thì không cản ai và không ai đụng bạn. Dừng lâu giữa đường làm người khác phải chờ thì sẽ bị nhắc.
+- **Ô đỗ xe P:** có 26 ô, kẻ vạch trắng ngay trên lòng đường, sát vỉa hè bên phải theo chiều xe chạy, giống ngoài đời. Muốn đỗ vào ô ở lề bên kia thì phải quay đầu để đỗ đúng chiều; chỉ đường sẽ dẫn bạn như vậy. Đỗ trong ô thì không cản ai và không ai đụng bạn. Dừng lâu giữa đường làm người khác phải chờ thì sẽ bị nhắc.
 - **Vạch giữa đường:** vạch vàng **đứt** thì được cắt qua để rẽ, vượt hoặc vào làn bên kia để quay đầu, xong phải về làn ngay. Vạch vàng **liền** (gần ngã tư và vòng xuyến) thì không được đè lên.
 - **Đèn tín hiệu:** khi tiến vào ngã tư, bạn sẽ gặp lần lượt **vạch dừng** (màu trắng), **vạch người đi bộ**, rồi **cột đèn** ở góc giao lộ. Đèn đỏ thì dừng trước vạch dừng; đầu xe vượt qua vạch dừng lúc đèn đỏ là bị phạt. Có dòng nhắc "🔴 Đèn đỏ phía trước" khi bạn tới gần.
 - **Thưởng:** chuyến đi không vi phạm được thưởng thêm, chuỗi chuyến sạch càng dài thì thưởng càng cao. Cứ 5 chuyến sạch liên tiếp thì hồi 1 điểm GPLX.
@@ -66,10 +66,10 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Xi-nhan:** bấm **Q** (xi-nhan trái) hoặc **E** (xi-nhan phải) **trước khi rẽ ở ngã tư hoặc quay đầu**. Trên điện thoại là hai nút nhỏ "◀ xi-nhan" và "xi-nhan ▶" ngay phía trên nút chữ thập. Đèn nháy trên thanh thông tin và trên xe, kèm tiếng tích-tắc. Xi-nhan **không tự tắt**: rẽ xong bấm lại đúng bên để tắt (quên tắt lâu thì người trong phố sẽ nhắc, không bị phạt). Khi sắp tới chỗ rẽ mà chưa bật, game có dòng nhắc 💡. Rẽ hoặc quay đầu mà không bật xi-nhan đúng bên (hoặc bật quá trễ, sau khi đã bắt đầu rẽ) là bị phạt. Cắt vạch đứt để vượt xe thì game không bắt lỗi này.
 - **Phố Chợ là phố đi bộ:** hai đầu phố có biển **cấm xe máy** (tròn, viền đỏ, gạch chéo, hình người lái xe máy) và biển **cấm ô tô**, kèm bảng "PHỐ ĐI BỘ". Xe máy chạy vào là bị phạt. Chỉ đường sẽ không dẫn bạn qua đó. Chợ Hoa Sữa giờ đỗ xe ở bãi ngoài cổng chợ, trên đường Me Chua.
 - **Tốc độ:** xe giờ chạy tối đa **55 km/h**. Đường thường có biển tròn viền đỏ ghi **40** (tốc độ tối đa cho phép), đặt bên phải ngay sau mỗi ngã tư. **Cả khối Phố Bánh Mì giữa hai ngã tư** (chỗ có trường mầm non Sơn Ca) giới hạn **30**, có thêm biển tam giác vàng **"Trẻ em"**. Ô tốc độ ở góc trên ghi giới hạn hiện tại ("tối đa 40"): **vàng** là đang hơi quá, **đỏ** là quá từ 5 km/h trở lên và có dòng nhắc 🚨 (ở góc nhìn sau tay lái, số trên đồng hồ cũng đổi màu). Chạy quá dưới 5 km/h thì không sao.
-- **Camera phạt nguội:** giữa hai ngã tư bạn chỉ bị nhắc nhở, không bị phạt. Nhưng **ba ngã tư có đèn đều có camera trên cột đèn**: đúng lúc xe qua vạch dừng (đèn xanh hay đèn đỏ đều tính), nếu tốc độ vượt giới hạn của đoạn đường vừa đi qua từ 5 km/h thì bị phạt theo mức vượt lúc đó: 5 đến dưới 10 km/h phạt 400–600 nghìn; 10 đến 20 km/h phạt 800 nghìn–1 triệu; trên 20 km/h (chỉ gặp được ở khối trường học) phạt 6–8 triệu và trừ 4 điểm GPLX. Có tiếng máy ảnh "tách" và loé sáng. Vậy nhả ga **trước** khi tới vạch dừng. Phố Chợ và vòng xuyến không có camera.
+- **Camera phạt nguội:** giữa hai ngã tư bạn chỉ bị nhắc nhở, không bị phạt. Nhưng **mọi ngã tư có đèn đều có camera trên cột đèn** (khu cũ có ba ngã, cả bản đồ 15 ngã): đúng lúc xe qua vạch dừng (đèn xanh hay đèn đỏ đều tính), nếu tốc độ vượt giới hạn của đoạn đường vừa đi qua từ 5 km/h thì bị phạt theo mức vượt lúc đó: 5 đến dưới 10 km/h phạt 400–600 nghìn; 10 đến 20 km/h phạt 800 nghìn–1 triệu; trên 20 km/h (chỉ gặp được ở khối trường học) phạt 6–8 triệu và trừ 4 điểm GPLX. Có tiếng máy ảnh "tách" và loé sáng. Vậy nhả ga **trước** khi tới vạch dừng. Phố Chợ và vòng xuyến không có camera.
 - **Chọn xe:** ngay đầu màn hình mở đầu có ô **Bạn lái**: 🏍️ xe máy (bằng A1) hoặc 🚗 ô tô (bằng B). Muốn đổi thì bấm nút ❔ rồi chọn lại. Tiền dùng chung, nhưng **mỗi xe một bằng lái riêng, mỗi bằng 12 điểm**: ô ở góc trên ghi "GPLX A1" hoặc "GPLX B". Hết điểm bằng nào thì chỉ không lái được xe đó; xe kia vẫn lái bình thường.
 - **Lái ô tô:** xe to, tăng tốc chậm hơn, tối đa 70 km/h, quay vòng rộng. **Rẽ ở ngã tư thì giảm còn khoảng 10–15 km/h**, không thì xe văng sang làn ngược chiều. Ô tô khó quay đầu trên đường hẹp, nên chỉ đường sẽ dẫn bạn **đi vòng** (vòng xuyến hoặc vòng quanh khối phố); muốn tự quay đầu thì lùi, tiến vài lần (giữ ↓ hoặc nút ▼ sau khi dừng để lùi). Ô tô thì **thắt dây an toàn** (nút 💺, phím H) thay cho đội mũ. Phố đi bộ có biển cấm ô tô. Mức phạt ô tô **cao hơn xe máy nhiều**: vượt đèn đỏ 18–20 triệu, cầm điện thoại 4–6 triệu, quá tốc độ có 4 bậc (vượt từ 10 km/h đã bị trừ điểm). Ô tô đỗ ngược chiều trong ô P là **bị phạt** (xe máy chỉ bị nhắc). 📘 Sổ tay và bài kiểm tra hiện luật của xe đang lái.
-- **Mũ bảo hiểm:** mỗi buổi chơi xe bắt đầu **đầu trần** (ô đỏ "🪖 Chưa đội mũ" ở góc trên). Bấm nút vàng **🪖 Đội mũ** (phím **H**) ở góc phải, dưới bản đồ nhỏ; đội một lần là dùng cho cả buổi chơi. Có hai **chốt CSGT** cố định (chòi xanh, chú CSGT áo vàng, cọc tiêu cam và vạch đứt cam ngang đường): một trên Đường Hoa Sữa giữa Phố Chợ và Đường Cầu Vồng, một trên Đường Cầu Vồng giữa hai ngã tư. Đầu trần chạy qua chốt là bị thổi còi, giữ xe khoảng 2 giây và phạt 500.000đ (không trừ điểm). Đã đội mũ thì chú CSGT cho đi. Đầu trần chạy lâu thì người đi đường cũng nhắc.
+- **Mũ bảo hiểm:** mỗi buổi chơi xe bắt đầu **đầu trần** (ô đỏ "🪖 Chưa đội mũ" ở góc trên). Bấm nút vàng **🪖 Đội mũ** (phím **H**) ở góc phải, dưới bản đồ nhỏ; đội một lần là dùng cho cả buổi chơi. Có ba **chốt CSGT** cố định (hai chốt ở khu cũ tả dưới đây, chốt thứ ba trên Đường Bằng Lăng) (chòi xanh, chú CSGT áo vàng, cọc tiêu cam và vạch đứt cam ngang đường): một trên Đường Hoa Sữa giữa Phố Chợ và Đường Cầu Vồng, một trên Đường Cầu Vồng giữa hai ngã tư. Đầu trần chạy qua chốt là bị thổi còi, giữ xe khoảng 2 giây và phạt 500.000đ (không trừ điểm). Đã đội mũ thì chú CSGT cho đi. Đầu trần chạy lâu thì người đi đường cũng nhắc.
 - **Khách gọi điện:** cứ 2–3 chuyến thì điện thoại đổ chuông (ô "📞 Khách đang gọi…", nút xanh nhấp nháy **📞 Nghe máy**, hoặc phím **C**). Có 12 giây để nghe; không nghe thì khách gọi lại sau, không mất gì. **Tấp vào ô P rồi mới nghe**: hết cuộc gọi bạn được **+3 điểm văn hóa** (từ bản 1.0 không còn tiền boa). **Vừa chạy vừa nghe (hoặc đứng giữa đường, kể cả dừng đèn đỏ) là vừa lái vừa cầm điện thoại**: xe lái khó hơn, trợ lái tắt, và nếu qua chốt CSGT hoặc qua vạch dừng ngã tư có camera lúc đó thì bị phạt 900.000đ và trừ 4 điểm GPLX (mỗi cuộc gọi phạt một lần). Điện thoại gắn trên xe để xem bản đồ thì không bị coi là vi phạm.
 - **Phạt:** vượt đèn đỏ, chạy quá tốc độ, không đội mũ bảo hiểm khi qua chốt, cầm điện thoại khi lái, đi vào phố đi bộ có biển cấm xe máy, rẽ hoặc quay đầu không xi-nhan, đè vạch liền, chạy lâu bên phần đường ngược chiều, không nhường đường ở vòng xuyến. Gây va chạm khi đang vi phạm thì bị phạt nặng hơn nữa.
 - **Nhắc nhở (không phạt tiền):** đỗ trong ô P mà đầu xe quay ngược chiều đi. Luật yêu cầu đỗ sát lề bên phải theo chiều đi, nhưng với xe máy không có mức phạt riêng, nên game chỉ nhắc. Chuyến đó không được tính là chuyến sạch.
@@ -79,6 +79,27 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 1.2 (đợt a) đổi gì so với bản 1.1
+
+1. **Bản đồ to gấp 4.** Khu phố cũ vẫn ở góc trên bên trái; bốn con đường cũ nay chạy tiếp sang ba khu mới.
+   - **Khu đại lộ** (bên phải khu cũ): Đại lộ Cây Bàng chạy **chéo**; đầu trên của nó chạm ngã tư Hoa Sữa – Phượng Vĩ thành một **ngã năm** có đèn. Đèn ở đây có **ba lượt xanh** (ngang, dọc, rồi tới đại lộ chéo) nên chờ lâu hơn một chút.
+   - **Khu chợ và hẻm** (bên dưới khu cũ): Hẻm Xôi và Hẻm Chè hẹp, không có vạch giữa, tối đa 30 km/h, **cấm ô tô**; Đường Bờ Kè uốn cong ở góc dưới.
+   - **Khu trường học** (góc dưới bên phải): đoạn Đường Phượng Vĩ trước Trường tiểu học Bình Minh giới hạn 30 km/h, có biển "Trẻ em" và vạch người đi bộ; một **vòng xuyến thứ hai** to hơn.
+2. **12 điểm giao hàng mới** (tổng 21). Chuyến giao giờ có thể dài hơn nhiều, tiền công tính theo quãng đường nên cũng cao hơn.
+3. **Bản đồ nhỏ** ở góc phải chỉ hiện vùng quanh xe. Điểm giao ở xa hiện thành chấm xanh ghim ở mép, cứ đi theo bảng chỉ dẫn là tới.
+4. **Rẽ chếch cũng phải xi-nhan:** ở ngã năm, đi chếch vào Đại lộ Cây Bàng mà không bật xi-nhan là bị phạt như rẽ. Bật xi-nhan thì trợ lái tự ôm cua vào đúng nhánh theo chỉ đường.
+5. **Sửa lỗi:** quay đầu (tự động hay tự lái) ngay chỗ **vạch vàng liền** nay bị phạt đè vạch, đúng như luật; trước đây bị lọt. Vạch chấm xanh chỉ đường không còn đoạn tiến rồi lùi trước ngã tư.
+6. Thêm một chốt CSGT trên Đường Bằng Lăng. Ngã tư có đèn nào cũng có camera như trước.
+
+**Tạm thời ở đợt này:** vài ngã tư ở khu mới (dọc Đường Bằng Lăng và quanh khu hẻm) đang có đèn; đợt sau chúng sẽ thành **giao lộ không đèn** có biển ưu tiên, biển STOP hoặc không biển, để tập nhường đường. Xe trong phố chưa chạy vào hẻm.
+
+**Nhờ bạn chơi thử trên iPhone:**
+1. Game còn **mượt** không? Bản đồ to hơn và đông xe hơn (76 xe).
+2. Ngã năm có dễ hiểu không, chờ đèn có lâu quá không?
+3. Lái trên đại lộ chéo, trong hẻm và khúc cong có ổn không? Đỗ vào ô P nằm chéo (Siêu thị Cây Bàng) có khó không?
+4. Chuyến giao hàng xa có dài quá không? Bản đồ nhỏ như vậy có đủ để định hướng không?
+5. Có lần nào bị phạt đè vạch liền hay phạt xi-nhan mà thấy oan không?
 
 ## Bản 1.1 đổi gì so với bản 1.0
 
