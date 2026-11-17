@@ -230,5 +230,5 @@ TP3.themLop('nha', (o, G) => {
     D.dat(); GT.dat();
   }
 });
-TP3.nhaOng = nhaOng;
+TP3.nhaOng = nhaOng; TP3.matNha = cacMat;
 })();
