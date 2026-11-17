@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Traffic Prune · bản thử 3D (khu phố cũ)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%B5%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="thu-3d.css">
+</head>
+<body>
+<div id="stage"><canvas id="game"></canvas></div>
+<div id="flash">📸 Camera phạt nguội đã ghi hình</div>
+
+<div id="top">
+  <div id="nav"><div id="navIcon"></div><div id="navTxt"><div id="navMain"></div><div id="navSub"></div></div></div>
+  <div id="chips">
+    <div class="chip" id="money"></div>
+    <div class="chip" id="pts"></div>
+    <div class="chip" id="streak"></div>
+    <div class="chip" id="cult"></div>
+    <div class="chip" id="speed"></div>
+    <div class="chip over" id="helmchip" style="display:none"></div>
+    <div class="chip" id="callchip" style="display:none"></div>
+    <div class="chip" id="sigchip" style="display:none"><b id="sigL">◀</b> <span class="lbl">xi-nhan</span> <b id="sigR">▶</b></div>
+  </div>
+  <div id="warn"></div>
+  <div id="bubble"><b id="bubName"></b><span id="bubText"></span></div>
+  <div id="law"></div>
+</div>
+<div id="right">
+  <div id="topbtns">
+    <button class="btn" id="viewBtn"></button>
+    <button class="btn" id="bookBtn">📘<span class="lbl"> Sổ tay</span></button>
+    <button class="btn" id="muteBtn" aria-label="Bật hoặc tắt âm thanh">🔊</button>
+    <button class="btn" id="soundBtn" aria-label="Cài đặt âm thanh">🎚️</button>
+    <button class="btn" id="helpBtn">❔</button>
+  </div>
+  <div id="soundPanel" class="chip">
+    <label class="srow"><input type="checkbox" id="sndOn"> Bật âm thanh</label>
+    <label class="srow">Loại xe <select id="sndBike"><option value="so">Xe số</option><option value="ga">Xe tay ga</option></select></label>
+    <label class="srow">Tiếng động <input type="range" id="sndFx" min="0" max="1" step="0.05"></label>
+    <label class="srow">Giọng chỉ đường <input type="range" id="sndVoice" min="0" max="1" step="0.05"></label>
+    <label class="srow">Giọng NPC <input type="range" id="sndNpc" min="0" max="1" step="0.05"></label>
+    <div class="fine" id="sndStatus"></div>
+    <button class="btn" id="sndTest">▶ Nghe thử</button>
+  </div>
+  <canvas id="mini"></canvas>
+  <div id="actions">
+    <button class="btn act" id="helmBtn">🪖 Đội mũ <span class="key">(H)</span></button>
+    <button class="btn act" id="utBtn"><span id="utTxt">↩️ Quay đầu</span> <span class="key">(U)</span></button>
+    <button class="btn act ring" id="callBtn" style="display:none">📞 Nghe máy <span class="key">(C)</span></button>
+  </div>
+</div>
+
+<!-- Góc nhìn "sau tay lái": ghi đông và đồng hồ tốc độ, chỉ hiện khi chọn kiểu nhìn này -->
+<div id="cockpit" aria-hidden="true">
+  <svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMax meet">
+    <path d="M8 96 C70 70 130 62 200 62 C270 62 330 70 392 96" fill="none" stroke="#2b2a33" stroke-width="13" stroke-linecap="round"/>
+    <path d="M8 96 C30 86 52 79 76 74" fill="none" stroke="#111" stroke-width="19" stroke-linecap="round"/>
+    <path d="M392 96 C370 86 348 79 324 74" fill="none" stroke="#111" stroke-width="19" stroke-linecap="round"/>
+    <path d="M150 150 L162 78 C175 66 225 66 238 78 L250 150 Z" fill="#ff8a3d" stroke="#c0703a" stroke-width="2"/>
+    <circle cx="200" cy="74" r="45" fill="#23222b" stroke="#fffaf2" stroke-width="4"/>
+    <path d="M168 99 A40 40 0 1 1 232 99" fill="none" stroke="#6b6875" stroke-width="3" stroke-linecap="round"/>
+    <path d="M226 46 A40 40 0 0 1 232 99" fill="none" stroke="#e5484d" stroke-width="3" stroke-linecap="round"/>
+    <g id="needle" transform="rotate(-128 200 74)"><path d="M200 74 L200 40" stroke="#ffb020" stroke-width="3.5" stroke-linecap="round"/></g>
+    <circle cx="200" cy="74" r="4" fill="#fffaf2"/>
+    <polygon id="sigCkL" points="124,56 146,44 146,68" fill="#ffae00" opacity="0"/>
+    <polygon id="sigCkR" points="276,56 254,44 254,68" fill="#ffae00" opacity="0"/>
+    <text id="ckSpeed" x="200" y="100" text-anchor="middle" font-size="19" font-weight="700" fill="#fffaf2" font-family="Segoe UI, Roboto, sans-serif">0</text>
+    <text id="ckUnit" x="200" y="112" text-anchor="middle" font-size="8.5" fill="#bdbbc7" font-family="Segoe UI, Roboto, sans-serif">km/h</text>
+  </svg>
+</div>
+
+
+<!-- Góc nhìn "sau vô lăng" của ô tô (bản 0.12.3): bảng đồng hồ, vô lăng xoay theo hướng lái, đèn xi-nhan, chữ số D/R/P -->
+<div id="cockpitCar" aria-hidden="true">
+  <svg viewBox="0 0 400 215" preserveAspectRatio="xMidYMax meet">
+    <path id="dashCar" d="M0 215 L0 154 C80 142 140 139 200 139 C260 139 320 142 400 154 L400 215 Z" fill="#26252d"/>
+    <circle cx="200" cy="112" r="36" fill="#1b1a21" stroke="#fffaf2" stroke-width="3.5"/>
+    <path d="M176.4 130.5 A30 30 0 1 1 223.6 130.5" fill="none" stroke="#6b6875" stroke-width="3" stroke-linecap="round"/>
+    <path d="M227 98.9 A30 30 0 0 1 223.6 130.5" fill="none" stroke="#e5484d" stroke-width="3" stroke-linecap="round"/>
+    <g id="needleCar" transform="rotate(-128 200 112)"><path d="M200 98 L200 83" stroke="#ffb020" stroke-width="3.5" stroke-linecap="round"/></g>
+    <text id="ckSpeedCar" x="200" y="119" text-anchor="middle" font-size="18" font-weight="700" fill="#fffaf2" font-family="Segoe UI, Roboto, sans-serif">0</text>
+    <text x="200" y="130" text-anchor="middle" font-size="7" fill="#bdbbc7" font-family="Segoe UI, Roboto, sans-serif">km/h</text>
+    <polygon id="sigCkLCar" points="130,112 152,100 152,124" fill="#ffae00" opacity="0"/>
+    <polygon id="sigCkRCar" points="270,112 248,100 248,124" fill="#ffae00" opacity="0"/>
+    <text id="gearCar" x="306" y="122" text-anchor="middle" font-size="26" font-weight="800" fill="#7ee0a1" font-family="Segoe UI, Roboto, sans-serif">P</text>
+    <g id="wheelCar" transform="rotate(0 200 192)">
+      <circle cx="200" cy="192" r="50" fill="none" stroke="#111" stroke-width="12"/>
+      <circle cx="200" cy="192" r="50" fill="none" stroke="#3a3944" stroke-width="3"/>
+      <path d="M152 192 L248 192 M200 192 L200 242" stroke="#111" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="200" cy="192" r="14" fill="#2f2e38" stroke="#6b6875" stroke-width="2"/>
+      <rect x="196" y="139" width="8" height="12" rx="2" fill="#ff8a3d"/>
+    </g>
+  </svg>
+</div>
+
+<div id="controls">
+  <div class="padcol">
+    <div class="sigrow">
+      <button class="sbtn" data-s="-1" aria-label="Xi-nhan trái">◀ xi-nhan</button>
+      <button class="sbtn" data-s="1" aria-label="Xi-nhan phải">xi-nhan ▶</button>
+    </div>
+    <div class="steer">
+      <button class="cbtn d-left" data-k="left" aria-label="Rẽ trái">◀</button>
+      <button class="cbtn d-right" data-k="right" aria-label="Rẽ phải">▶</button>
+    </div>
+    <div class="downrow">
+      <button class="cbtn d-down" data-k="down" aria-label="Phanh rồi lùi">▼</button>
+      <button class="cbtn d-rev" data-k="rev" aria-label="Số lùi (chỉ lùi khi xe đã dừng)">R</button>
+    </div>
+  </div>
+  <div class="pad">
+    <button class="cbtn small" data-k="brake">PHANH</button>
+    <button class="cbtn small" data-k="up">GA</button>
+  </div>
+</div>
+
+<div class="overlay" id="start">
+  <div class="card">
+    <h1>Traffic Prune</h1>
+    <p class="tag">Phố nhỏ, luật thật, NPC hơi… lắm lời. <b>(BẢN THỬ 3D: chỉ có khu phố cũ, để đo độ mượt. Tiền, điểm ở đây lưu riêng, không đụng tới bản chơi chính.)</b></p>
+    <div class="row" id="vehRow">
+      <label for="veh">Bạn lái:</label>
+      <select id="veh">
+        <option value="bike">🏍️ Xe máy (bằng A1)</option>
+        <option value="car">🚗 Ô tô (bằng B)</option>
+      </select>
+    </div>
+    <ul>
+      <li>Bạn là shipper, giao hàng bằng xe máy hoặc ô tô (chọn ngay ở trên). Màn hình giống <b>ứng dụng dẫn đường</b>: bản đồ xoay theo hướng xe, <b>vạch chấm xanh có mũi tên nhỏ</b> chỉ lối, bảng xanh lá phía trên báo chỗ rẽ sắp tới.</li>
+      <li>Tới nơi thì <b>tấp vào ô đỗ xe chữ P</b> và dừng lại để giao hàng. Muốn nghỉ thì cũng đỗ vào ô P, đừng dừng giữa đường.</li>
+      <li><b>Vạch vàng đứt</b>: được cắt qua để rẽ, vượt hoặc vào ô P bên kia đường. <b>Vạch vàng liền</b> (gần ngã tư, vòng xuyến): không được đè lên.</li>
+      <li>Đi sạch luật thì được thưởng thêm. Phạt tiền và trừ điểm theo <b>mức phạt thật</b> của Nghị định 168/2024/NĐ-CP. Làm ai kẹt xe hay va chạm thì bạn phải <b>đền tiền</b> cho người đó.</li>
+      <li>Lái xe: ↑ hoặc W để ga, Space để phanh (↓ hoặc S: phanh, giữ tiếp thì lùi), ← → hoặc A D để rẽ trái, rẽ phải. Trên điện thoại bấm các nút ở dưới màn hình.</li>
+      <li><b>Xi-nhan</b>: bấm <b>Q</b> (trái) hoặc <b>E</b> (phải) <b>trước khi rẽ ở ngã tư hoặc quay đầu</b>; trên điện thoại là hai nút nhỏ phía trên nút mũi tên. Xi-nhan không tự tắt, rẽ xong bấm lại để tắt. Nhìn <b>biển xanh</b> bên đường để biết ngã tư dẫn đi đâu, và nhớ <b>phố đi bộ có biển cấm xe máy</b>.</li>
+      <li><b>Chọn xe</b> ngay bên dưới: xe máy hoặc ô tô, đổi lúc nào cũng được ở nút ❔. Mỗi xe một bằng lái riêng (A1, B), mỗi bằng 12 điểm. Ô tô to, quay vòng rộng: muốn quay đầu thì đi vòng xuyến, hoặc lùi xe (nút <b>R</b> / phím R: dừng hẳn rồi nhấn R; hoặc giữ ↓ / nút ▼ sau khi dừng). Lái ô tô thì <b>thắt dây an toàn</b> (phím H) thay cho đội mũ; mức phạt ô tô cao hơn xe máy nhiều.</li>
+      <li><b>Mũ bảo hiểm</b>: bấm nút <b>🪖 Đội mũ</b> (phím H) trước khi chạy, đội một lần cho cả buổi chơi. Đầu trần mà qua <b>chốt CSGT</b> là bị thổi còi và phạt.</li>
+      <li><b>Điểm văn hóa 🎭</b> (bắt đầu 70, tối đa 100) khác điểm luật: không phạt tiền, không tự hồi, chỉ tăng bằng hành vi tốt (nhường người đi bộ qua vạch, tấp vào ô P rồi mới nghe máy, đi không làm ai phải chờ). Làm kẹt xe, leo vỉa hè, bám đuôi, không nhường người qua vạch thì bị trừ. Từ 80 điểm khách boa thêm, dưới 40 khách chấm ít sao.</li>
+      <li><b>Khách gọi điện</b> thì tấp vào ô P rồi bấm <b>📞 Nghe máy</b> (phím C): bạn được cộng <b>điểm văn hóa</b> (không còn tiền boa). Vừa lái vừa cầm điện thoại là vi phạm (chốt CSGT và camera ngã tư sẽ bắt); điện thoại gắn trên xe để xem bản đồ thì không sao.</li>
+      <li><b>Rẽ ở ngã tư:</b> bật xi-nhan trước ngã tư là xe tự ôm cua vào đúng làn (cần bật trợ lái bên dưới); bạn lo ga, phanh và đèn. Bấm nút rẽ là tự lái lại.</li>
+      <li><b>Quay đầu:</b> bấm nút <b>↩️ Quay đầu</b> (phím U), xe tự bật xi-nhan và quay ngược lại; chỉ làm ở chỗ vạch đứt và khi đường trống. Nút <b>🔊</b> (phím M) tắt hoặc bật tiếng. Tiền công mỗi chuyến tính theo quãng đường.</li>
+    </ul>
+    <div class="row">
+      <label for="xungho">Người trong phố gọi bạn là:</label>
+      <select id="xungho">
+        <option value="anh">anh</option>
+        <option value="chị">chị</option>
+        <option value="bác">bác</option>
+        <option value="bạn">bạn</option>
+        <option value="ông">ông</option>
+      </select>
+    </div>
+    <div class="row">
+      <input type="checkbox" id="assist" checked>
+      <label for="assist">Trợ lái giữ làn: thả phím rẽ ra là xe tự chạy thẳng theo làn (nên bật khi mới chơi)</label>
+    </div>
+    <p class="fine">Quyền riêng tư: game chỉ lưu trên chính máy của bạn cách gọi bạn chọn, các lựa chọn ở trên và thống kê cách bạn chơi (số lần mắc mỗi lỗi, tiền, điểm). Không gửi đi đâu cả. Muốn xóa thì vào 📘 Sổ tay.</p>
+    <div class="row"><button class="btn primary" id="go">Lên xe!</button></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="suspend">
+  <div class="card" id="suspendCard"></div>
+</div>
+
+<div class="overlay hidden" id="book">
+  <div class="card">
+    <h2>📘 Sổ tay luật của bạn</h2>
+    <div id="bookList"></div>
+    <p class="fine">Mức phạt lấy theo Nghị định 168/2024/NĐ-CP (Điều 7, áp dụng cho xe mô tô, xe gắn máy), có hiệu lực từ 01/01/2025. Nghị định 238/2026/NĐ-CP sửa đổi một số điều của Nghị định 168, có hiệu lực từ 15/8/2026. Trước khi phát hành rộng, cần đối chiếu lại các mức này với văn bản gốc. Luật ngoài đời: giấy phép lái xe có 12 điểm và được phục hồi đủ 12 điểm nếu 12 tháng không bị trừ điểm. Bị trừ hết điểm thì không được lái xe; sau ít nhất 6 tháng mới được kiểm tra kiến thức pháp luật để phục hồi điểm (khoản 3 Điều 58 Luật Trật tự, an toàn giao thông đường bộ 2024). Trong game: cứ 5 chuyến sạch liên tiếp thì hồi 1 điểm.</p>
+    <div class="row">
+      <button class="btn primary" id="bookClose">Chạy tiếp</button>
+      <button class="btn" id="resetBtn">Xóa dữ liệu và chơi lại từ đầu</button>
+    </div>
+  </div>
+</div>
+
+<!-- BẢN THỬ 3D: dùng lại nguyên "bộ não" của game (các file ../js), chỉ thay phần vẽ bằng ve-3d.js -->
+<!-- Lưu riêng: phải nạp TRƯỚC game.js để bản thử không ghi đè tiền, điểm của bản chơi chính -->
+<script src="luu-rieng.js"></script>
+<!-- Thứ tự nạp quan trọng: dữ liệu trước, game.js sau cùng -->
+<script src="../js/luat.js"></script>
+<script src="../js/cau-thoai.js"></script>
+<script src="../js/ban-do.js"></script>
+<script src="../js/ve-nen.js"></script>
+<script src="../js/am-thanh.js"></script>
+<script src="../js/game.js"></script>
+<!-- Phần vẽ 3D: thư viện Three.js r187 (MIT) gom thành script thường, rồi file vẽ của bản thử -->
+<script src="lib/three.r187.js"></script>
+<script src="ve-3d.js"></script>
+</body>
+</html>
