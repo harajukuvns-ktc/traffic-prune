@@ -156,7 +156,7 @@ const X = TP3.xe = {};
     // ô tô của người chơi: thân dưới (có nắp capo), buồng lái (ẩn khi nhìn từ sau vô lăng), mặt táp-lô (chỉ hiện khi nhìn từ sau vô lăng)
     { const Gt = new Gom(), Gb = new Gom(); hinhOTo({than: Gt, buong: Gb}, '#f07f2e');
       const nhom = new T.Group(), M = (g, vl) => { const l = new T.Mesh(g.hinh(), vl || TP3.vl.duc); l.castShadow = true; nhom.add(l); return l; };
-      const than = M(Gt), buong = M(Gb), Gl = new Gom(); Gl.hop(3.9, 3.6, 0, 1.4, 2.0, 9.2, 0, '#25242b', {tren: '#2f2e36'}); const tapLo = M(Gl);
+      const than = M(Gt), buong = M(Gb), Gl = new Gom(); Gl.hop(1.3, 3.6, 0, 5.8, 1.6, 9.6, 0, '#25242b', {tren: '#2f2e36'}); const tapLo = M(Gl);
       const nhay = [-1, 1].map(kz => { const g = new Gom(); hinhNhayOTo(g); const l = M(g, TP3.vl.sang); l.scale.z = kz; l.castShadow = false; return l; });
       const gp = new Gom(); hinhPhanhOTo(gp); const phanh = M(gp, TP3.vl.sang); phanh.castShadow = false;
       scene.add(nhom); X.oTo = {nhom, than, buong, tapLo, nhay, phanh}; }

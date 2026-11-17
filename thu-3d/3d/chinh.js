@@ -131,7 +131,7 @@ function apDungNac(){
   TT.nac = TC.nac;
 }
 function theoDoi(khung, ky){
-  if (!TP3.tuChinh || hang.length || khung > 400) return;
+  if (!TP3.tuChinh || hang.length || khung > 1500) return;   // đang dựng ô hoặc vừa bị khựng (chuyển tab): không tính
   TC.t += khung; TC.n++; TC.tong += khung;
   if (TC.t < 2500) return;
   const tb = TC.tong / TC.n, now = performance.now(); TC.t = TC.n = TC.tong = 0;
