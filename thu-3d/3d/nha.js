@@ -248,7 +248,8 @@ TP3.dungNhaXa = function(o){
     const cao = h.stall ? 11 : H_TRET + (1 + Math.floor(bam(h.x, h.y, 1) * 3)) * H_TANG, mau = h.stall ? '#c9b9a0' : TP3.tron(XI_MANG, SON[Math.floor(bam(h.x, h.y, 2) * SON.length)], 0.6);
     G.hop(h.x + h.w / 2, CAO, h.y + h.h / 2, h.w - 2, cao, h.h - 2, 0, mau, {tren: h.stall ? '#c0564a' : '#8f8a82', aoDay: 0.8});
   }
-  if (!n) return null;
+  if (TP3.Q.chiTiet > 0 && TP3.cayXa) TP3.cayXa(o, G);   // thêm cây đơn giản để ô xa không trơ trụi (mức thấp thì bỏ)
+  if (!G.so) return null;
   const l = new TP3.T.Mesh(G.hinh(), TP3.vl.duc); return l;
 };
 })();

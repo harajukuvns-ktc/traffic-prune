@@ -53,7 +53,6 @@ const OO = new Map();
     if ((o.x1 <= 0 || o.y1 <= 0 || o.x0 >= W || o.y0 >= H) && !MAP.roads.some(r => r.veh && r.pts.some(p => p.x >= o.x0 - 60 && p.x <= o.x1 + 60 && p.y >= o.y0 - 60 && p.y <= o.y1 + 60) &&
         (MAP.nodes[r.a].kind === 'end' || MAP.nodes[r.b].kind === 'end'))) continue;
     OO.set(o.khoa, o);
-    if (TP3.dungNhaXa){ const l = TP3.dungNhaXa(o); if (l){ l.matrixAutoUpdate = false; scene.add(l); o.xa = l; } }
   } }
 TP3.cacO = OO;
 const cachO = o => Math.hypot(Math.max(o.x0 - player.x, 0, player.x - o.x1), Math.max(o.y0 - player.y, 0, player.y - o.y1));   // khoảng cách từ xe tới ô (0 nếu xe ở trong ô)
@@ -83,10 +82,20 @@ function oCanCo(){
   ds.sort((a, b) => a.d - b.d); return ds.slice(0, Q.oToiDa);
 }
 // mỗi khung hình: nhả ô xa, rồi làm MỘT bước dựng. hetSuc = true: làm một mạch tới khi xong ô (lúc khởi động). Trả về true nếu vừa làm việc nặng.
+// "hình xa" của một ô (khối nhà trơn, cây đơn giản): dựng khi ô lọt vào tầm nhìn, mỗi khung hình một ô, giữ luôn (rất nhẹ)
+function dungXaTiep(){
+  let tot = null; const tam = TP3.tamXa + 260;
+  for (const o of OO.values()) if (!o.xaDa && o.d < tam && (!tot || o.d < tot.d)) tot = o;
+  if (!tot) return false;
+  tot.xaDa = true; const l = TP3.dungNhaXa ? TP3.dungNhaXa(tot) : null;
+  if (l){ l.matrixAutoUpdate = false; l.visible = !tot.nhom; scene.add(l); tot.xa = l; }
+  return true;
+}
 function dungTiep(hetSuc){
   const can = oCanCo(), trongDs = new Set(can);
   for (const o of OO.values()) if (o.nhom && !trongDs.has(o) && (o.d > Q.oBanKinh + 220 || soODa > Q.oToiDa)) boO(o);
   if (viec && !trongDs.has(viec.o)) viec = null;   // ô đang dựng dở đã ra xa: bỏ
+  if (!hetSuc && dungXaTiep()) return true;
   if (!viec){ const o = can.find(q => !q.nhom); if (!o){ if (choSanSang.length){ ghiThongTinO(); for (const f of choSanSang.splice(0)) f(); } return false; }
     viec = {o, buoc: 0, ms: 0, G: {duc: new TP3.Gom(), trong: new TP3.Gom(), bong: new TP3.Gom(), day: [], them: []}}; }
   do {

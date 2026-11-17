@@ -95,6 +95,12 @@ function hinhXeBuyt(G, soTuyen){
   for (const z of [1, -1]) G.thanh([22.6, 11.5, z*7.8], [23.6, 10.2, z*9.2], 0.3, 0.3, '#17181b');   // gương
 }
 
+// đèn xi-nhan bên phải của xe buýt (bên trái lật gương) và đèn phanh
+function hinhNhayBuyt(G){ for (const x of [23.06, -23.06]) G.tu([x, 3.0, 6.0], [x, 3.0, 7.4], [x, 4.3, 7.4], [x, 4.3, 6.0], [x > 0 ? 1 : -1, 0, 0], '#ffb000');
+  G.hop(20.5, 3.4, 7.86, 1.6, 0.8, 0.12, 0, '#ffb000'); G.hop(-21, 3.6, 7.86, 1.4, 0.8, 0.12, 0, '#ffb000'); }
+function hinhPhanhBuyt(G){ for (const z of [1, -1]) G.tu([-23.07, 3.2, z*5.6 - 0.9], [-23.07, 3.2, z*5.6 + 0.9], [-23.07, 5.2, z*5.6 + 0.9], [-23.07, 5.2, z*5.6 - 0.9], [-1, 0, 0], '#ff2a1f');
+  G.tu([-23.07, 13.2, -2.4], [-23.07, 13.2, 2.4], [-23.07, 13.8, 2.4], [-23.07, 13.8, -2.4], [-1, 0, 0], '#ff2a1f'); }
+
 /* ---------- ghi ma trận đặt vật vào ô thứ i của một InstancedMesh ---------- */
 // đặt tại (x, y0, z), quay theo góc bản đồ a; kz = −1 thì lật gương theo chiều ngang (đèn xi-nhan bên trái)
 TP3.datMaTran = function(arr, i, x, y0, z, a, kz){
@@ -143,6 +149,7 @@ const X = TP3.xe = {};
     X.coDinh = lap(P.coDinh, false); X.ao = lap(P.ao, true); X.mu = lap(P.mu, true);
     X.coDinh.instanceMatrix = X.ao.instanceMatrix = X.mu.instanceMatrix = X.son.instanceMatrix;   // bốn phần dùng chung vị trí
     X.nhay = TP3.taoLap(hinhNhayXM, so, {vl: TP3.vl.sang, khongBong: true}); X.phanh = TP3.taoLap(hinhPhanhXM, so, {vl: TP3.vl.sang, khongBong: true}); scene.add(X.nhay); scene.add(X.phanh);
+    X.nhayB = TP3.taoLap(hinhNhayBuyt, 8, {vl: TP3.vl.sang, khongBong: true}); X.phanhB = TP3.taoLap(hinhPhanhBuyt, 8, {vl: TP3.vl.sang, khongBong: true}); scene.add(X.nhayB); scene.add(X.phanhB);
     X.buyt = new Map(); X.scene = scene;
     BD.tao(scene);
     // xe máy của người chơi (shipper áo cam, thùng hàng xanh): thân, mũ hoặc tóc, đèn xi-nhan, đèn phanh
@@ -165,7 +172,10 @@ const X = TP3.xe = {};
     const tam = TP3.tamXa * (S.view === 'bike' ? 0.7 : 0.62), tam2 = tam * tam, px = player.x, py = player.y, nhip = (S.now % 0.7) < 0.35;
     BD.batDau();
     const mx = X.son.instanceMatrix.array, cs = X.son.instanceColor.array, ca = X.ao.instanceColor.array, cm = X.mu.instanceColor.array, mn = X.nhay.instanceMatrix.array, mp = X.phanh.instanceMatrix.array;
-    let nx = 0, nn = 0, np = 0; const conBuyt = new Set();
+    let nx = 0, nn = 0, np = 0, bn = 0, bp = 0; const conBuyt = new Set(), mnB = X.nhayB.instanceMatrix.array, mpB = X.phanhB.instanceMatrix.array;
+    // xi-nhan (suy từ tuyến đi phía trước, mỗi 0,3 giây xét lại) và đèn phanh (đang giảm tốc rõ hoặc đang đứng chờ) của một xe NPC
+    const re = n => (n._reT3 || 0) > S.now ? n._re3 : (n._reT3 = S.now + 0.3, n._re3 = sapRe(n));
+    const phanh = n => { const g = n._v3 !== undefined && dt > 0 && (n._v3 - n.v) / dt > 30; n._v3 = n.v; return g || n.v < 1.5; };
     for (const n of npcs){
       if (n.hidden) continue;
       const dx = n.x - px, dy = n.y - py; if (dx*dx + dy*dy > tam2) continue;
@@ -173,6 +183,8 @@ const X = TP3.xe = {};
       if (n.kind === 'bus'){
         let l = X.buyt.get(n); if (!l){ const G = new Gom(); hinhXeBuyt(G, m.so); l = new T.Mesh(G.hinh(), TP3.vl.duc); l.castShadow = true; X.scene.add(l); X.buyt.set(n, l); }
         l.visible = true; l.position.set(n.x, 0, n.y); l.rotation.y = -n.a; conBuyt.add(n); BD.them(n.x, 0.07, n.y, n.a, 29, 12.5);
+        if (nhip && bn < 8){ const r = re(n); if (r) TP3.datMaTran(mnB, bn++, n.x, 0, n.y, n.a, r); }
+        if (phanh(n) && bp < 8) TP3.datMaTran(mpB, bp++, n.x, 0, n.y, n.a);
         continue;
       }
       // xe đang "nhường xuyên qua" (bản 2D vẽ mờ) thì vẽ nhạt màu hơn
@@ -180,15 +192,14 @@ const X = TP3.xe = {};
       TP3.datMaTran(mx, nx, n.x, 0, n.y, n.a);
       cs[nx*3] = m.son[0]*mo; cs[nx*3+1] = m.son[1]*mo; cs[nx*3+2] = m.son[2]*mo; ca[nx*3] = m.ao[0]; ca[nx*3+1] = m.ao[1]; ca[nx*3+2] = m.ao[2]; cm[nx*3] = m.mu[0]; cm[nx*3+1] = m.mu[1]; cm[nx*3+2] = m.mu[2]; nx++;
       BD.them(n.x, 0.07, n.y, n.a, 9.5, 5);
-      if (nhip){ const re = n._re3 = (n._reT3 || 0) > S.now ? n._re3 : (n._reT3 = S.now + 0.3, sapRe(n)); if (re) TP3.datMaTran(mn, nn++, n.x, 0, n.y, n.a, re); }
-      // đèn phanh: đang giảm tốc rõ hoặc đang đứng chờ
-      const giam = n._v3 !== undefined && dt > 0 && (n._v3 - n.v) / dt > 30; n._v3 = n.v;
-      if (giam || n.v < 1.5) TP3.datMaTran(mp, np++, n.x, 0, n.y, n.a);
+      if (nhip){ const r = re(n); if (r) TP3.datMaTran(mn, nn++, n.x, 0, n.y, n.a, r); }
+      if (phanh(n)) TP3.datMaTran(mp, np++, n.x, 0, n.y, n.a);
     }
     for (const [n, l] of X.buyt) if (!conBuyt.has(n)) l.visible = false;
     X.son.count = X.coDinh.count = X.ao.count = X.mu.count = nx; X.nhay.count = nn; X.phanh.count = np;
     X.son.instanceMatrix.needsUpdate = true; X.son.instanceColor.needsUpdate = true; X.ao.instanceColor.needsUpdate = true; X.mu.instanceColor.needsUpdate = true;
     X.nhay.instanceMatrix.needsUpdate = true; X.phanh.instanceMatrix.needsUpdate = true;
+    X.nhayB.count = bn; X.phanhB.count = bp; X.nhayB.instanceMatrix.needsUpdate = true; X.phanhB.instanceMatrix.needsUpdate = true;
     TP3.TT.xeVe = nx + conBuyt.size;
     // xe của người chơi: đèn xi-nhan nháy theo S.turn / S.blinkOn của game, đèn phanh khi đang bóp phanh; đầu trần nếu chưa đội mũ (S.helmet)
     const car = S.veh === 'car', bike = S.view === 'bike', B = X.xeToi, O = X.oTo, dangPhanh = (keys.brake || keys.down) && player.v > -1;

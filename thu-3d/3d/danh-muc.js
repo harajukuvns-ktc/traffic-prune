@@ -74,19 +74,28 @@ function bienCam(icon){   // biển cấm ở đầu phố đi bộ: quay dọc 
     return {x: b.x, y: b.y, n: {x: u.x, y: u.y}, mat: ['cam', icon], dang: 'tron', haiMat: true};
   });
 }
-// Cột đèn: cột ở góc bên phải mỗi nhánh (trangTri.cotDen, cùng thứ tự với MAP.stopLines), hộp đèn quay về phía xe đang tới, pha đèn
-// riêng của nhánh (sl.phase). Thêm một hộp nhắc lại cho nhánh đi tới từ bên trái cột (với họ cột này ở góc XA bên phải), để xe đứng
-// ở vạch dừng nhìn thẳng vẫn thấy đèn của mình. Ngã năm, ngã ba lệch: nhánh nào có chiều đi lệch dưới 35° so với hướng đó thì nhận.
+// Cột đèn: cột ở góc bên phải mỗi nhánh (trangTri.cotDen, cùng thứ tự với MAP.stopLines), hộp đèn chính quay về phía xe đang tới,
+// pha đèn riêng của nhánh (sl.phase). Xe đứng ở vạch dừng thường không thấy hộp chính của mình (cột ở ngang hoặc sau lưng, nhất là ở
+// ngã năm, ngã ba lệch), nên mỗi nhánh có thêm một HỘP NHẮC LẠI gắn trên cột khác của nút: chọn cột nằm phía trước vạch dừng
+// 40–260 đơn vị, lệch ngang ít nhất (ưu tiên bên phải). Bài kiểm kiem-vat.js bảo đảm vạch dừng nào cũng có hộp đèn nhìn thấy được.
 function cotDen(){
-  const ds = [];
+  const ds = [], theoNut = {};
   MAP.stopLines.forEach((sl, i) => {
     const p = trangTri.cotDen[i]; if (!p) return;
-    const hop = [{n: {x: -sl.d.x, y: -sl.d.y}, L: sl.L, phase: sl.phase}], dx = -sl.d.y, dy = sl.d.x;
-    let kia = null, tot = 0.82;
-    for (const q of MAP.stopLines) if (q.node === sl.node && q !== sl && q.d.x*dx + q.d.y*dy > tot){ tot = q.d.x*dx + q.d.y*dy; kia = q; }
-    if (kia) hop.push({n: {x: -kia.d.x, y: -kia.d.y}, L: kia.L, phase: kia.phase});
-    ds.push({x: p.x, y: p.y, hop, cam: Math.atan2(-sl.d.y, -sl.d.x)});
+    const c = {x: p.x, y: p.y, hop: [{n: {x: -sl.d.x, y: -sl.d.y}, L: sl.L, phase: sl.phase}], cam: Math.atan2(-sl.d.y, -sl.d.x), sl};
+    ds.push(c); (theoNut[sl.node] = theoNut[sl.node] || []).push(c);
   });
+  for (const sl of MAP.stopLines){
+    let tot = null, dTot = 1e9;
+    for (const c of theoNut[sl.node] || []){
+      if (c.sl === sl) continue;
+      const vx = c.x - sl.sx, vy = c.y - sl.sy, truoc = vx*sl.d.x + vy*sl.d.y, ngang = -vx*sl.d.y + vy*sl.d.x;   // ngang dương: bên phải
+      if (truoc < 40 || truoc > 260 || ngang < -70 || ngang > 120) continue;
+      const diem = Math.abs(ngang) + (ngang < 0 ? 25 : 0) + truoc * 0.2;
+      if (diem < dTot && !c.hop.some(h => -h.n.x*sl.d.x - h.n.y*sl.d.y > 0.9)){ dTot = diem; tot = c; }
+    }
+    if (tot) tot.hop.push({n: {x: -sl.d.x, y: -sl.d.y}, L: sl.L, phase: sl.phase, nhac: true});
+  }
   return ds;
 }
 // Mọi "bảng dữ liệu" của game cần có mục lo (bài kiểm so danh sách này với cột phu của danh mục)

@@ -173,7 +173,9 @@ TP3.dungNenXa = function(){
     if (MAP.nodes[r.a].kind === 'end'){ pts[0].x -= r.dirA.x*EXT; pts[0].y -= r.dirA.y*EXT; }
     if (MAP.nodes[r.b].kind === 'end'){ pts[n-1].x -= r.dirB.x*EXT; pts[n-1].y -= r.dirB.y*EXT; }
     for (let i = 0; i + 1 < n; i++){
-      const p = pts[i], q = pts[i+1], L = Math.hypot(q.x - p.x, q.y - p.y) || 1, vx = -(q.y - p.y) / L * r.half, vy = (q.x - p.x) / L * r.half;
+      const p = pts[i], q = pts[i+1], L = Math.hypot(q.x - p.x, q.y - p.y) || 1, vx = -(q.y - p.y) / L * r.half, vy = (q.x - p.x) / L * r.half, k = (r.half + SIDE) / r.half;
+      // dải vỉa hè phẳng hai bên (ô xa chưa dựng vẫn thấy vỉa hè sáng màu), rồi mặt đường
+      G.tu([p.x - vx*k, yDuong - 0.15, p.y - vy*k], [q.x - vx*k, yDuong - 0.15, q.y - vy*k], [q.x + vx*k, yDuong - 0.15, q.y + vy*k], [p.x + vx*k, yDuong - 0.15, p.y + vy*k], [0, 1, 0], '#b3aa9b');
       G.tu([p.x - vx, yDuong, p.y - vy], [q.x - vx, yDuong, q.y - vy], [q.x + vx, yDuong, q.y + vy], [p.x + vx, yDuong, p.y + vy], [0, 1, 0], '#585a60');
     }
   }

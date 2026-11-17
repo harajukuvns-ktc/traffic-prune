@@ -10,30 +10,54 @@ const Gom = TP3.Gom, bam = TP3.bam, CAO = TP3.CAO_VIA;
 const gan = (x, y, ds, r) => ds.some(o => Math.hypot(o.x - x, o.y - y) < r);
 const trenVia = (x, y, r) => [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]].every(([dx, dy]) => x + dx > 3 && y + dy > 3 && x + dx < W - 3 && y + dy < H - 3 && MAP.classify(x + dx, y + dy).t === 'off');
 
-/* ---------- chỗ đặt cây và cột điện (tính một lần) ---------- */
-const CAY = TP3.cayDS = [], COT = TP3.cotDienDS = [];
-TP3.khoiDong.push(() => {
-  CAY.length = 0; COT.length = 0;
-  const tranh = TP3.bienDS.concat(TP3.cotDenDS, CSGT.filter(p => !p.off).map(p => p.cabinPt), DESTS.map(d => ({x: d.lx, y: d.ly})));
-  for (const r of MAP.roads){
-    if (!r.veh || r.cap === 'alley') continue;   // hẻm hẹp: không trồng cây, không cột điện
-    // cột điện: một bên đường (bên phải theo chiều a→b), sát mép vỉa hè, cách nhau khoảng 105
-    let truoc = null;
-    for (let s = 58; s < r.len - 40; s += 105){
-      const p = MAP.pointAt(r, s), le = r.half + 4.5, x = p.x - p.dir.y*le, y = p.y + p.dir.x*le;
-      if (!TP3.trongVung(x, y, -4) || !trenVia(x, y, 2.5) || gan(x, y, tranh, 13)){ truoc = null; continue; }
-      const c = {x, y, d: {x: p.dir.x, y: p.dir.y}, n: {x: -p.dir.y, y: p.dir.x}, noi: truoc && Math.hypot(truoc.x - x, truoc.y - y) < 160 ? truoc : null, den: (COT.length % 2) === 0};
-      COT.push(c); truoc = c;
-    }
-    // cây: hai bên đường, lùi vào giữa vỉa hè, so le
-    for (let s = 46; s < r.len - 30; s += 62) for (const k of [-1, 1]){
-      const p = MAP.pointAt(r, s + (k > 0 ? 0 : 27)), le = r.half + 12.5, x = p.x - p.dir.y*le*k, y = p.y + p.dir.x*le*k;
-      if (!TP3.trongVung(x, y, -6) || !trenVia(x, y, 5) || hitsHouse(x, y, 5) || gan(x, y, tranh, 30) || gan(x, y, CAY, 30) || gan(x, y, COT, 12)) continue;
-      CAY.push({x, y});
+/* ---------- chỗ đặt cây và cột điện: tính THEO Ô, lúc ô được dựng (không tính cả bản đồ lúc mở trang) ----------
+   Mỗi chỗ là một "ứng viên" cố định trên một đường (đường r, số thứ tự k, bên lề): toạ độ chỉ phụ thuộc dữ liệu MAP nên ô nào hỏi cũng ra
+   cùng kết quả. Ứng viên bị loại nếu không đứng hẳn trên vỉa hè, chạm nhà, sát biển báo / cột đèn / chòi / nhãn điểm giao; cây còn bị loại
+   nếu sát cột điện, hoặc trong vòng 30 đơn vị có một cây ứng viên khác "ưu tiên hơn" (số ưu tiên nhỏ hơn). Quy tắc này không phụ thuộc
+   thứ tự dựng ô, nên cây ở hai bên ranh giới ô vẫn tránh nhau và lần dựng nào cũng ra cùng chỗ. */
+const nhoUV = new Map(), nhoO = new Map();
+const VAT_TRANH = () => TP3._tranh || (TP3._tranh = TP3.bienDS.concat(CSGT.filter(p => !p.off).map(p => p.cabinPt), DESTS.map(d => ({x: d.lx, y: d.ly}))));
+const DUONG = () => TP3._duongCay || (TP3._duongCay = MAP.roads.filter(r => r.veh && r.cap !== 'alley').map((r, i) => ({r, i})));   // hẻm hẹp: không trồng cây, không cột điện
+function cotUV(q, k){   // cột điện: một bên đường (bên phải theo chiều a→b), sát mép vỉa hè, cách nhau 105
+  const s = 58 + k * 105; if (k < 0 || s >= q.r.len - 40) return null;
+  const key = 'c' + q.i + ',' + k; let c = nhoUV.get(key); if (c) return c;
+  const p = MAP.pointAt(q.r, s), le = q.r.half + 4.5, x = p.x - p.dir.y*le, y = p.y + p.dir.x*le;
+  c = {x, y, d: {x: p.dir.x, y: p.dir.y}, n: {x: -p.dir.y, y: p.dir.x}, den: k % 2 === 0, ok: trenVia(x, y, 2.5) && !gan(x, y, VAT_TRANH(), 13)};
+  nhoUV.set(key, c); return c;
+}
+function cayUV(q, k, ben){   // cây: hai bên đường, lùi vào giữa vỉa hè, so le, cách nhau 62
+  const s = 46 + k * 62; if (s >= q.r.len - 30) return null;
+  const key = 't' + q.i + ',' + k + ',' + ben; let c = nhoUV.get(key); if (c) return c;
+  const p = MAP.pointAt(q.r, s + (ben > 0 ? 0 : 27)), le = q.r.half + 12.5, x = p.x - p.dir.y*le*ben, y = p.y + p.dir.x*le*ben;
+  c = {x, y, uuTien: q.i * 1000 + k * 2 + (ben > 0 ? 0 : 1), ok: trenVia(x, y, 5) && !hitsHouse(x, y, 5) && !gan(x, y, VAT_TRANH(), 30)};
+  nhoUV.set(key, c); return c;
+}
+// mọi ứng viên (cột hoặc cây) của các đường chạy qua vùng [x0−le, x1+le] × [y0−le, y1+le]
+function trongVungUV(o, le, loai){
+  const ds = [], x0 = o.x0 - le, x1 = o.x1 + le, y0 = o.y0 - le, y1 = o.y1 + le;
+  for (const q of DUONG()){
+    const h = q.hop || (q.hop = q.r.pts.reduce((b, p) => ({x0: Math.min(b.x0, p.x), y0: Math.min(b.y0, p.y), x1: Math.max(b.x1, p.x), y1: Math.max(b.y1, p.y)}), {x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9}));
+    if (h.x1 < x0 - 60 || h.x0 > x1 + 60 || h.y1 < y0 - 60 || h.y0 > y1 + 60) continue;
+    const buoc = loai === 'cot' ? 105 : 62, dau = loai === 'cot' ? 58 : 46;
+    for (let k = 0; dau + k * buoc < q.r.len; k++){
+      // lọc nhanh theo vị trí trên tim đường trước khi tính ứng viên (khỏi tính những chỗ ở xa ô)
+      const t = MAP.pointAt(q.r, dau + k * buoc); if (t.x < x0 - 60 || t.x > x1 + 60 || t.y < y0 - 60 || t.y > y1 + 60) continue;
+      for (const ben of loai === 'cot' ? [1] : [-1, 1]){
+        const c = loai === 'cot' ? cotUV(q, k) : cayUV(q, k, ben);
+        if (c && c.ok && c.x >= x0 && c.x < x1 && c.y >= y0 && c.y < y1){ if (loai === 'cot' && c.noi === undefined){ const tr = cotUV(q, k - 1); c.noi = tr && tr.ok && Math.hypot(tr.x - c.x, tr.y - c.y) < 160 ? tr : null; } ds.push(c); }
+      }
     }
   }
-  TP3.TT.cay = CAY.length; TP3.TT.cotDien = COT.length;
-});
+  return ds;
+}
+// cây và cột điện của một ô (và các vật ở sát ngoài ô, để thứ khác tránh)
+TP3.cayCotCuaO = function(o){
+  let kq = nhoO.get(o.khoa); if (kq) return kq;
+  const cotGan = trongVungUV(o, 60, 'cot'), ung = trongVungUV(o, 40, 'cay').filter(c => !gan(c.x, c.y, cotGan, 12));
+  const cayGan = ung.filter(c => !ung.some(d => d !== c && d.uuTien < c.uuTien && Math.hypot(d.x - c.x, d.y - c.y) < 30));
+  kq = {cay: cayGan.filter(c => TP3.trongO(o, c.x, c.y)), cot: cotGan.filter(c => TP3.trongO(o, c.x, c.y)), cayGan, cotGan};
+  nhoO.set(o.khoa, kq); return kq;
+};
 
 /* ---------- hình mẫu dựng một lần rồi chép vào từng chỗ ---------- */
 let MAU = null;
@@ -72,17 +96,24 @@ function banHang(G, x, z, a, dai, rong, loai){
   G.hop(x, 0, z, dai * 0.5, 1.6, rong * 0.6, a, '#3f7fbf', {aoDay: 0.8});
 }
 
+// Cây dạng đơn giản cho "ô xa" (ô chưa dựng đầy đủ): thân bốn cạnh và một tán tròn ít mặt, cùng chỗ, cùng cỡ, cùng màu với cây thật
+TP3.cayXa = function(o, G){
+  for (const c of TP3.cayCotCuaO(o).cay){
+    const s = 0.86 + bam(c.x, c.y, 3) * 0.36;
+    G.tru(c.x, CAO, c.y, 0.9 * s, 0.7 * s, 14 * s, 4, '#7a5d42'); G.cau(c.x, CAO + 19.5 * s, c.y, 9 * s, 6.8 * s, 9 * s, XANH[Math.floor(bam(c.x, c.y, 4) * XANH.length)], {n: 6, t: 3, aoDuoi: 0.55});
+  }
+};
 TP3.themLop('trang-tri', (o, G) => {
   if (!MAU) MAU = taoMau();
-  const D = G.duc, ct = TP3.Q.chiTiet, A = TP3.anh.duc.o;
+  const D = G.duc, ct = TP3.Q.chiTiet, A = TP3.anh.duc.o, {cay: CAY, cot: COT, cayGan, cotGan} = TP3.cayCotCuaO(o);
   // --- cây ---
-  for (const c of CAY){ if (!TP3.trongO(o, c.x, c.y)) continue;
+  for (const c of CAY){
     const s = 0.86 + bam(c.x, c.y, 3) * 0.36, g = bam(c.x, c.y, 5) * 6.28;
     D.dat(c.x, CAO, c.y, g, s); D.chen(MAU.than); D.chen(MAU.tan[bam(c.x, c.y, 6) < 0.5 ? 0 : 1], XANH[Math.floor(bam(c.x, c.y, 4) * XANH.length)]); D.dat();
     TP3.bongMo(G.bong, c.x + 2.5, CAO + 0.06, c.y + 2, 11 * s, 11 * s, 0);
   }
   // --- cột điện, đèn đường, dây điện ---
-  for (const c of COT){ if (!TP3.trongO(o, c.x, c.y)) continue;
+  for (const c of COT){
     const a = Math.atan2(c.d.y, c.d.x);
     D.dat(c.x, CAO, c.y, a); D.chen(MAU.cot); if (c.den) D.chen(MAU.den); D.dat();
     TP3.bongMo(G.bong, c.x, CAO + 0.05, c.y, 3, 3, 0);
@@ -143,7 +174,7 @@ TP3.themLop('trang-tri', (o, G) => {
       const xd = {x: m.n.y, y: -m.n.x};
       for (let s = 10; s < m.dai - 8; s += 13){ if (bam(h.x + s, h.y + m.n.x * 7, 31) > 0.3) continue;
         const x = m.mx + xd.x*(s - m.dai / 2) + m.n.x*3.4, y = m.my + xd.y*(s - m.dai / 2) + m.n.y*3.4;
-        if (gan(x, y, CAY, 6) || gan(x, y, COT, 5)) continue;
+        if (gan(x, y, cayGan, 6) || gan(x, y, cotGan, 5)) continue;
         D.dat(x, CAO, y, Math.atan2(xd.y, xd.x) + (bam(x, y, 32) - 0.5) * 0.5 + (bam(x, y, 33) < 0.5 ? Math.PI : 0)); D.chen(MAU.xeSon, SON_XE[Math.floor(bam(x, y, 34) * SON_XE.length)]); D.chen(MAU.xeCoDinh); D.dat();
         TP3.bongMo(G.bong, x, CAO + 0.05, y, 7, 3.2, Math.atan2(xd.y, xd.x));
       } } }

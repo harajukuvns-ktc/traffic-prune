@@ -42,7 +42,7 @@ const camUng = ('ontouchstart' in window) || !!(window.matchMedia && window.matc
 const MUC = {
   thap: {pr: 1,   nen: 1,   xa: 900,  rangCua: false, chiTiet: 0, bong: false, oToiDa: 9,  oBanKinh: 600},
   vua:  {pr: 1.5, nen: 1.5, xa: 1300, rangCua: true,  chiTiet: 1, bong: false, oToiDa: 14, oBanKinh: 800},
-  cao:  {pr: 2,   nen: 2,   xa: 1900, rangCua: true,  chiTiet: 2, bong: true, bongAnh: 2048, oToiDa: 16, oBanKinh: 900}
+  cao:  {pr: 2,   nen: 2,   xa: 1900, rangCua: true,  chiTiet: 2, bong: true, bongAnh: 2048, oToiDa: 18, oBanKinh: 1000}
 };
 TP3.MUC = MUC;
 TP3.mucTen = MUC[thamSo.get('q')] ? thamSo.get('q') : (camUng ? 'vua' : 'cao');
