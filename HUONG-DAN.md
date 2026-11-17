@@ -6,6 +6,8 @@ Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.htm
 
 Cách lấy game mới nhất về máy: vào trang kho code trên GitHub, bấm nút xanh **Code → Download ZIP**, rồi giải nén ra một thư mục.
 
+**Bản thử 3D (khu phố cũ):** https://harajukuvns-ktc.github.io/traffic-prune/thu-3d/ . Chỉ để đo xem 3D có mượt trên điện thoại không; tiền và điểm ở đây lưu riêng. Thêm `?q=thap` (nhẹ), `?q=vua` (mặc định) hoặc `?q=cao` (nét) vào cuối địa chỉ để đổi độ nét; ô nhỏ bên trái ghi số khung hình mỗi giây.
+
 ## Cách 1: mở thẳng (nhanh nhất)
 
 1. Giải nén game ra một thư mục, ví dụ `Traffic Prune`.
