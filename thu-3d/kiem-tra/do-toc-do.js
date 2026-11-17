@@ -15,7 +15,7 @@ const TRANG = 'file://' + path.resolve(__dirname, '..', 'index.html'), CHO = {x:
       const tai = await B.mo(TRANG + '?tu=0&fps=60&q=' + muc); await B.cho(400);
       await B.chay('document.getElementById("go").click(); 1');
       const tt = await B.chay('__T3D.sanSang()');
-      console.log(`# ${kho.ten} · ${muc}: tải trang ${tai} ms · dựng xong mọi ô sau ${tt.msSanSang} ms (riêng dựng ô ${tt.msDungO} ms) · ${tt.soO} ô · ${tt.tamGiacTinh} tam giác tĩnh · ảnh trên card đồ họa khoảng ${tt.boNhoAnhMB} MB`);
+      console.log(`# ${kho.ten} · ${muc}: tải trang ${tai} ms · dựng xong các ô quanh xe sau ${tt.msSanSang} ms · đang giữ ${tt.soO}/${tt.soOTong} ô · ${tt.tamGiacTinh} tam giác tĩnh · ảnh trên card đồ họa khoảng ${tt.boNhoAnhMB} MB · một ô nhiều nhất ${tt.msOLonNhat} ms, một bước nhiều nhất ${tt.msBuocLonNhat} ms`);
       for (const goc of ['nav', 'bike']){
         await B.chay(`__T3D.doiXe('bike'); __T3D.gocNhin('${goc}'); __T3D.datXe(${CHO.x}, ${CHO.y}, ${CHO.a}, 0); 1`); await B.cho(900);
         const r = await B.chay(`__T3D.do(${n})`);
