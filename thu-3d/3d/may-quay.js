@@ -9,12 +9,12 @@ const TP3 = window.TP3; if (!TP3 || TP3.hong) return;
 const T = TP3.T;
 const MQ = TP3.mayQuay = {goc: 0, nghieng: 0, gocTruoc: 0, toc: 0, VW: 800, VH: 600};
 // vị trí mắt người lái trong hệ trục của xe: cao = độ cao, truoc = cách tâm xe về phía trước, nhin = độ chúc xuống của hướng nhìn
-MQ.MAT = {bike: {cao: 9.5, truoc: -1.2, nhin: 10}, car: {cao: 6.75, truoc: 0.9, nhin: 8}};
+MQ.MAT = {bike: {cao: 9.9, truoc: -1.7, nhin: 13}, car: {cao: 6.75, truoc: 0.9, nhin: 8}};
 MQ.datOngKinh = function(camera){
   const bike = S.view === 'bike', car = S.veh === 'car', VW = MQ.VW, VH = MQ.VH;
   // chừa phần dưới màn hình cho hàng nút cảm ứng (và bảng đồng hồ ở góc sau tay lái), phần trên cho bảng chỉ đường trên điện thoại:
   // tâm hình dồn vào khoảng giữa còn lại, hình không bị méo
-  const tren = isTouch ? Math.min(150, VH * 0.18) : 0, duoi = isTouch ? Math.min(190, VH * 0.25) : (bike ? (car ? 150 : 110) : 0);
+  const tren = isTouch ? Math.min(150, VH * 0.18) : 0, duoi = isTouch ? Math.min(190, VH * 0.25) : (bike ? 150 : 0);
   const caoThat = Math.max(120, VH - tren - duoi), tiLe = VW / caoThat, ngang = (bike ? 70 : 60) * Math.PI / 180;
   camera.fov = clamp(2 * Math.atan(Math.tan(ngang / 2) / tiLe) * 180 / Math.PI, bike ? 56 : 48, 94);
   camera.aspect = tiLe; camera.near = bike ? 0.4 : 4; camera.far = TP3.tamXa || TP3.Q.xa;

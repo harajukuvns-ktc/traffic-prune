@@ -34,6 +34,7 @@ try { renderer = new T.WebGLRenderer({canvas: glCanvas, antialias: Q.rangCua, al
 catch (e){ TP3.hong = true; TP3.baoLoi('Máy này không bật được đồ họa 3D (WebGL). Bấm nút đổi góc nhìn để dùng kiểu bản đồ từ trên xuống.'); glCanvas.remove(); nhanCanvas.remove(); return; }
 const scene = new T.Scene(), camera = new T.PerspectiveCamera(55, 1.6, 1, Q.xa);
 Object.assign(TP3, {renderer, scene, camera, tamXa: Q.xa});
+document.body.classList.add('co3d');   // có 3D: ẩn ghi đông SVG của game (thu-3d.css), dùng ghi đông 3D
 TP3.taoChatLieu(renderer);
 TP3.datCanh('ngay', scene, renderer);
 const nenXa = TP3.dungNenXa(); scene.add(nenXa);
