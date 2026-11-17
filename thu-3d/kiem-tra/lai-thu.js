@@ -1,6 +1,6 @@
 /* Lái thử bản thử 3D bằng "bộ não" thật của game (qua window.__TP và window.__T3D):
    1. vượt đèn đỏ ở ngã tư Hoa Sữa × Bánh Mì phải bị ghi lỗi và trừ tiền;
-   2. đỗ vào ô P của điểm giao phải giao được hàng, đơn mới vẫn nằm trong khu phố cũ;
+   2. đỗ vào ô P của điểm giao phải giao được hàng; đơn nhận đủ 21 điểm giao của cả bản đồ;
    3. đổi qua lại ba góc nhìn và hai loại xe không sinh lỗi;
    4. giữ mát máy: giới hạn khung hình, tự hạ độ nét khi máy chậm, mất ngữ cảnh WebGL rồi có lại vẫn vẽ tiếp.
    Chạy: node lai-thu.js [địa chỉ gốc, ví dụ http://127.0.0.1:8123/thu-3d/]  (không ghi thì mở bằng file://) */
@@ -34,13 +34,20 @@ const {moTrinhDuyet} = require('./trinh-duyet.js');
         // đặt xe ở đầu ô đỗ, đúng chiều đỗ, đang chạy chậm: xe trôi vào giữa ô rồi dừng
         __T3D.datXe(b.cx - b.dir.x * 20, b.cy - b.dir.y * 20, Math.atan2(b.dir.y, b.dir.x), 30);
         await new Promise(r => setTimeout(r, 2500));
-        return JSON.stringify({ten, chuyen, sau: S.trips, moi: S.trip.dest.name, trongKhu: __T3D.diemKhu.includes(S.trip.dest), inBay: S.inBay}); })()`);
+        return JSON.stringify({ten, chuyen, sau: S.trips, moi: S.trip.dest.name, inBay: S.inBay}); })()`);
       const g = JSON.parse(gh);
-      kiem(`[${goc}] đỗ vào ô P thì giao được hàng, đơn mới ở trong khu cũ`, g.sau === g.chuyen + 1 && g.trongKhu, `giao "${g.ten}", số chuyến ${g.chuyen}→${g.sau}, đơn mới "${g.moi}"`);
+      kiem(`[${goc}] đỗ vào ô P thì giao được hàng`, g.sau === g.chuyen + 1, `giao "${g.ten}", số chuyến ${g.chuyen}→${g.sau}, đơn mới "${g.moi}"`);
     }
-    // --- 3. mọi đơn mới đều trong khu cũ (nhận 60 đơn liên tiếp) ---
-    const ngoai = await B.chay('(() => { let n = 0; for (let i = 0; i < 60; i++){ __TP.S.trip = null; newTrip(); if (!__T3D.diemKhu.includes(__TP.S.trip.dest)) n++; } return n + "/" + __T3D.diemKhu.length + "/" + __TP.DESTS.length; })()');
-    kiem('60 đơn liên tiếp đều ở trong khu cũ, danh sách điểm giao của game còn nguyên', ngoai.startsWith('0/') && ngoai.endsWith('/21'), 'số đơn ngoài khu / số điểm trong khu / tổng số điểm = ' + ngoai);
+    // --- 3. đơn hàng dùng đủ các điểm giao của cả bản đồ (không còn giới hạn trong khu cũ) ---
+    const don = await B.chay('(() => { const ten = new Set(); let ngoai = 0; for (let i = 0; i < 300; i++){ __TP.S.trip = null; newTrip(); const d = __TP.S.trip.dest; ten.add(d.name); if (d.bay.cx > 1600 || d.bay.cy > 1200) ngoai++; } return JSON.stringify({khac: ten.size, ngoai, tong: __TP.DESTS.length}); })()');
+    const dn = JSON.parse(don);
+    kiem('300 đơn liên tiếp trải khắp bản đồ', dn.tong === 21 && dn.khac >= 15 && dn.ngoai > 100, dn.khac + '/' + dn.tong + ' điểm giao khác nhau (game không giao tới điểm cách xe dưới 420 đơn vị), ' + dn.ngoai + ' đơn ngoài khu cũ');
+    // --- 3b. chạy dọc bản đồ: số ô đang giữ và bộ nhớ ảnh không tăng mãi ---
+    const doc = await B.chay(`(async () => { const kq = []; for (const [x, y] of [[600, 320], [1180, 742], [2020, 425], [2780, 1125], [1980, 1935], [790, 1560], [386, 2165], [600, 320], [2780, 1125], [600, 320]]){
+      __T3D.datXe(x, y, 0, 0); await __T3D.sanSang(); kq.push([__T3D.soO(), __T3D.TP3.boNhoAnh()]); } return JSON.stringify({kq, toiDa: __T3D.TP3.Q.oToiDa, lan: __T3D.thongTin.soLanDungO, buoc: __T3D.thongTin.msBuocLonNhat, o: __T3D.thongTin.msOLonNhat}); })()`);
+    const dc = JSON.parse(doc), mb = dc.kq.map(k => k[1]);
+    kiem('chạy dọc bản đồ: số ô giữ không quá giới hạn, bộ nhớ ảnh không tăng mãi', dc.kq.every(k => k[0] <= dc.toiDa) && Math.max(...mb) < Math.min(...mb) * 1.5 + 5,
+      'số ô ' + dc.kq.map(k => k[0]).join(' ') + ' (tối đa ' + dc.toiDa + '); ảnh ' + mb.join(' ') + ' MB; đã dựng ô ' + dc.lan + ' lần, bước nặng nhất ' + dc.buoc + ' ms, một ô nhiều nhất ' + dc.o + ' ms');
     // --- 4. đổi góc nhìn, đổi xe ---
     for (const xe of ['car', 'bike']) for (const goc of ['nav', 'bike', 'map', 'nav']){ await B.chay(`__T3D.doiXe('${xe}'); __T3D.gocNhin('${goc}'); 1`); await B.cho(250); }
     await B.chay('document.getElementById("viewBtn").click(); 1'); await B.cho(250);
