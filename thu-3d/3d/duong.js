@@ -195,6 +195,7 @@ TP3.dungNenXa = function(){
   }
   for (const rg of MAP.rings) G.tru(rg.x, yDuong - 0.1, rg.y, rg.rOut, rg.rOut, 0.1, 20, '#585a60', {nap: true});
   const luoi = new T.Mesh(G.hinh(), TP3.vl.duc); luoi.frustumCulled = false; luoi.matrixAutoUpdate = false; luoi.receiveShadow = true;
+  luoi.renderOrder = 0.5;   // vẽ SAU các ô: phần nền xa nằm dưới ô đã dựng bị loại ngay nhờ phép thử độ sâu, đỡ tô chồng
   return luoi;
 };
 })();
