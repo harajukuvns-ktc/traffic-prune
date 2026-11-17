@@ -14,7 +14,8 @@ MQ.datOngKinh = function(camera){
   const bike = S.view === 'bike', car = S.veh === 'car', VW = MQ.VW, VH = MQ.VH;
   // chừa phần dưới màn hình cho hàng nút cảm ứng (và bảng đồng hồ ở góc sau tay lái), phần trên cho bảng chỉ đường trên điện thoại:
   // tâm hình dồn vào khoảng giữa còn lại, hình không bị méo
-  const tren = isTouch ? Math.min(150, VH * 0.18) : 0, duoi = isTouch ? Math.min(190, VH * 0.25) : (bike ? 150 : 0);
+  // (trên điện thoại cụm chữ gọn cao khoảng 150–190 điểm: xem giao-dien-gon.css)
+  const tren = MQ.tren = isTouch ? Math.min(170, VH * 0.2) : 0, duoi = isTouch ? Math.min(190, VH * 0.25) : (bike ? 150 : 0);
   const caoThat = Math.max(120, VH - tren - duoi), tiLe = VW / caoThat, ngang = (bike ? 70 : 60) * Math.PI / 180;
   camera.fov = clamp(2 * Math.atan(Math.tan(ngang / 2) / tiLe) * 180 / Math.PI, bike ? 56 : 48, 94);
   camera.aspect = tiLe; camera.near = bike ? 0.4 : 4; camera.far = TP3.tamXa || TP3.Q.xa;

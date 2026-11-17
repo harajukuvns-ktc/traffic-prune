@@ -1,0 +1,63 @@
+/* =========================================================
+   Traffic Prune · thu-3d/giao-dien-gon.css: GIAO DIỆN GỌN KHI LÁI Ở GÓC NHÌN 3D
+   Mục tiêu (người dùng yêu cầu 14:23 ngày 17/11/2026): chữ cảnh báo, nhắc nhở không được che tầm nhìn người lái;
+   vùng phía trước xe (làn đường và hai bên lề, khoảng nửa giữa màn hình) luôn thoáng.
+   Mọi quy tắc chỉ áp dụng khi <body> có lớp v3d (3d/giao-dien.js bật lớp này ở góc nhìn 'nav' và 'bike').
+   Không sửa ../css/style.css: file này nạp sau và ghi đè. Cách chép sang game chính: xem HUONG-DAN-3D.md, mục "Chép sang game chính".
+   ========================================================= */
+
+/* --- 1. Dòng nhắc (💡 🔴 🟡 🚨 📞): MỘT dòng ngắn, chữ nhỏ, nền hơi trong, rộng vừa chữ (nội dung rút gọn do giao-dien.js) --- */
+body.v3d #warn{align-self:flex-start;max-width:100%;padding:3px 8px;font-size:12px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background:rgba(255,243,205,.9);border-left-width:4px;border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+/* --- 2. Lời thoại NPC (💬): tối đa 2 dòng, tên và lời trên cùng một dòng, nền hơi trong, chạm để ẩn --- */
+body.v3d #bubble{align-self:flex-start;max-width:100%;padding:4px 9px;font-size:12.5px;line-height:1.32;max-height:calc(2.64em + 10px);overflow:hidden;
+  border-width:1.5px;border-radius:11px;background:rgba(255,250,242,.88);box-shadow:0 2px 6px rgba(0,0,0,.14);pointer-events:auto}
+body.v3d #bubName{display:inline;font-size:11.5px;margin:0 5px 0 0}
+/* đang có bảng phạt / thông báo thì không chồng thêm khung lời thoại (giao-dien.js bật lớp co-law) */
+body.v3d.co-law #bubble{display:none !important}
+
+/* --- 3. Bảng phạt / thông báo giao hàng: 2 dòng, chữ nhỏ, nền hơi trong, chạm để ẩn (chi tiết xem ở 📘 Sổ tay) --- */
+body.v3d #law{padding:5px 9px;font-size:12px;line-height:1.3;border-left-width:4px;border-radius:11px;background:rgba(255,250,242,.9);box-shadow:0 2px 8px rgba(0,0,0,.14)}
+body.v3d #law .lawin{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+body.v3d #law .lawx{display:none}
+body.v3d #law small{display:none}
+body.v3d #law .lawin br{display:none}   /* các ý nối liền trên cùng dòng cho đỡ tốn chỗ */
+
+/* --- 4. Ô số đo: mặc định một dòng nhỏ (số khung hình); ?do=1 hiện đủ; ?do=0 tắt --- */
+#do3d.gon{top:auto;bottom:4px;left:50%;transform:translateX(-50%);padding:1px 6px;font-size:10px;background:rgba(20,24,30,.4);border-radius:6px}
+
+/* --- 5. Máy tính (rộng từ 1000): lời thoại thôi nằm giữa màn hình phía trên, bảng phạt gọn ở góc dưới trái --- */
+@media (min-width:1000px){
+  body.v3d #bubble{position:static;margin:0;max-width:410px}
+  body.v3d #law{width:360px}
+  body.v3d #law .lawin{-webkit-line-clamp:3}
+}
+
+/* --- 6. Điện thoại (rộng dưới 1000): mọi thứ dồn sát mép trên, cả cụm cao không quá khoảng 190 điểm --- */
+@media (max-width:999px){
+  body.v3d #top{left:6px;top:6px;width:min(410px,calc(100vw - 12px));gap:4px}
+  body.v3d #nav{gap:8px;padding:5px 9px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+  body.v3d #navIcon{flex-basis:30px;height:30px}
+  body.v3d #navIcon svg{width:30px;height:30px}
+  body.v3d #navMain{font-size:13.5px;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  body.v3d #navSub{font-size:11px;margin-top:1px}
+  body.v3d #chips{gap:3px;max-width:calc(100% - 172px)}
+  body.v3d .chip{padding:2px 6px;font-size:11.5px;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+  body.v3d .chip .lim{display:none}
+  body.v3d #helmchip{display:none !important}          /* đã có nút 🪖 / 💺 và dòng nhắc */
+  body.v3d #right{right:6px;top:58px;gap:4px}
+  body.v3d #topbtns{gap:4px}
+  body.v3d #topbtns .btn{padding:4px 7px;font-size:12px;border-radius:9px}
+  body.v3d .btn.act{font-size:13px;padding:7px 10px;border-radius:10px}
+  body.v3d #warn{font-size:11.5px}
+  #do3d.gon{bottom:auto;top:1px;left:auto;right:2px;transform:none;font-size:9px;padding:0 4px}
+}
+/* điện thoại cầm ngang (màn hình thấp): cụm chữ bên trái hẹp lại để chừa giữa màn hình */
+@media (max-height:500px){
+  body.v3d #top{width:min(300px,40vw)}
+  body.v3d #chips{max-width:100%}
+  body.v3d #navMain{-webkit-line-clamp:1}
+  body.v3d #right{top:6px}
+  body.v3d #law .lawin{-webkit-line-clamp:2}
+}

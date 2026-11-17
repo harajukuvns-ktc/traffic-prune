@@ -48,8 +48,10 @@ CN.ve = function(g, camera, VW, VH){
   const b = S.bubble;
   if (b && b.speaker && b.speaker.x !== undefined && !b.speaker.follow){ const p = chieu(b.speaker.x, 17, b.speaker.y); if (p){ g.font = '20px sans-serif'; g.fillText('💬', p.x, p.y); } }
   for (const f of S.floats){   // số tiền bay lên
-    const p = chieu(f.x, 14 + (f.rise || 0) * 0.6, f.y); if (!p) continue;
-    g.globalAlpha = clamp(f.t, 0, 1); g.font = '700 15px ' + TP3.FONT; g.lineWidth = 3; g.strokeStyle = '#fff'; g.strokeText(f.text, p.x, p.y); g.fillStyle = f.color; g.fillText(f.text, p.x, p.y); g.globalAlpha = 1;
+    // chữ rút gọn, nhỏ; ở góc sau tay lái chữ của chính mình hiện sát mép trên vùng nhìn (không nổi giữa làn đường trước mặt)
+    const cuaToi = Math.hypot(f.x - player.x, f.y - player.y) < 16, t = TP3.giaoDien.rutChuBay(f.text);
+    const p = S.view === 'bike' && cuaToi ? {x: VW / 2, y: (TP3.mayQuay.tren || 60) + 34 - (f.rise || 0) * 0.5} : chieu(f.x, 15 + (f.rise || 0) * 0.6, f.y); if (!p) continue;
+    g.globalAlpha = clamp(f.t, 0, 1); g.font = '700 13px ' + TP3.FONT; g.lineWidth = 3; g.strokeStyle = '#fff'; g.strokeText(t, p.x, p.y); g.fillStyle = f.color; g.fillText(t, p.x, p.y); g.globalAlpha = 1;
   }
 };
 })();

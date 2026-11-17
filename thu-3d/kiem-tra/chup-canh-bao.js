@@ -15,7 +15,7 @@ const {moTrinhDuyet} = require('./trinh-duyet.js');
       await B.chay('document.getElementById("go").click(); 1');
       for (const [xe, goc] of [['bike', 'nav'], ['bike', 'bike'], ['car', 'bike'], ['car', 'nav']]){
         // xe đứng trước vạch dừng ngã tư Hoa Sữa × Bánh Mì, chưa đội mũ / thắt dây; chờ đèn đỏ rồi cho mọi thứ hiện cùng lúc
-        await B.chay(`__T3D.doiXe('${xe}'); __TP.S.helmet = false; __TP.S.belt = false; __T3D.gocNhin('${goc}'); __T3D.datXe(492, 280, Math.PI, 0); __TP.S.call = null; 1`);
+        await B.chay(`__T3D.doiXe('${xe}'); __TP.S.helmet = false; __TP.S.belt = false; __T3D.gocNhin('${goc}'); __T3D.datXe(492, 280, Math.PI, 0); __TP.S.call = null; __TP.S.pts = 12; __TP.S.suspended = false; document.getElementById('suspend').classList.add('hidden'); __TP.S.paused = false; 1`);
         await B.chay('__T3D.sanSang()');
         await B.chay(`new Promise(xong => { const t0 = Date.now(), f = () => { const la = __TP.playerLightAhead(400); if ((la && la.state === 'red') || Date.now() - t0 > 25000) xong(); else setTimeout(f, 100); }; f(); })`);
         await B.chay(`__TP.violate('red'); __TP.say({name: 'Bác xe ôm', follow: true}, 'Ấy chết, đi đứng kiểu gì thế, đèn đỏ kia kìa! Nhanh một phút chậm cả đời đó nha.'); __TP.S.callAt = __TP.S.now; 1`);

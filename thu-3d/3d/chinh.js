@@ -168,7 +168,7 @@ glCanvas.addEventListener('webglcontextrestored', () => {
 
 /* ---------- 7. vẽ mỗi khung hình và số đo ---------- */
 const DO = {t: 0, n: 0, tong: 0, ve: 0, nao: 0, ghi: null, msNaoKhung: 0, boQua: 0};
-const oDo = document.createElement('div'); oDo.id = 'do3d'; if (TP3.hienDo) document.body.appendChild(oDo);
+const oDo = document.createElement('div'); oDo.id = 'do3d'; const kieuDo = TP3.giaoDien.kieuDo; if (kieuDo !== 'tat') document.body.appendChild(oDo); if (kieuDo === 'gon') oDo.className = 'gon';
 step = function(dt){ const t0 = performance.now(); stepGoc(dt); DO.msNaoKhung = performance.now() - t0; };
 let vuaDung = false;
 function ve3D(dt){
@@ -182,6 +182,7 @@ function ve3D(dt){
 let daVe = false, lanGoi = 0, lanVe = 0, tich = 0;
 render = function(dt){
   const t0 = performance.now(), ba = la3D(), ky = 1000 / TP3.fpsToiDa;
+  TP3.giaoDien.capNhat(ba);
   if (ba){
     if (document.hidden || matNguCanh) return;        // tab ẩn hoặc đang mất ngữ cảnh: không vẽ
     // giới hạn khung hình: cộng dồn thời gian, đủ một nhịp mới vẽ (bộ não của game vẫn chạy ở mọi nhịp màn hình)
@@ -198,7 +199,8 @@ render = function(dt){
   if (ba) theoDoi(khung, ky);
   if (DO.t >= 500){
     const fps = 1000 * DO.n / DO.tong, ms = DO.tong / DO.n;
-    if (TP3.hienDo) oDo.textContent = (ba ? '3D ' + S.view : '2D map') + ' · ' + TP3.mucTen + (ba && TC.nac > (Q.bong ? 0 : 1) ? ' (hạ ' + (TC.nac - (Q.bong ? 0 : 1)) + ' nấc)' : '') + '\n' + fps.toFixed(0) + ' khung/giây · ' + ms.toFixed(1) + ' ms\n' +
+    if (kieuDo === 'gon') oDo.textContent = fps.toFixed(0) + ' k/g' + (ba && TC.nac > (Q.bong ? 0 : 1) ? ' ↓' + (TC.nac - (Q.bong ? 0 : 1)) : '');
+    else if (kieuDo === 'du') oDo.textContent = (ba ? '3D ' + S.view : '2D map') + ' · ' + TP3.mucTen + (ba && TC.nac > (Q.bong ? 0 : 1) ? ' (hạ ' + (TC.nac - (Q.bong ? 0 : 1)) + ' nấc)' : '') + '\n' + fps.toFixed(0) + ' khung/giây · ' + ms.toFixed(1) + ' ms\n' +
       'vẽ ' + (DO.ve / DO.n).toFixed(1) + ' · não ' + (DO.nao / DO.n).toFixed(1) + ' ms\n' + (ba ? lenh + ' lệnh vẽ · ' + (tam / 1000).toFixed(0) + ' nghìn tam giác\n' + (TT.diemAnh || '') + ' · ' + soODa + ' ô' + (viec ? ' (đang dựng)' : '') : '');
     DO.t = DO.n = DO.tong = DO.ve = DO.nao = 0;
   }
