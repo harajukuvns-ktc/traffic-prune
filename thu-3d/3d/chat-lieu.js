@@ -235,6 +235,20 @@ TP3.taoChatLieu = function(renderer){
   // hình đặc: chất liệu nhận nắng kiểu Lambert (rẻ hơn hẳn MeshStandardMaterial trên điện thoại mà phố ban ngày vẫn đủ đẹp)
   vl.duc = new T.MeshLambertMaterial({map: vl.anhDuc, vertexColors: true});
   vl.trong = new T.MeshLambertMaterial({map: vl.anhTrong, vertexColors: true, alphaTest: 0.5, side: T.DoubleSide});
+  // Ở góc dẫn đường, tán cây / cột / dây biển nằm GIỮA máy quay và xe người chơi sẽ che mất xe. Chèn vài dòng vào chương trình tô màu:
+  // điểm nào cao hơn 12 đơn vị và nằm trong ống bán kính uCat.y quanh đường ngắm máy quay → xe thì bỏ không vẽ (mép ống vẽ thưa cho mềm).
+  // Tính trong hệ toạ độ của máy quay: uXe = vị trí xe, uLen = hướng "lên trên", uCat.x = độ cao máy quay. uCat.y = 0 thì tắt (góc sau tay lái).
+  TP3.catTam = {uXe: {value: new T.Vector3(0, 0, -1)}, uLen: {value: new T.Vector3(0, 1, 0)}, uCat: {value: new T.Vector2(0, 0)}};
+  for (const m of [vl.duc, vl.trong]){
+    m.onBeforeCompile = sh => {
+      if (sh.fragmentShader.indexOf('#include <clipping_planes_fragment>') < 0) return;   // three.js đổi cấu trúc thì bỏ tính năng này, cảnh vẫn vẽ bình thường
+      Object.assign(sh.uniforms, TP3.catTam);
+      sh.fragmentShader = 'uniform vec3 uXe;\nuniform vec3 uLen;\nuniform vec2 uCat;\n' + sh.fragmentShader.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+	if ( uCat.y > 0.0 ) { vec3 pC = - vViewPosition; if ( dot( pC, uLen ) + uCat.x > 12.0 ) { float tC = dot( pC, uXe ) / dot( uXe, uXe );
+		if ( tC > 0.04 && tC < 0.93 ) { float dC = length( pC - uXe * tC ); if ( dC < uCat.y || ( dC < uCat.y + 3.0 && mod( gl_FragCoord.x + gl_FragCoord.y, 2.0 ) < 1.0 ) ) discard; } } }`);
+    };
+    m.customProgramCacheKey = () => 'tp3-cat-tam';
+  }
   // bóng mờ dưới chân vật: ảnh tròn sẫm ở giữa, trắng dần ra mép, NHÂN vào màu mặt đất bên dưới
   // (không dùng độ trong suốt của ảnh: ảnh đen có độ trong suốt đưa lên card đồ họa bị mất hẳn khi thử trên Chrome)
   { const c = TP3.taoCanvas(64, 64), g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 31);

@@ -185,6 +185,10 @@ function ve3D(dt){
   for (const d of TP3.dong || []) d.capNhat(dt);
   TP3.mayQuay.capNhat(camera, dt);
   TP3.capNhatAnhSang(camera, player.x, player.y);
+  // ống "cắt tầm" giữa máy quay và xe (xem chat-lieu.js): chỉ bật ở góc dẫn đường
+  camera.updateMatrixWorld(); const C = TP3.catTam;
+  C.uXe.value.set(player.x, 6, player.y).applyMatrix4(camera.matrixWorldInverse); C.uLen.value.set(0, 1, 0).transformDirection(camera.matrixWorldInverse);
+  C.uCat.value.set(camera.position.y, S.view === 'nav' ? 9 : 0);
   renderer.render(scene, camera);
   TP3.chuNoi.ve(nctx, camera, VW, VH);
 }

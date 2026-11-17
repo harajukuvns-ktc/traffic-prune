@@ -46,29 +46,43 @@ function anhMatDat(o){
     else { g.fillStyle = 'rgba(' + (r() < 0.5 ? '20,21,24' : '150,152,160') + ',' + (0.10 + r()*0.08) + ')'; g.fillRect(-8 - r()*16, -3 - r()*5, 16 + r()*30, 6 + r()*9); }
     g.restore();
   }
-  // tô lại từng điểm ảnh theo loại mặt đất (nhận ra qua màu veNen đã tô)
+  // Tô lại từng điểm ảnh theo loại mặt đất (nhận ra qua màu veNen đã tô).
+  // Điểm ảnh ở MÉP giữa hai loại (canvas đã làm mịn thành màu pha) được tô bằng màu pha tương ứng của hai loại mới, nên mép đường chéo,
+  // mép cong không còn viền răng cưa. Cỏ nằm sát đại lộ chéo (khoảng trống hình tam giác giữa vỉa hè và nhà xếp bậc thang) thành sân lát.
   g.setTransform(1, 0, 0, 1, 0, 0);
-  const d = g.getImageData(0, 0, n, n), a = d.data, NH = TP3.nhieu, gan = (i, m, s) => Math.abs(a[i] - m[0]) + Math.abs(a[i+1] - m[1]) + Math.abs(a[i+2] - m[2]) < s;
+  const d = g.getImageData(0, 0, n, n), a = d.data, NH = TP3.nhieu, LOAI = ['duong', 'via', 'san', 'co', 'gach'], MAUG = LOAI.map(t => RGB[t]), ra = [0, 0, 0], rb = [0, 0, 0];
+  const cheo = MAP.roads.filter(q => q.veh && !q.via && q.kieu.t === 'road' && q.pts.some(p => p.x > o.x0 - 700 && p.x < o.x1 + 700 && p.y > o.y0 - 700 && p.y < o.y1 + 700));
+  const ganCheo = (wx, wy) => { for (const q of cheo){ const s = q.seg[0], t = Math.max(0, Math.min(s.l, (wx - s.p.x)*s.d.x + (wy - s.p.y)*s.d.y));
+    if (Math.hypot(wx - s.p.x - s.d.x*t, wy - s.p.y - s.d.y*t) < q.half + SIDE + 72) return true; } return false; };
+  // màu mới của loại mặt đất l tại (wx, wy), ghi vào `out`
+  const to = (l, wx, wy, n1, n2, out) => {
+    if (l === 3 && cheo.length && ganCheo(wx, wy)) l = 2;
+    if (l === 0){ const m = 0.8 + 0.22 * n2 + 0.16 * n1; out[0] = 84 * m; out[1] = 86 * m; out[2] = 91 * m; }               // nhựa đường: xám, loang mảng lớn và hạt nhỏ
+    else if (l === 1){ const tx = Math.floor(wx / 8), ty = Math.floor(wy / 8), fx = wx - tx * 8, fy = wy - ty * 8;          // vỉa hè lát gạch 8 × 8, hai tông so le, mạch sẫm
+      const m = (fx < 0.7 || fy < 0.7 ? 0.8 : ((tx + ty) & 1) ? 1 : 0.93) * (0.93 + 0.12 * n1); out[0] = 190 * m; out[1] = 180 * m; out[2] = 167 * m; }
+    else if (l === 2){ const fx = ((wx % 24) + 24) % 24, fy = ((wy % 24) + 24) % 24, m = (fx < 0.6 || fy < 0.6 ? 0.84 : 1) * (0.86 + 0.2 * n2);   // sân bê tông tấm 24 × 24
+      out[0] = 190 * m; out[1] = 185 * m; out[2] = 175 * m; }
+    else if (l === 3){ const m = 0.78 + 0.32 * n1; out[0] = (96 + 44 * n2) * m; out[1] = (150 + 30 * n2) * m; out[2] = (74 + 20 * n2) * m; }      // cỏ hai tông xanh loang
+    else { const m = 0.9 + 0.14 * n1; out[0] = RGB.gach[0] * m; out[1] = RGB.gach[1] * m * 0.98; out[2] = RGB.gach[2] * m * 0.95; }             // phố đi bộ lát gạch
+  };
   for (let iy = 0; iy < n; iy++){
     const wy = Y0 + iy / k;
     for (let ix = 0; ix < n; ix++){
-      const i = (iy * n + ix) * 4, wx = X0 + ix / k;
+      const i = (iy * n + ix) * 4, wx = X0 + ix / k, r0 = a[i], g0 = a[i+1], b0 = a[i+2];
       const n1 = NH.lay(Math.floor(wx * 2.2), Math.floor(wy * 2.2)), n2 = NH.lay(Math.floor(wx * 0.45) + 91, Math.floor(wy * 0.45) + 37);
-      if (gan(i, RGB.duong, 30)){            // nhựa đường: xám trung tính, loang mảng lớn và hạt nhỏ
-        const m = 0.8 + 0.22 * n2 + 0.16 * n1; a[i] = 84 * m; a[i+1] = 86 * m; a[i+2] = 91 * m;
-      } else if (gan(i, RGB.via, 26)){       // vỉa hè lát gạch 8 × 8, hai tông màu so le, mạch gạch sẫm
-        const tx = Math.floor(wx / 8), ty = Math.floor(wy / 8), fx = wx - tx * 8, fy = wy - ty * 8, mach = fx < 0.7 || fy < 0.7;
-        const so = ((tx + ty) & 1) ? 1 : 0.93, m = (mach ? 0.8 : so) * (0.93 + 0.12 * n1);
-        a[i] = 190 * m; a[i+1] = 180 * m; a[i+2] = 167 * m;
-      } else if (gan(i, RGB.san, 14)){       // sân bê tông: tấm lớn 24 × 24, loang bẩn
-        const fx = ((wx % 24) + 24) % 24, fy = ((wy % 24) + 24) % 24, m = (fx < 0.6 || fy < 0.6 ? 0.84 : 1) * (0.86 + 0.2 * n2);
-        a[i] = 190 * m; a[i+1] = 185 * m; a[i+2] = 175 * m;
-      } else if (gan(i, RGB.co, 34)){        // cỏ: hai tông xanh loang
-        const m = 0.78 + 0.32 * n1, t = n2;
-        a[i] = (96 + 44 * t) * m; a[i+1] = (150 + 30 * t) * m; a[i+2] = (74 + 20 * t) * m;
-      } else if (gan(i, RGB.gach, 26)){      // phố đi bộ lát gạch
-        const m = 0.9 + 0.14 * n1; a[i] *= m; a[i+1] *= m * 0.98; a[i+2] *= m * 0.95;
-      } else { const m = 0.9 + 0.12 * n1; a[i] *= m; a[i+1] *= m; a[i+2] *= m; }   // vạch sơn: hơi mòn
+      let l = -1;
+      for (let q = 0; q < 5; q++){ const m = MAUG[q]; if (Math.abs(r0 - m[0]) + Math.abs(g0 - m[1]) + Math.abs(b0 - m[2]) < 12){ l = q; break; } }
+      if (l >= 0){ to(l, wx, wy, n1, n2, ra); a[i] = ra[0]; a[i+1] = ra[1]; a[i+2] = ra[2]; continue; }
+      // không khớp hẳn loại nào: thử coi là màu pha của hai loại (điểm ảnh ở mép)
+      let tA = -1, tB = -1, tT = 0, tE = 20 * 20;
+      for (let p = 0; p < 5; p++) for (let q = p + 1; q < 5; q++){
+        const A = MAUG[p], B = MAUG[q], ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2];
+        let t = ((r0 - A[0])*ux + (g0 - A[1])*uy + (b0 - A[2])*uz) / (ux*ux + uy*uy + uz*uz); t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const ex = r0 - A[0] - ux*t, ey = g0 - A[1] - uy*t, ez = b0 - A[2] - uz*t, e = ex*ex + ey*ey + ez*ez;
+        if (e < tE){ tE = e; tA = p; tB = q; tT = t; }
+      }
+      if (tA >= 0){ to(tA, wx, wy, n1, n2, ra); to(tB, wx, wy, n1, n2, rb); a[i] = ra[0] + (rb[0] - ra[0])*tT; a[i+1] = ra[1] + (rb[1] - ra[1])*tT; a[i+2] = ra[2] + (rb[2] - ra[2])*tT; }
+      else { const m = 0.9 + 0.12 * n1; a[i] = r0 * m; a[i+1] = g0 * m; a[i+2] = b0 * m; }   // vạch sơn và thứ khác: hơi mòn
     }
   }
   g.putImageData(d, 0, 0);
