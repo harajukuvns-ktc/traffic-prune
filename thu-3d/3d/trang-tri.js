@@ -16,7 +16,7 @@ TP3.khoiDong.push(() => {
   CAY.length = 0; COT.length = 0;
   const tranh = TP3.bienDS.concat(TP3.cotDenDS, CSGT.filter(p => !p.off).map(p => p.cabinPt), DESTS.map(d => ({x: d.lx, y: d.ly})));
   for (const r of MAP.roads){
-    if (r.via || !r.veh || r.cap === 'alley') continue;
+    if (!r.veh || r.cap === 'alley') continue;   // hẻm hẹp: không trồng cây, không cột điện
     // cột điện: một bên đường (bên phải theo chiều a→b), sát mép vỉa hè, cách nhau khoảng 105
     let truoc = null;
     for (let s = 58; s < r.len - 40; s += 105){

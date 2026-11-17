@@ -40,8 +40,17 @@ function cacMat(h){
               {n: {x: -1, y: 0}, mx: h.x, my: cy, dai: h.h, sau: h.w}, {n: {x: 1, y: 0}, mx: h.x + h.w, my: cy, dai: h.h, sau: h.w}];
   for (const m of ds){
     // mặt quay ra đường nếu đi ra ngoài 34 đơn vị (sân 5 + vỉa hè 22 + lấn vào đường) gặp lòng đường hoặc phố đi bộ
-    const t = TP3.loaiDat(m.mx + m.n.x * 34, m.my + m.n.y * 34);
-    m.pho = t !== 'off' && t !== 'island' && m.mx + m.n.x * 34 > 0 && m.my + m.n.y * 34 > 0 && m.mx + m.n.x * 34 < W && m.my + m.n.y * 34 < H;
+    // (đường chéo, đường cong: khoảng cách tới đường thay đổi dọc mặt nhà, nên thử thêm hai đầu mặt và xa hơn một chút)
+    m.pho = false;
+    for (const [d, k] of [[34, 0], [34, -0.4], [34, 0.4], [48, 0]]){
+      const x = m.mx + m.n.x * d + m.n.y * m.dai * k, y = m.my + m.n.y * d - m.n.x * m.dai * k, t = TP3.loaiDat(x, y);
+      if (t !== 'off' && t !== 'island' && x > 0 && y > 0 && x < W && y < H){ m.pho = true; break; }
+    }
+    if (!m.pho){   // nhà dọc đại lộ chéo đứng lùi xa đường: mặt nào nhìn thẳng ra đường trong vòng 80 đơn vị cũng làm mặt tiền (khỏi quay tường xi măng ra đại lộ)
+      const p = MAP.project(m.mx, m.my), g = p.road.seg.find(q => q.d === p.dir) || p.road.seg[0], t = Math.max(0, Math.min(g.l, (m.mx - g.p.x)*g.d.x + (m.my - g.p.y)*g.d.y));
+      const vx = g.p.x + g.d.x*t - m.mx, vy = g.p.y + g.d.y*t - m.my, L = Math.hypot(vx, vy) || 1;
+      m.pho = p.road.veh && p.dist - p.road.half < 80 && (vx * m.n.x + vy * m.n.y) / L > 0.6;
+    }
   }
   return ds;
 }
@@ -231,4 +240,15 @@ TP3.themLop('nha', (o, G) => {
   }
 });
 TP3.nhaOng = nhaOng; TP3.matNha = cacMat;
+// "Nhà xa" của một ô: mỗi nhà một khối hộp trơn. Hiện khi ô chưa được dựng đầy đủ (ô ở xa), ẩn khi ô đã dựng.
+TP3.dungNhaXa = function(o){
+  const G = new TP3.Gom(); let n = 0;
+  for (const h of MAP.houses || []){
+    if (!TP3.trongO(o, h.x + h.w / 2, h.y + h.h / 2)) continue; n++;
+    const cao = h.stall ? 11 : H_TRET + (1 + Math.floor(bam(h.x, h.y, 1) * 3)) * H_TANG, mau = h.stall ? '#c9b9a0' : TP3.tron(XI_MANG, SON[Math.floor(bam(h.x, h.y, 2) * SON.length)], 0.6);
+    G.hop(h.x + h.w / 2, CAO, h.y + h.h / 2, h.w - 2, cao, h.h - 2, 0, mau, {tren: h.stall ? '#c0564a' : '#8f8a82', aoDay: 0.8});
+  }
+  if (!n) return null;
+  const l = new TP3.T.Mesh(G.hinh(), TP3.vl.duc); return l;
+};
 })();

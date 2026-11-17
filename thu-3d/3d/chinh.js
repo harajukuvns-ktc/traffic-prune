@@ -4,7 +4,6 @@
    file này chỉ gán lại vài hàm toàn cục của game.js:
      render()  → góc 'nav' và 'bike' vẽ bằng 3D; góc 'map' gọi lại hàm vẽ 2D gốc
      resize()  → gọi hàm gốc rồi chỉnh thêm khung vẽ 3D
-     newTrip() → chỉ nhận đơn ở các điểm giao trong khu phố cũ
      step()    → chỉ bọc lại để đo thời gian
 
    CHỖ DÍNH GIỮA "BỘ NÃO" VÀ PHẦN VẼ 2D, VÀ CÁCH XỬ LÝ:
@@ -16,7 +15,7 @@
    (4) Tên đường, tên điểm giao, tiền bay lên, 😤 💬 vẽ trong drawUprights bằng canvas 2D → chu-noi.js.
    (5) Biển báo, cột đèn trong dữ liệu chỉ có vị trí, không có hướng mặt biển → bien.js suy từ làn đường gần nhất.
    (6) Hình dáng, kích thước, màu xe và người nằm trong các hàm draw* → xe.js, nguoi.js dựng lại.
-   (7) newTrip() chọn thẳng trong DESTS → bọc lại, tạm thu DESTS về các điểm trong khu cũ trong lúc gọi hàm gốc.
+   (7) (đợt 1 từng bọc newTrip() để chỉ nhận đơn trong khu cũ; đợt 2 đã dựng cả bản đồ nên bỏ.)
    (8) Khoá lưu localStorage dùng chung với bản chơi chính → luu-rieng.js đổi sang khoá riêng.
    (9) frame() của game gọi step + render ở mỗi nhịp màn hình → giới hạn khung hình làm trong render mới (bỏ qua lần vẽ, bộ não vẫn chạy đủ nhịp).
    ========================================================= */
@@ -40,20 +39,25 @@ TP3.datCanh('ngay', scene, renderer);
 const nenXa = TP3.dungNenXa(); scene.add(nenXa);
 for (const f of TP3.khoiDong) f();
 
-/* ---------- 2. các ô bản đồ: dựng dần, ô gần xe trước ---------- */
-const OO = new Map(); let hang = [];
+/* ---------- 2. các ô bản đồ: dựng dần quanh xe, nhả ô xa ----------
+   Cả bản đồ chia thành ô 512 × 512. Chỉ những ô gần xe (trong Q.oBanKinh, tối đa Q.oToiDa ô) được dựng đầy đủ; ô xa hơn bị nhả
+   (huỷ hình và ảnh mặt đất) nên bộ nhớ không tăng theo diện tích bản đồ. Ô chưa dựng vẫn có "nhà xa": các khối hộp đơn giản
+   (một lưới nhỏ mỗi ô, dựng sẵn lúc mở trang) để nhìn xa trong sương không thấy phố trống.
+   Dựng một ô chia thành nhiều bước (mỗi lớp một bước, rồi một bước tạo lưới), mỗi khung hình chỉ làm một bước cho khỏi giật. */
+const OO = new Map();
 { const R = TP3.O_RONG, V = TP3.VUNG;
   for (let j = Math.floor(V.y0 / R); j * R < V.y1; j++) for (let i = Math.floor(V.x0 / R); i * R < V.x1; i++){
-    const o = {i, j, khoa: i + ',' + j, x0: i*R, y0: j*R, x1: (i + 1)*R, y1: (j + 1)*R, nhom: null};
-    // ô nằm hẳn ngoài bản đồ và không có đường nào chạy qua thì khỏi dựng (chỉ có cỏ, đã có nền xa)
+    const o = {i, j, khoa: i + ',' + j, x0: i*R, y0: j*R, x1: (i + 1)*R, y1: (j + 1)*R, nhom: null, xa: null};
+    // ô nằm hẳn ngoài bản đồ và không có đoạn đường kéo dài nào chạy qua thì khỏi dựng (chỉ có cỏ, đã có nền xa)
     if ((o.x1 <= 0 || o.y1 <= 0 || o.x0 >= W || o.y0 >= H) && !MAP.roads.some(r => r.veh && r.pts.some(p => p.x >= o.x0 - 60 && p.x <= o.x1 + 60 && p.y >= o.y0 - 60 && p.y <= o.y1 + 60) &&
         (MAP.nodes[r.a].kind === 'end' || MAP.nodes[r.b].kind === 'end'))) continue;
-    OO.set(o.khoa, o); hang.push(o);
+    OO.set(o.khoa, o);
+    if (TP3.dungNhaXa){ const l = TP3.dungNhaXa(o); if (l){ l.matrixAutoUpdate = false; scene.add(l); o.xa = l; } }
   } }
 TP3.cacO = OO;
-function dungO(o){
-  const t0 = performance.now(), G = {duc: new TP3.Gom(), trong: new TP3.Gom(), bong: new TP3.Gom(), day: [], them: []};
-  for (const l of TP3.lop) l.ham(o, G);
+const cachO = o => Math.hypot(Math.max(o.x0 - player.x, 0, player.x - o.x1), Math.max(o.y0 - player.y, 0, player.y - o.y1));   // khoảng cách từ xe tới ô (0 nếu xe ở trong ô)
+let viec = null, soODa = 0;   // viec: ô đang dựng dở {o, G, buoc}
+function taoLuoiO(o, G){
   const nhom = new T.Group(); let tam = 0;
   const them = (l, bong) => { l.matrixAutoUpdate = false; if (bong){ l.castShadow = true; l.receiveShadow = true; } nhom.add(l); if (l.geometry.index) tam += l.geometry.index.count / 3; };
   for (const l of G.them) them(l);
@@ -62,23 +66,40 @@ function dungO(o){
   if (G.bong.so){ const l = new T.Mesh(G.bong.hinh(), TP3.vl.bong); l.renderOrder = 1; them(l); }
   if (G.day.length){ const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(new Float32Array(G.day), 3)); g.computeBoundingSphere();
     const l = new T.LineSegments(g, TP3.vl.day); l.matrixAutoUpdate = false; nhom.add(l); }
-  nhom.matrixAutoUpdate = false; scene.add(nhom); o.nhom = nhom; o.tam = tam; o.ms = performance.now() - t0;
+  nhom.matrixAutoUpdate = false; scene.add(nhom); o.nhom = nhom; o.tam = tam; soODa++;
+  if (o.xa) o.xa.visible = false;
 }
 function boO(o){
   if (!o.nhom) return;
   o.nhom.traverse(l => { if (l.geometry) l.geometry.dispose(); if (l.userData.anh){ l.userData.anh.dispose(); l.material.dispose(); } });
-  scene.remove(o.nhom); o.nhom = null;
+  scene.remove(o.nhom); o.nhom = null; soODa--;
+  if (o.xa) o.xa.visible = true;
   TP3.khoAnh = TP3.khoAnh.filter(a => a.o !== o.khoa);
 }
-function dungTiep(){   // dựng một ô đang chờ, chọn ô gần xe người chơi nhất
-  if (!hang.length) return false;
-  let tot = 0, dTot = 1e18;
-  hang.forEach((o, i) => { const d = Math.hypot((o.x0 + o.x1) / 2 - player.x, (o.y0 + o.y1) / 2 - player.y); if (d < dTot){ dTot = d; tot = i; } });
-  dungO(hang.splice(tot, 1)[0]);
-  if (!hang.length){ let tam = 0, ms = 0, n = 0; for (const o of OO.values()) if (o.nhom){ tam += o.tam; ms += o.ms; n++; }
-    Object.assign(TT, {soO: n, tamGiacTinh: Math.round(tam), msDungO: Math.round(ms), boNhoAnhMB: TP3.boNhoAnh(), msSanSang: Math.round(performance.now() - tDung0)});
-    for (const f of choSanSang.splice(0)) f(); }
+// các ô nên có lúc này: gần xe nhất trước, trong bán kính, không quá số tối đa
+function oCanCo(){
+  const ds = []; for (const o of OO.values()){ o.d = cachO(o); if (o.d < Q.oBanKinh) ds.push(o); }
+  ds.sort((a, b) => a.d - b.d); return ds.slice(0, Q.oToiDa);
+}
+// mỗi khung hình: nhả ô xa, rồi làm MỘT bước dựng. hetSuc = true: làm một mạch tới khi xong ô (lúc khởi động). Trả về true nếu vừa làm việc nặng.
+function dungTiep(hetSuc){
+  const can = oCanCo(), trongDs = new Set(can);
+  for (const o of OO.values()) if (o.nhom && !trongDs.has(o) && (o.d > Q.oBanKinh + 220 || soODa > Q.oToiDa)) boO(o);
+  if (viec && !trongDs.has(viec.o)) viec = null;   // ô đang dựng dở đã ra xa: bỏ
+  if (!viec){ const o = can.find(q => !q.nhom); if (!o){ if (choSanSang.length){ ghiThongTinO(); for (const f of choSanSang.splice(0)) f(); } return false; }
+    viec = {o, buoc: 0, ms: 0, G: {duc: new TP3.Gom(), trong: new TP3.Gom(), bong: new TP3.Gom(), day: [], them: []}}; }
+  do {
+    const t0 = performance.now(), v = viec;
+    if (v.buoc < TP3.lop.length) TP3.lop[v.buoc].ham(v.o, v.G); else { taoLuoiO(v.o, v.G); viec = null; }
+    const ms = performance.now() - t0; v.buoc++; v.ms += ms;
+    if (!hetSuc) TT.msBuocLonNhat = Math.max(TT.msBuocLonNhat || 0, Math.round(ms));
+    if (!viec){ v.o.ms = v.ms; TT.msOLonNhat = Math.max(TT.msOLonNhat || 0, Math.round(v.ms)); TT.soLanDungO = (TT.soLanDungO || 0) + 1; }
+  } while (hetSuc && viec);
   return true;
+}
+function ghiThongTinO(){
+  let tam = 0; for (const o of OO.values()) if (o.nhom) tam += o.tam;
+  Object.assign(TT, {soO: soODa, soOTong: OO.size, tamGiacTinh: Math.round(tam), boNhoAnhMB: TP3.boNhoAnh(), msSanSang: TT.msSanSang || Math.round(performance.now() - tDung0)});
 }
 const choSanSang = [];
 
@@ -86,13 +107,7 @@ const choSanSang = [];
 for (const d of TP3.dong || []) d.tao(scene);
 
 /* ---------- 4. nối vào game ---------- */
-const renderGoc = render, resizeGoc = resize, newTripGoc = newTrip, stepGoc = step;
-const DIEM_KHU = DESTS.filter(d => TP3.trongKhu(d.bay.cx, d.bay.cy));
-newTrip = function(){
-  const tatCa = DESTS.slice();
-  DESTS.length = 0; DESTS.push(...DIEM_KHU);
-  try { newTripGoc(); } finally { DESTS.length = 0; DESTS.push(...tatCa); }
-};
+const renderGoc = render, resizeGoc = resize, stepGoc = step;
 const la3D = () => S.view !== 'map';
 let VW = 800, VH = 600, heSoNet = 1;
 function datCoKhung(){
@@ -131,7 +146,7 @@ function apDungNac(){
   TT.nac = TC.nac;
 }
 function theoDoi(khung, ky){
-  if (!TP3.tuChinh || hang.length || khung > 1500) return;   // đang dựng ô hoặc vừa bị khựng (chuyển tab): không tính
+  if (!TP3.tuChinh || vuaDung || khung > 1500) return;   // khung vừa dựng một bước của ô, hoặc vừa bị khựng (chuyển tab): không tính
   TC.t += khung; TC.n++; TC.tong += khung;
   if (TC.t < 2500) return;
   const tb = TC.tong / TC.n, now = performance.now(); TC.t = TC.n = TC.tong = 0;
@@ -146,16 +161,17 @@ let matNguCanh = false;
 glCanvas.addEventListener('webglcontextlost', e => { e.preventDefault(); matNguCanh = true; TT.matNguCanh = (TT.matNguCanh || 0) + 1; });
 glCanvas.addEventListener('webglcontextrestored', () => {
   // three.js tự nạp lại hình và ảnh còn giữ trên bộ nhớ thường; ảnh mặt đất của các ô đã bỏ bản gốc nên phải dựng lại ô
-  for (const o of OO.values()){ if (o.nhom){ boO(o); } if (!hang.includes(o)) hang.push(o); }
-  matNguCanh = false; dungTiep(); resize();
+  for (const o of OO.values()) boO(o);
+  viec = null; matNguCanh = false; dungTiep(true); resize();
 });
 
 /* ---------- 7. vẽ mỗi khung hình và số đo ---------- */
 const DO = {t: 0, n: 0, tong: 0, ve: 0, nao: 0, ghi: null, msNaoKhung: 0, boQua: 0};
 const oDo = document.createElement('div'); oDo.id = 'do3d'; if (TP3.hienDo) document.body.appendChild(oDo);
 step = function(dt){ const t0 = performance.now(); stepGoc(dt); DO.msNaoKhung = performance.now() - t0; };
+let vuaDung = false;
 function ve3D(dt){
-  dungTiep();
+  vuaDung = dungTiep();
   for (const d of TP3.dong || []) d.capNhat(dt);
   TP3.mayQuay.capNhat(camera, dt);
   TP3.capNhatAnhSang(camera, player.x, player.y);
@@ -182,23 +198,23 @@ render = function(dt){
   if (DO.t >= 500){
     const fps = 1000 * DO.n / DO.tong, ms = DO.tong / DO.n;
     if (TP3.hienDo) oDo.textContent = (ba ? '3D ' + S.view : '2D map') + ' · ' + TP3.mucTen + (ba && TC.nac > (Q.bong ? 0 : 1) ? ' (hạ ' + (TC.nac - (Q.bong ? 0 : 1)) + ' nấc)' : '') + '\n' + fps.toFixed(0) + ' khung/giây · ' + ms.toFixed(1) + ' ms\n' +
-      'vẽ ' + (DO.ve / DO.n).toFixed(1) + ' · não ' + (DO.nao / DO.n).toFixed(1) + ' ms\n' + (ba ? lenh + ' lệnh vẽ · ' + (tam / 1000).toFixed(0) + ' nghìn tam giác\n' + (TT.diemAnh || '') + (hang.length ? ' · còn ' + hang.length + ' ô' : '') : '');
+      'vẽ ' + (DO.ve / DO.n).toFixed(1) + ' · não ' + (DO.nao / DO.n).toFixed(1) + ' ms\n' + (ba ? lenh + ' lệnh vẽ · ' + (tam / 1000).toFixed(0) + ' nghìn tam giác\n' + (TT.diemAnh || '') + ' · ' + soODa + ' ô' + (viec ? ' (đang dựng)' : '') : '');
     DO.t = DO.n = DO.tong = DO.ve = DO.nao = 0;
   }
   daVe = true;
 };
 
 /* ---------- 8. khởi động và cửa kiểm tra tự động (window.__T3D) ---------- */
-dungTiep();   // ô có xe người chơi dựng ngay; các ô còn lại dựng dần, mỗi khung hình một ô
+dungTiep(true);   // ô có xe người chơi dựng ngay một mạch; các ô còn lại dựng dần, mỗi khung hình một bước
 TT.msDung = Math.round(performance.now() - tDung0);
-if (!S.trip || !DIEM_KHU.includes(S.trip.dest)) newTrip();   // game.js đã nhận một đơn lúc khởi động (có thể ở ngoài khu cũ)
 apDungNac(); resize();
 
 window.__T3D = {
-  THREE: T, TP3, renderer, scene, camera, thongTin: TT, KHU: TP3.KHU, VUNG: TP3.VUNG, diemKhu: DIEM_KHU, renderGoc, resizeGoc,
+  THREE: T, TP3, renderer, scene, camera, thongTin: TT, VUNG: TP3.VUNG, renderGoc, resizeGoc,
   daVe: () => daVe,
   // chờ tới khi mọi ô đã dựng xong
-  sanSang(){ return new Promise(xong => { if (!hang.length) xong(TT); else choSanSang.push(() => xong(TT)); }); },
+  sanSang(){ return new Promise(xong => choSanSang.push(() => xong(TT))); },
+  soO: () => soODa,
   // đặt xe ở toạ độ bản đồ (x, y), hướng a (rad; 0 = sang phải, π/2 = đi xuống), vận tốc v
   datXe(x, y, a, v){ player.x = x; player.y = y; player.a = a || 0; player.v = v || 0; TP3.mayQuay.theoXe(); S.route = computeRoute(); },
   gocNhin(v){ if (VIEWS.includes(v)){ S.view = v; hudCache.ck = null; resize(); } return S.view; },
@@ -216,7 +232,7 @@ window.__T3D = {
       tong += khung; ve += msVe; nao += msNao; lenh += l; tam += t; lonNhat = Math.max(lonNhat, khung);
       if (k >= n){ DO.ghi = null; const r = v => Math.round(v * 100) / 100;
         xong({gocNhin: S.view, xe: S.veh, muc: TP3.mucTen, nac: TC.nac, khung: n, fps: r(1000 * n / tong), msKhung: r(tong / n), msKhungLonNhat: r(lonNhat), msVe: r(ve / n), msNao: r(nao / n),
-          lenhVe: Math.round(lenh / n), tamGiac: Math.round(tam / n), diemAnh: la3D() ? TT.diemAnh : canvas.width + '×' + canvas.height, manHinh: VW + '×' + VH, boNhoAnhMB: TP3.boNhoAnh()}); }
+          lenhVe: Math.round(lenh / n), tamGiac: Math.round(tam / n), diemAnh: la3D() ? TT.diemAnh : canvas.width + '×' + canvas.height, manHinh: VW + '×' + VH, boNhoAnhMB: TP3.boNhoAnh(), soO: soODa}); }
     }; }); }
 };
 })();

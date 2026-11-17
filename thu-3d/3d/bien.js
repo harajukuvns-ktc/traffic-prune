@@ -43,6 +43,7 @@ const MAT_BIEN = {
   lungVuong: g => { g.fillStyle = '#8a9097'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#7b8188'; g.fillRect(0, 56, 128, 6); },
   // biển chỉ dẫn hướng đi: nền xanh, mũi tên và tên đường
   chiDan: rows => (g, w, h) => {
+    g.scale(w / 256, w / 256); h = h * 256 / w; w = 256;   // vẽ theo khổ rộng 256 rồi thu nhỏ (cả bản đồ có hơn 60 biển, để bảng ảnh không quá lớn)
     g.fillStyle = '#fff'; rr(g, 2, 2, w - 4, h - 4, 12); g.fill(); g.fillStyle = '#1b6fb8'; rr(g, 6, 6, w - 12, h - 12, 9); g.fill();
     g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.textAlign = 'left';
     rows.forEach((r, i) => { const y = 12 + 38 * (i + 0.5);
@@ -72,7 +73,7 @@ const BIEN = TP3.bienDS = [];
   for (const sb of SIGNBOARDS){ if (!tv(sb.x, sb.y)) continue;
     const d = chieuDiGan(sb.x, sb.y), hpx = sb.rows.length * 38 + 24, w = 23, h = w * hpx / 256;
     BIEN.push({x: sb.x, y: sb.y, cot: 14, cao: 14 + h / 2, w, h, n: {x: -d.x, y: -d.y}, lung: lV, to: true,
-      ten: can('cd:' + sb.rows.map(r => r.k + r.name).join('|'), 256, hpx, MAT_BIEN.chiDan(sb.rows))}); }
+      ten: can('cd:' + sb.rows.map(r => r.k + r.name).join('|'), 192, Math.round(hpx * 0.75), MAT_BIEN.chiDan(sb.rows))}); }
   for (const p of trangTri.bienVong){ if (!tv(p.x, p.y)) continue; const d = chieuDiGan(p.x, p.y);
     BIEN.push({x: p.x, y: p.y, cot: 12.6, cao: 15, w: 8, h: 8, n: {x: -d.x, y: -d.y}, ten: can('vong', 128, 128, MAT_BIEN.vongXuyen), lung: lT}); }
   BAYS.forEach((b, i) => { const p = trangTri.bienP[i]; if (!p || !tv(p.x, p.y)) return;   // biển P quay về phía xe đang tới trên làn đó

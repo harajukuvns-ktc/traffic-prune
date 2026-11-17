@@ -38,10 +38,11 @@ const camUng = ('ontouchstart' in window) || !!(window.matchMedia && window.matc
 // pr: tỉ lệ điểm ảnh tối đa · nen: điểm ảnh của ảnh mặt đất cho mỗi đơn vị bản đồ · xa: tầm nhìn · rangCua: khử răng cưa
 // chiTiet: 0 = nhà trơn, không dây điện · 1 = đủ ban công, cục nóng, dây điện · 2 = thêm xe dựng vỉa hè, chậu cây
 // bong: bóng đổ thật (một nguồn nắng) · bongAnh: cỡ ảnh bóng
+// oToiDa: số ô bản đồ dựng đầy đủ được giữ cùng lúc · oBanKinh: ô cách xe trong khoảng này mới dựng (ô xa hơn chỉ có khối nhà đơn giản)
 const MUC = {
-  thap: {pr: 1,   nen: 1,   xa: 900,  rangCua: false, chiTiet: 0, bong: false},
-  vua:  {pr: 1.5, nen: 1.5, xa: 1300, rangCua: true,  chiTiet: 1, bong: false},
-  cao:  {pr: 2,   nen: 2,   xa: 1900, rangCua: true,  chiTiet: 2, bong: true, bongAnh: 2048}
+  thap: {pr: 1,   nen: 1,   xa: 900,  rangCua: false, chiTiet: 0, bong: false, oToiDa: 9,  oBanKinh: 600},
+  vua:  {pr: 1.5, nen: 1.5, xa: 1300, rangCua: true,  chiTiet: 1, bong: false, oToiDa: 14, oBanKinh: 800},
+  cao:  {pr: 2,   nen: 2,   xa: 1900, rangCua: true,  chiTiet: 2, bong: true, bongAnh: 2048, oToiDa: 16, oBanKinh: 900}
 };
 TP3.MUC = MUC;
 TP3.mucTen = MUC[thamSo.get('q')] ? thamSo.get('q') : (camUng ? 'vua' : 'cao');
@@ -50,13 +51,12 @@ TP3.camUng = camUng;
 TP3.fpsToiDa = [30, 45, 60].includes(+thamSo.get('fps')) ? +thamSo.get('fps') : (camUng ? 45 : 60);
 TP3.tuChinh = thamSo.get('tu') !== '0';
 TP3.hienDo = thamSo.get('do') !== '0';
-TP3.KHU = {x0: 0, y0: 0, x1: 1600, y1: 1200};            // khu phố cũ: đơn giao hàng chỉ ở trong này
 TP3.O_RONG = 512;                                        // bản đồ chia thành các ô vuông 512 đơn vị, mỗi ô dựng riêng
-TP3.VUNG = {x0: -512, y0: -512, x1: 2048, y1: 1536};     // vùng dựng 3D đầy đủ (đợt 1): khu cũ và một dải viền, tròn theo ô
+// vùng dựng 3D (đợt 2): cả bản đồ và một dải viền một ô quanh mép (chỗ các đường kéo dài ra ngoài), tròn theo ô
+TP3.VUNG = {x0: -512, y0: -512, x1: Math.ceil(W / 512) * 512 + 512, y1: Math.ceil(H / 512) * 512 + 512};
 TP3.CAO_VIA = 1.2;                                       // vỉa hè nhô cao 1,2 đơn vị (0,3 m)
 TP3.TT = {muc: TP3.mucTen};                              // thông tin dựng cảnh, để báo cáo qua __T3D.thongTin
 TP3.trongVung = (x, y, le) => x >= TP3.VUNG.x0 - (le || 0) && x <= TP3.VUNG.x1 + (le || 0) && y >= TP3.VUNG.y0 - (le || 0) && y <= TP3.VUNG.y1 + (le || 0);
-TP3.trongKhu = (x, y) => x >= TP3.KHU.x0 && x <= TP3.KHU.x1 && y >= TP3.KHU.y0 && y <= TP3.KHU.y1;
 TP3.trongO = (o, x, y) => x >= o.x0 && x < o.x1 && y >= o.y0 && y < o.y1;
 // số "ngẫu nhiên" cố định theo vị trí (cùng chỗ thì lần dựng nào cũng ra cùng một kết quả)
 TP3.bam = (x, y, k) => { const v = Math.sin(x*12.9898 + y*78.233 + (k || 0)*37.719) * 43758.5453; return v - Math.floor(v); };
