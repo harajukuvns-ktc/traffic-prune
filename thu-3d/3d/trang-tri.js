@@ -42,7 +42,7 @@ function taoMau(){
   // cây tán tròn, gốc quét vôi trắng
   M.than = new Gom(); M.than.tru(0, 0, 0, 1.05, 0.8, 13.5, 7, '#7a5d42', {aoDay: 0.8}); M.than.tru(0, 0, 0, 1.1, 1.0, 4.2, 7, '#efece2');
   M.than.thanh([0, 11, 0], [3.4, 16, 1.6], 0.7, 0.7, '#7a5d42'); M.than.thanh([0, 11.5, 0], [-3, 16.5, -2], 0.7, 0.7, '#7a5d42');
-  M.tan = [0, 1].map(v => { const g = new Gom(), o = {n: 7, t: 4, aoDuoi: 0.5};
+  M.tan = [0, 1].map(v => { const g = new Gom(), o = {n: 8, t: 5, aoDuoi: 0.55};
     g.cau(0, 19.5, 0, 8.4, 6.4, 8.4, '#ffffff', o); g.cau(3.6, 17, 2.2, 5.6, 4.4, 5.6, '#f2f2f2', o); g.cau(-3.6, 17.8, -2.4, 5.8, 4.6, 5.8, '#e9e9e9', o);
     if (v) g.cau(1, 23.6, -1, 5.2, 4, 5.2, '#ffffff', o); else g.cau(-1.5, 22.6, 2.4, 4.8, 3.8, 4.8, '#f6f6f6', o);
     return g; });
@@ -60,7 +60,7 @@ function taoMau(){
   M.ghe = new Gom(); M.ghe.hop(0, 1.5, 0, 1.6, 0.3, 1.6, 0, '#ffffff'); for (const [i, j] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) M.ghe.hop(i*0.6, 0, j*0.6, 0.3, 1.5, 0.3, 0, '#ffffff');
   return M;
 }
-const XANH = ['#5aa653', '#4c9853', '#6fb35c', '#3f9163', '#7fb86a', '#5a9c48'];
+const XANH = ['#6fbf62', '#5fb062', '#84c96a', '#52a873', '#93cc78', '#6eb556'];
 const SON_XE = ['#c0392b', '#2c5f9e', '#e8e8e8', '#2f2f35', '#3c8d5a', '#d8a22a', '#7a4a9c', '#d86a2a'];
 const MAU_O = ['#d83a3a', '#2f79c4', '#e6b02e', '#3c9a5c', '#e06a2a'];
 

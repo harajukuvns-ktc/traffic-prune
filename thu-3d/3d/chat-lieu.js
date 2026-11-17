@@ -235,11 +235,14 @@ TP3.taoChatLieu = function(renderer){
   // hình đặc: chất liệu nhận nắng kiểu Lambert (rẻ hơn hẳn MeshStandardMaterial trên điện thoại mà phố ban ngày vẫn đủ đẹp)
   vl.duc = new T.MeshLambertMaterial({map: vl.anhDuc, vertexColors: true});
   vl.trong = new T.MeshLambertMaterial({map: vl.anhTrong, vertexColors: true, alphaTest: 0.5, side: T.DoubleSide});
-  // bóng mờ dưới chân vật: ảnh tròn mờ dần ra mép
+  // bóng mờ dưới chân vật: ảnh tròn sẫm ở giữa, trắng dần ra mép, NHÂN vào màu mặt đất bên dưới
+  // (không dùng độ trong suốt của ảnh: ảnh đen có độ trong suốt đưa lên card đồ họa bị mất hẳn khi thử trên Chrome)
   { const c = TP3.taoCanvas(64, 64), g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 31);
-    gr.addColorStop(0, 'rgba(0,0,0,.62)'); gr.addColorStop(0.55, 'rgba(0,0,0,.38)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 64);
+    gr.addColorStop(0, 'rgb(72,74,84)'); gr.addColorStop(0.55, 'rgb(128,130,140)'); gr.addColorStop(1, 'rgb(255,255,255)'); g.fillStyle = gr; g.fillRect(1, 1, 62, 62);
     vl.anhBong = ghi(TP3.anhTuCanvas(c), c);
-    vl.bong = new T.MeshBasicMaterial({map: vl.anhBong, transparent: true, depthWrite: false, color: 0x000000, opacity: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, toneMapped: false}); }
+    vl.bong = new T.MeshBasicMaterial({map: vl.anhBong, transparent: true, depthWrite: false, fog: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+      blending: T.CustomBlending, blendEquation: T.AddEquation, blendSrc: T.DstColorFactor, blendDst: T.ZeroFactor}); }
   vl.day = new T.LineBasicMaterial({color: 0x24262b});
   vl.den = new T.MeshBasicMaterial({vertexColors: true, fog: false, toneMapped: false});   // bóng đèn tín hiệu tự phát sáng
   vl.sang = new T.MeshBasicMaterial({vertexColors: true, toneMapped: false});              // đèn xi-nhan, đèn phanh khi bật

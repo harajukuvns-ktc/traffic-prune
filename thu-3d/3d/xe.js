@@ -172,14 +172,14 @@ const X = TP3.xe = {};
       const m = n._m3 || (n._m3 = {son: TP3.mau(n.color), mu: TP3.mau(n.helmet), ao: AO_NPC[n.id % AO_NPC.length], so: TP3.SO_TUYEN[n.id % TP3.SO_TUYEN.length]});
       if (n.kind === 'bus'){
         let l = X.buyt.get(n); if (!l){ const G = new Gom(); hinhXeBuyt(G, m.so); l = new T.Mesh(G.hinh(), TP3.vl.duc); l.castShadow = true; X.scene.add(l); X.buyt.set(n, l); }
-        l.visible = true; l.position.set(n.x, 0, n.y); l.rotation.y = -n.a; conBuyt.add(n); BD.them(n.x, 0.07, n.y, n.a, 27, 10.5);
+        l.visible = true; l.position.set(n.x, 0, n.y); l.rotation.y = -n.a; conBuyt.add(n); BD.them(n.x, 0.07, n.y, n.a, 29, 12.5);
         continue;
       }
       // xe đang "nhường xuyên qua" (bản 2D vẽ mờ) thì vẽ nhạt màu hơn
       const mo = n.ghostP > 0 || n.ghostT > 0 ? 1.6 : 1;
       TP3.datMaTran(mx, nx, n.x, 0, n.y, n.a);
       cs[nx*3] = m.son[0]*mo; cs[nx*3+1] = m.son[1]*mo; cs[nx*3+2] = m.son[2]*mo; ca[nx*3] = m.ao[0]; ca[nx*3+1] = m.ao[1]; ca[nx*3+2] = m.ao[2]; cm[nx*3] = m.mu[0]; cm[nx*3+1] = m.mu[1]; cm[nx*3+2] = m.mu[2]; nx++;
-      BD.them(n.x, 0.07, n.y, n.a, 8.2, 3.4);
+      BD.them(n.x, 0.07, n.y, n.a, 9.5, 5);
       if (nhip){ const re = n._re3 = (n._reT3 || 0) > S.now ? n._re3 : (n._reT3 = S.now + 0.3, sapRe(n)); if (re) TP3.datMaTran(mn, nn++, n.x, 0, n.y, n.a, re); }
       // đèn phanh: đang giảm tốc rõ hoặc đang đứng chờ
       const giam = n._v3 !== undefined && dt > 0 && (n._v3 - n.v) / dt > 30; n._v3 = n.v;
@@ -196,7 +196,7 @@ const X = TP3.xe = {};
     const nhom = car ? O.nhom : B.nhom; nhom.position.set(px, 0, py); nhom.rotation.y = -player.a;
     if (car){ O.buong.visible = !bike; O.tapLo.visible = bike; } else { B.mu.visible = !!S.helmet; B.toc.visible = !S.helmet; }
     const V = car ? O : B; V.nhay[0].visible = S.turn < 0 && S.blinkOn; V.nhay[1].visible = S.turn > 0 && S.blinkOn; V.phanh.visible = dangPhanh;
-    if (!bike || car) BD.them(px, 0.07, py, player.a, car ? 12.5 : 8.2, car ? 6.6 : 3.4);
+    if (!bike || car) BD.them(px, 0.07, py, player.a, car ? 14.5 : 9.5, car ? 8.6 : 5);
   }
 });
 X.hinhXeMay = hinhXeMay; X.TI_LE_XM = TI_LE_XM;
