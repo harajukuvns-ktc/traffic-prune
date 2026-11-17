@@ -11,7 +11,7 @@ const {moTrinhDuyet} = require('./trinh-duyet.js');
   const B = await moTrinhDuyet(); let hong = 0;
   const kiem = (ten, dung, them) => { console.log((dung ? 'ĐẠT   ' : 'HỎNG  ') + ten + (them ? ' · ' + them : '')); if (!dung) hong++; };
   try {
-    await B.kho(1280, 800, false, 1);
+    await B.kho(640, 400, false, 1);
     const GOC = process.argv[2] ? process.argv[2].replace(/\/?$/, '/') + 'index.html' : 'file://' + path.resolve(__dirname, '..', 'index.html');
     await B.mo(GOC + '?q=thap&tu=0&fps=60'); await B.cho(600);
     await B.chay('document.getElementById("go").click(); __TP.putOnHelmet(); 1');
@@ -24,7 +24,8 @@ const {moTrinhDuyet} = require('./trinh-duyet.js');
       // chờ tới lúc đèn của mình vừa đỏ (tối đa 25 giây)
       await B.chay(`new Promise(xong => { const t0 = Date.now(), f = () => { const la = __TP.playerLightAhead(400); if ((la && la.state === 'red') || Date.now() - t0 > 25000) xong(); else setTimeout(f, 100); }; f(); })`);
       const den = await B.chay('(__TP.playerLightAhead(400) || {}).state');
-      await B.chay('__T3D.lai({up: true}, 3.2)');
+      // giữ ga tới khi xe qua hẳn ngã tư (Chrome vẽ bằng CPU chạy chậm nên chờ theo vị trí xe, tối đa 15 giây)
+      await B.chay(`new Promise(xong => { __TP.keys.up = true; const t0 = Date.now(), f = () => { if (__TP.player.x < 420 || Date.now() - t0 > 15000){ __TP.keys.up = false; xong(); } else setTimeout(f, 50); }; f(); })`);
       const sau = await B.chay('JSON.stringify({red: __TP.S.stats.red || 0, tien: __TP.S.money, x: Math.round(__TP.player.x)})');
       const a = JSON.parse(truoc), b = JSON.parse(sau);
       kiem(`[${goc}] vượt đèn đỏ bị ghi lỗi và phạt tiền`, den === 'red' && b.red === a.red + 1 && b.tien < a.tien, `đèn ${den}, lỗi ${a.red}→${b.red}, tiền ${a.tien}→${b.tien}, xe tới x=${b.x}`);
