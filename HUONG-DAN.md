@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.2a.1)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.2b-1)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -68,7 +68,7 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Xi-nhan:** bấm **Q** (xi-nhan trái) hoặc **E** (xi-nhan phải) **trước khi rẽ ở ngã tư hoặc quay đầu**. Trên điện thoại là hai nút nhỏ "◀ xi-nhan" và "xi-nhan ▶" ngay phía trên nút chữ thập. Đèn nháy trên thanh thông tin và trên xe, kèm tiếng tích-tắc. Xi-nhan **không tự tắt**: rẽ xong bấm lại đúng bên để tắt (quên tắt lâu thì người trong phố sẽ nhắc, không bị phạt). Khi sắp tới chỗ rẽ mà chưa bật, game có dòng nhắc 💡. Rẽ hoặc quay đầu mà không bật xi-nhan đúng bên (hoặc bật quá trễ, sau khi đã bắt đầu rẽ) là bị phạt. Cắt vạch đứt để vượt xe thì game không bắt lỗi này.
 - **Phố Chợ là phố đi bộ:** hai đầu phố có biển **cấm xe máy** (tròn, viền đỏ, gạch chéo, hình người lái xe máy) và biển **cấm ô tô**, kèm bảng "PHỐ ĐI BỘ". Xe máy chạy vào là bị phạt. Chỉ đường sẽ không dẫn bạn qua đó. Chợ Hoa Sữa giờ đỗ xe ở bãi ngoài cổng chợ, trên đường Me Chua.
 - **Tốc độ:** xe giờ chạy tối đa **55 km/h**. Đường thường có biển tròn viền đỏ ghi **40** (tốc độ tối đa cho phép), đặt bên phải ngay sau mỗi ngã tư. **Cả khối Phố Bánh Mì giữa hai ngã tư** (chỗ có trường mầm non Sơn Ca) giới hạn **30**, có thêm biển tam giác vàng **"Trẻ em"**. Ô tốc độ ở góc trên ghi giới hạn hiện tại ("tối đa 40"): **vàng** là đang hơi quá, **đỏ** là quá từ 5 km/h trở lên và có dòng nhắc 🚨 (ở góc nhìn sau tay lái, số trên đồng hồ cũng đổi màu). Chạy quá dưới 5 km/h thì không sao.
-- **Camera phạt nguội:** giữa hai ngã tư bạn chỉ bị nhắc nhở, không bị phạt. Nhưng **mọi ngã tư có đèn đều có camera trên cột đèn** (khu cũ có ba ngã, cả bản đồ 15 ngã): đúng lúc xe qua vạch dừng (đèn xanh hay đèn đỏ đều tính), nếu tốc độ vượt giới hạn của đoạn đường vừa đi qua từ 5 km/h thì bị phạt theo mức vượt lúc đó: 5 đến dưới 10 km/h phạt 400–600 nghìn; 10 đến 20 km/h phạt 800 nghìn–1 triệu; trên 20 km/h (chỉ gặp được ở khối trường học) phạt 6–8 triệu và trừ 4 điểm GPLX. Có tiếng máy ảnh "tách" và loé sáng. Vậy nhả ga **trước** khi tới vạch dừng. Phố Chợ và vòng xuyến không có camera.
+- **Camera phạt nguội:** giữa hai ngã tư bạn chỉ bị nhắc nhở, không bị phạt. Nhưng **mọi ngã tư có đèn đều có camera trên cột đèn** (khu cũ có ba ngã, cả bản đồ 8 ngã có đèn): đúng lúc xe qua vạch dừng (đèn xanh hay đèn đỏ đều tính), nếu tốc độ vượt giới hạn của đoạn đường vừa đi qua từ 5 km/h thì bị phạt theo mức vượt lúc đó: 5 đến dưới 10 km/h phạt 400–600 nghìn; 10 đến 20 km/h phạt 800 nghìn–1 triệu; trên 20 km/h (chỉ gặp được ở khối trường học) phạt 6–8 triệu và trừ 4 điểm GPLX. Có tiếng máy ảnh "tách" và loé sáng. Vậy nhả ga **trước** khi tới vạch dừng. Phố Chợ và vòng xuyến không có camera.
 - **Chọn xe:** ngay đầu màn hình mở đầu có ô **Bạn lái**: 🏍️ xe máy (bằng A1) hoặc 🚗 ô tô (bằng B). Muốn đổi thì bấm nút ❔ rồi chọn lại. Tiền dùng chung, nhưng **mỗi xe một bằng lái riêng, mỗi bằng 12 điểm**: ô ở góc trên ghi "GPLX A1" hoặc "GPLX B". Hết điểm bằng nào thì chỉ không lái được xe đó; xe kia vẫn lái bình thường.
 - **Lái ô tô:** xe to, tăng tốc chậm hơn, tối đa 70 km/h, quay vòng rộng. **Rẽ ở ngã tư thì giảm còn khoảng 10–15 km/h**, không thì xe văng sang làn ngược chiều. Ô tô khó quay đầu trên đường hẹp, nên chỉ đường sẽ dẫn bạn **đi vòng** (vòng xuyến hoặc vòng quanh khối phố); muốn tự quay đầu thì lùi, tiến vài lần (giữ ↓ hoặc nút ▼ sau khi dừng để lùi). Ô tô thì **thắt dây an toàn** (nút 💺, phím H) thay cho đội mũ. Phố đi bộ có biển cấm ô tô. Mức phạt ô tô **cao hơn xe máy nhiều**: vượt đèn đỏ 18–20 triệu, cầm điện thoại 4–6 triệu, quá tốc độ có 4 bậc (vượt từ 10 km/h đã bị trừ điểm). Ô tô đỗ ngược chiều trong ô P là **bị phạt** (xe máy chỉ bị nhắc). 📘 Sổ tay và bài kiểm tra hiện luật của xe đang lái.
 - **Mũ bảo hiểm:** mỗi buổi chơi xe bắt đầu **đầu trần** (ô đỏ "🪖 Chưa đội mũ" ở góc trên). Bấm nút vàng **🪖 Đội mũ** (phím **H**) ở góc phải, dưới bản đồ nhỏ; đội một lần là dùng cho cả buổi chơi. Có ba **chốt CSGT** cố định (hai chốt ở khu cũ tả dưới đây, chốt thứ ba trên Đường Bằng Lăng) (chòi xanh, chú CSGT áo vàng, cọc tiêu cam và vạch đứt cam ngang đường): một trên Đường Hoa Sữa giữa Phố Chợ và Đường Cầu Vồng, một trên Đường Cầu Vồng giữa hai ngã tư. Đầu trần chạy qua chốt là bị thổi còi, giữ xe khoảng 2 giây và phạt 500.000đ (không trừ điểm). Đã đội mũ thì chú CSGT cho đi. Đầu trần chạy lâu thì người đi đường cũng nhắc.
@@ -81,6 +81,20 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 1.2b-1 đổi gì so với bản 1.2a.2
+
+Bản đồ có thêm **giao lộ không đèn** với 4 kiểu quy tắc:
+1. **Đường ưu tiên + biển "giao nhau với đường ưu tiên"**: xe ở đường nhỏ phải nhường xe đang chạy trên đường chính. Có vạch nhường (nét đứt) trên mặt đường.
+2. **Biển STOP** (4 chỗ): xe phải dừng hẳn trước vạch (vạch liền) rồi mới đi, và vẫn phải nhường đường chính.
+3. **Không biển**: nhường xe đến từ bên phải; rẽ trái thì nhường cả xe đi thẳng từ hướng ngược lại.
+4. **Vòng xuyến**: như cũ.
+
+Xe NPC đã biết nhường theo các quy tắc này. **Bản này chưa phạt bạn** khi vi phạm: bạn chỉ thấy dòng nhắc phía trên khi sắp tới chỗ phải nhường. Việc phạt (không nhường đường, không dừng ở STOP) sẽ làm ở bản 1.2b-2 sau khi tra luật. Số hiệu và hình biển chưa đối chiếu với QCVN 41:2024.
+
+Số ngã tư có đèn giảm từ 15 còn 8 (7 chỗ đổi thành không đèn), nên camera phạt nguội cũng còn 8 chỗ.
+
+**Gợi ý chơi thử:** (a) Chạy trên đường nhỏ tới chỗ có biển STOP, xe NPC có chờ bạn đúng không? (b) Ở ngã tư không biển, xe NPC bên phải có nhường bạn / bạn có thấy bị chặn vô lý không? (c) Có chỗ nào xe NPC đứng mãi không đi không?
 
 ## Bản 1.2a.1 đổi gì so với bản 1.2 (đợt a)
 

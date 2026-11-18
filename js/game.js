@@ -120,6 +120,11 @@ function npcBuildPts(M, chain, loop){
     }
     const E = lanePt(along(nd, din, -tr), din, laneOff(ri)), X = lanePt(along(nd, dout, tr), dout, laneOff(ro));
     const cr = din.x*dout.y - din.y*dout.x;
+    // giao lộ không đèn (bản 1.2b): mốc nhường ở vạch dừng của nhánh đi vào. mode: 'stop' | 'minor' | 'right' | 'left' (đường ưu tiên mà rẽ trái: nhường xe đi ngược chiều)
+    { const qt = quyTacNut(nd, ri);
+      if (qt){ const trai = cr < -0.34, gap = ri.a === nd.id ? ri.gapA.gap : ri.gapB.gap;
+        const mode = qt === 'main' ? (trai ? 'left' : null) : qt;
+        if (mode) pts.push(Object.assign(lanePt(along(nd, din, -(gap + STOPG)), din, laneOff(ri)), {gw: {node: nd.id, mode, trai, arm: ri.id}})); } }
     if (Math.abs(cr) < 0.1){ pts.push(E, X); continue; }       // đi thẳng
     // chỗ rẽ: đường cong Bézier bậc ba, ra khỏi E theo hướng vào và tới X theo hướng ra (kể cả chỗ rẽ gắt ở ngã năm vẫn không vòng ngược)
     const kk = dist(E, X) * 0.5, C1 = along(E, din, kk), C2 = along(X, dout, -kk);
@@ -130,7 +135,7 @@ function npcBuildPts(M, chain, loop){
   return pts;
 }
 // đoạn đầu/cuối đường nằm trong nút (tới chỗ xe vào/ra nút): không lấy điểm uốn ở đó
-function npcMargin(M, id){ const nd = M.nodes[id]; return nd.kind === 'ring' ? nd.ring.rOut + 4 : nd.kind === 'light' ? mapTrim(nd) + STOPG : mapTrim(nd); }
+function npcMargin(M, id){ const nd = M.nodes[id]; return nd.kind === 'ring' ? nd.ring.rOut + 4 : (nd.kind === 'light' || quyTacNut(nd, {id: ''}) ) ? mapTrim(nd) + STOPG : mapTrim(nd); }
 function npcEnds(M, kind){ return Object.keys(M.nodes).filter(id => M.nodes[id].kind === 'end' && M.nodes[id].arms.some(a => npcRoadOk(a.road, kind))); }
 // một tuyến mới ngẫu nhiên cho xe máy NPC
 function npcNewRoute(M, kind){
@@ -306,6 +311,19 @@ function playerLightAhead(maxD){
     const d = -(rx*sl.d.x + ry*sl.d.y);   // còn bao xa tới vạch dừng
     if (d < -2 || d > maxD) continue;   // đã qua vạch dừng thì thôi
     if (!best || d < best.dist) best = {dist: d, state: lightOf(sl.L, sl.phase, S.now)};
+  }
+  return best;
+}
+// Giao lộ không đèn phía trước người chơi (bản 1.2b): vạch nhường / dừng của nhánh xe đang đi tới trong vòng maxD đơn vị
+function playerGiveWayAhead(maxD){
+  const ux = Math.cos(player.a), uy = Math.sin(player.a); let best = null;
+  for (const gw of MAP.giveWays){
+    if (ux*gw.d.x + uy*gw.d.y <= 0.7) continue;
+    const rx = player.x - gw.sx, ry = player.y - gw.sy;
+    if (Math.abs(rx*gw.d.y - ry*gw.d.x) >= gw.half) continue;
+    const d = -(rx*gw.d.x + ry*gw.d.y);
+    if (d < -2 || d > maxD) continue;
+    if (!best || d < best.dist) best = {dist: d, rule: gw.rule, gw};
   }
   return best;
 }
@@ -941,6 +959,53 @@ function routeLightLimit(n){
   }
   return lim;
 }
+// Giao lộ không đèn (bản 1.2b-1): xe NPC nhường theo quy tắc của nút. Trả về xe đang chiếm quyền đi (hoặc null).
+// Xe được tính khi: đang ở trong nút; hoặc đang chạy tới (từ 6 đơn vị/giây) trên nhánh có quyền hơn và tới nút trong vòng 3 giây.
+//  'minor', 'stop': nhường mọi xe ở nhánh ưu tiên; 'right': nhường xe ở nhánh bên phải (rẽ trái thì nhường cả xe ở nhánh đối diện);
+//  'left' (đường ưu tiên mà rẽ trái): nhường xe ở nhánh đối diện. Xe đang đứng chờ ở vạch không tính (tránh chờ nhau vòng tròn).
+function gwConflict(n, gw){
+  const nd = MAP.nodes[gw.node], tr = mapTrim(nd), me = nd.arms.find(a => a.road.id === gw.arm);
+  if (!me) return null;
+  const myD = {x: -me.out.x, y: -me.out.y}, rt = {x: -myD.y, y: myD.x};
+  for (const o of vehicles()){
+    if (o === n || (o === player && S.inBay)) continue;
+    const rx = o.x - nd.x, ry = o.y - nd.y, dd = Math.hypot(rx, ry);
+    if (dd < tr + 6) return o;
+    if (dd > 300) continue;
+    let best = null, bc = 0.85;
+    for (const a of nd.arms){ if (!a.road.veh) continue; const c = (rx*a.out.x + ry*a.out.y) / dd; if (c > bc){ bc = c; best = a; } }
+    if (!best || best === me) continue;
+    const sp = Math.abs(o.v); if (sp < 6) continue;
+    const sg = o.v < 0 ? -1 : 1, hx = Math.cos(o.a)*sg, hy = Math.sin(o.a)*sg;
+    if (-(hx*rx + hy*ry) / dd < 0.6) continue;           // không chạy về phía nút
+    if ((dd - tr) / sp > 3) continue;                    // tới nơi sau hơn 3 giây
+    const doi = best.out.x*myD.x + best.out.y*myD.y > 0.85, phai = best.out.x*rt.x + best.out.y*rt.y > 0.35;
+    if (gw.mode === 'minor' || gw.mode === 'stop'){ if (nd.prio.includes(best.road.id)) return o; }
+    else if (gw.mode === 'right'){ if (phai || (gw.trai && doi)) return o; }
+    else if (gw.mode === 'left'){ if (doi) return o; }
+  }
+  return null;
+}
+// Nhìn trước dọc theo tuyến tới 130 đơn vị: gặp mốc nhường thì dừng nếu còn xe có quyền đi; STOP phải dừng hẳn 0,8 giây rồi mới xét
+function routeGiveWayLimit(n, dt){
+  const pts = n.route.pts, m = pts.length; let lim = Infinity, acc = 0, prev = n;
+  for (let k = 0; k < m && acc <= 130; k++){
+    const j = n.route.loop ? (n.idx + k) % m : n.idx + k; if (j >= m) break;
+    const q = pts[j]; acc += Math.hypot(q.x - prev.x, q.y - prev.y); prev = q;
+    if (!q.gw || n.gwPass === q) continue;
+    const front = acc - n.len/2;
+    if (front < -1 || acc > 130) continue;
+    if (q.gw.mode === 'stop' && n.stopOk !== q){
+      if (front <= 6 && n.v < 1.5){ n.stopT = (n.stopT || 0) + dt; if (n.stopT >= 0.8){ n.stopOk = q; n.stopT = 0; } }
+      if (n.stopOk !== q){ lim = Math.min(lim, stopLimit(front - 3)); continue; }
+    }
+    if (gwConflict(n, q.gw)){
+      lim = Math.min(lim, stopLimit(front - 3));
+      if (n.v < 3 && front < 14){ n.gwWait = (n.gwWait || 0) + dt; if (n.gwWait > 6){ n.gwPass = q; n.gwWait = 0; } }   // chờ quá 6 giây (nhường nhau vòng tròn) thì cứ đi
+    } else n.gwWait = 0;
+  }
+  return lim;
+}
 function updNPC(n, dt){
   if (n.hidden){
     n.respawnT -= dt;
@@ -964,7 +1029,7 @@ function updNPC(n, dt){
   const ux = dx / d, uy = dy / d;
   let allowed = n.vmax, blocker = null;
 
-  allowed = Math.min(allowed, n.route.gen ? routeLightLimit(n) : lightLimit(n, ux, uy));
+  allowed = Math.min(allowed, n.route.gen ? Math.min(routeLightLimit(n), routeGiveWayLimit(n, dt)) : lightLimit(n, ux, uy));
 
   if (tgt.yieldAt !== undefined && d < 45){
     if (n.yieldWait < 5 && ringBusy(tgt.yieldAt, n, 0, tgt.ring)){ allowed = Math.min(allowed, stopLimit(d - 2)); n.yieldWait += dt; }
@@ -1836,6 +1901,22 @@ function drawUprights(){
   }
   // biển chỉ dẫn hướng đi trước các ngã tư
   drawSignboards();
+  // biển ở giao lộ không đèn (bản 1.2b): STOP, giao nhau với đường ưu tiên, đường ưu tiên
+  for (const q of GIAO_BIEN) up(q.x, q.y, () => {
+    ctx.fillStyle = '#555'; ctx.fillRect(-1, -14, 2, 14);
+    if (q.kind === 'stop'){
+      const oct = r => { ctx.beginPath(); for (let i = 0; i < 8; i++){ const a = Math.PI/8 + i*Math.PI/4; ctx.lineTo(Math.cos(a)*r, -21 + Math.sin(a)*r); } ctx.closePath(); };
+      ctx.fillStyle = '#fff'; oct(9.6); ctx.fill(); ctx.fillStyle = '#d6282d'; oct(8.2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '800 5.4px "Segoe UI", Roboto, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('STOP', 0, -21);
+    } else if (q.kind === 'giaonhau'){
+      ctx.fillStyle = '#e5484d'; ctx.beginPath(); ctx.moveTo(0, -35); ctx.lineTo(11, -15); ctx.lineTo(-11, -15); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(0, -32); ctx.lineTo(8, -17.4); ctx.lineTo(-8, -17.4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#222'; ctx.fillRect(-6, -24.2, 12, 3.2); ctx.fillRect(-0.9, -21, 1.8, 3.6);   // đường ưu tiên (nét to ngang), đường mình đi (nét nhỏ dọc)
+    } else {
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(0, -31); ctx.lineTo(10, -21); ctx.lineTo(0, -11); ctx.lineTo(-10, -21); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f5b800'; ctx.beginPath(); ctx.moveTo(0, -29.2); ctx.lineTo(8.2, -21); ctx.lineTo(0, -12.8); ctx.lineTo(-8.2, -21); ctx.closePath(); ctx.fill();
+    }
+  });
   // biển vòng xuyến trước mỗi cửa vào
   for (const {x, y} of trangTri.bienVong)
     signDisc(x, y, '#2f6fde', () => { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6;
@@ -2004,12 +2085,13 @@ function updHUD(){
       el.className = 'chip' + (drv ? ' over' : '');
       $('callBtn').style.display = c && c.state === 'ring' ? 'block' : 'none'; } }
   // cảnh báo: sai phần đường (ưu tiên), rồi tới đèn phía trước
-  let w = '';
+  let w = '', gwa = null;
   if (S.warnT > 0) w = S.warnText;
   else if (!S.inBay){
     const la = playerLightAhead(230);
     if (la && la.state === 'red') w = '🔴 Đèn đỏ: dừng trước vạch';
     else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc, dừng lại';
+    else if ((gwa = playerGiveWayAhead(150)) && player.v > 6) w = gwa.rule === 'stop' ? '🛑 Biển STOP: dừng hẳn rồi mới đi' : gwa.rule === 'minor' ? '⚠️ Đường phụ: nhường xe đường ưu tiên' : '⚠️ Không biển: nhường xe bên phải';
     else if (over >= 5) w = '🚨 Quá tốc độ: ' + Math.round(kmhF) + ' / ' + S.spdLimit + ' km/h' + (S.spdLimit <= 30 ? ' (khu trường!)' : '');
     else if (over > 0) w = '⚠️ Hơi quá ' + S.spdLimit + ' km/h, nhả ga nhé';
     else if (phoneDriving()) w = '📵 Đang cầm điện thoại: tấp vào ô P';
@@ -2164,4 +2246,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {useMap, getMap: () => MAP, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, veNen, MAP, NODES, ROADS, dungBanDo, cultAdd, cultRating, CULT, uTurn, turnPath, turnArmChoice, laneFrame, assistOff, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, navText, HALF, setSignal, SIGNBOARDS, SPEED_SIGNS, LAW, VMAX, trangTri, datODo, sinhBienChiDan, sinhBienTocDo, P_SIGNS, lightLimit, KHOI_DI_BO, sinhNha, lightRemain, HOUSES, hitsHouse, SIG_THR, LINES, updHUD, actTapOk, setActT: v => { actLayoutT = v; }, resetHud: () => { hudCache = {}; }};
+window.__TP = {useMap, getMap: () => MAP, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, routeGiveWayLimit, playerGiveWayAhead, quyTacNut, GIAO_BIEN, gwConflict, makeNPCs, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, veNen, MAP, NODES, ROADS, dungBanDo, cultAdd, cultRating, CULT, uTurn, turnPath, turnArmChoice, laneFrame, assistOff, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, navText, HALF, setSignal, SIGNBOARDS, SPEED_SIGNS, LAW, VMAX, trangTri, datODo, sinhBienChiDan, sinhBienTocDo, P_SIGNS, lightLimit, KHOI_DI_BO, sinhNha, lightRemain, HOUSES, hitsHouse, SIG_THR, LINES, updHUD, actTapOk, setActT: v => { actLayoutT = v; }, resetHud: () => { hudCache = {}; }};

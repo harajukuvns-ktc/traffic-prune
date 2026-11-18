@@ -41,7 +41,17 @@ function lightRemain(L, axis, t){
    ========================================================= */
 // kind: 'light' (có đèn) | 'priority' (biển ưu tiên) | 'plain' (không biển) | 'ring' (vòng xuyến) | 'end' (mép bản đồ)
 // light: {off: lệch giờ, cycle: chu kỳ (mặc định 22), phase: {mã đường: 'NS' | 'EW' | 'X'} pha riêng của nhánh (không ghi thì theo hướng nhánh)}
-// tam: true = giao lộ sẽ thành KHÔNG ĐÈN ở đợt 1.2b (biển ưu tiên / STOP / không biển); đợt 1.2a tạm có đèn vì xe NPC chưa biết nhường.
+// Đợt 1.2b: giao lộ không đèn. 'priority' khai báo prio: [mã đường được ưu tiên] (nhánh còn lại là đường phụ, phải nhường) và
+// stop: [mã đường phụ có biển STOP, phải dừng hẳn]; 'plain' (từ 3 nhánh cho xe) là giao lộ không biển: nhường xe đến từ bên phải
+// (Điều 22 Luật TTATGTĐB 2024). Quy tắc của từng nhánh: hàm quyTacNut.
+// Quy tắc nhường của xe đi vào nút nd bằng đường road: 'main' (đường ưu tiên, không phải nhường), 'minor' (đường phụ: nhường xe trên đường ưu tiên),
+// 'stop' (biển STOP: dừng hẳn rồi nhường), 'right' (không biển: nhường xe đến từ bên phải), null (nút có đèn, vòng xuyến, không phải giao lộ)
+function quyTacNut(nd, road){
+  if (!nd.junction) return null;
+  if (nd.kind === 'priority') return nd.stop && nd.stop.includes(road.id) ? 'stop' : nd.prio.includes(road.id) ? 'main' : 'minor';
+  if (nd.kind === 'plain') return 'right';
+  return null;
+}
 const NODES = [
   // --- khu phố cũ (góc trên trái) ---
   {id:'A', x:400,  y:300, kind:'light', light:{off:0}},
@@ -52,24 +62,24 @@ const NODES = [
   {id:'F', x:1200, y:900, kind:'ring', ring:{rOut:100, rIn:48, rLane:76}},
   // --- khu đại lộ (trên phải): ngã năm G (đại lộ chéo chạm ngã tư), ngã ba lệch L ---
   {id:'G', x:2000, y:300, kind:'light', light:{off:3, cycle:33, phase:{cb:'X'}}},
-  {id:'H', x:2800, y:300, kind:'light', light:{off:9}, tam:true},
+  {id:'H', x:2800, y:300, kind:'priority', prio:['hs5','hs4']},
   {id:'I', x:2000, y:900, kind:'light', light:{off:17}},
   {id:'L', x:2500, y:900, kind:'light', light:{off:5, phase:{cb:'NS'}}},
-  {id:'M', x:2800, y:900, kind:'light', light:{off:12}, tam:true},
+  {id:'M', x:2800, y:900, kind:'priority', prio:['bl1','bl2'], stop:['mc6','mc5']},
   // --- khu chợ và hẻm (dưới trái) ---
-  {id:'R', x:400,  y:1500, kind:'light', light:{off:4}, tam:true},
+  {id:'R', x:400,  y:1500, kind:'plain'},
   {id:'T', x:800,  y:1500, kind:'plain'},
   {id:'U', x:1200, y:1500, kind:'light', light:{off:10}},
   {id:'Z', x:400,  y:1800, kind:'plain'},
   {id:'ZZ', x:800, y:1800, kind:'plain'},
-  {id:'V', x:400,  y:2100, kind:'light', light:{off:16}, tam:true},
+  {id:'V', x:400,  y:2100, kind:'plain'},
   {id:'X', x:800,  y:2100, kind:'plain'},
-  {id:'Y', x:1200, y:2100, kind:'light', light:{off:1}, tam:true},
+  {id:'Y', x:1200, y:2100, kind:'priority', prio:['cv3','cv4'], stop:['sm2','sm1']},
   // --- khu trường học (dưới phải): vòng xuyến K ---
   {id:'J', x:2000, y:1500, kind:'light', light:{off:19}},
   {id:'K', x:2000, y:2100, kind:'ring', ring:{rOut:124, rIn:62, rLane:94}},
-  {id:'O', x:2800, y:1500, kind:'light', light:{off:6}, tam:true},
-  {id:'Q', x:2800, y:2100, kind:'light', light:{off:13}, tam:true},
+  {id:'O', x:2800, y:1500, kind:'plain'},
+  {id:'Q', x:2800, y:2100, kind:'priority', prio:['bl3','bl4']},
   // --- đầu đường ở mép bản đồ ---
   {id:'W1', x:0, y:300, kind:'end'}, {id:'W2', x:0, y:900, kind:'end'}, {id:'W3', x:0, y:1500, kind:'end'}, {id:'W4', x:0, y:2340, kind:'end'},
   {id:'E1', x:3200, y:300, kind:'end'}, {id:'E2', x:3200, y:900, kind:'end'}, {id:'E3', x:3200, y:1500, kind:'end'}, {id:'E4', x:3200, y:2100, kind:'end'},
@@ -271,6 +281,12 @@ function dungBanDo(nodeList, roadList, opt){
     for (const a of nd.arms){ if (!a.road.veh) continue;
       const g = (a.end === 'a' ? a.road.gapA : a.road.gapB).gap + STOPG;
       M.stopLines.push({L, node: L.node, road: a.road, half: a.half, d: {x: -a.out.x, y: -a.out.y}, sx: nd.x + a.out.x*g, sy: nd.y + a.out.y*g, phase: (nd.light.phase && nd.light.phase[a.road.id]) || M.armPhase(a.out)}); } }
+  // Giao lộ không đèn (bản 1.2b): vạch nhường / vạch dừng của từng nhánh phải nhường (rule: 'minor' | 'stop' | 'right'); đường ưu tiên không có
+  M.giveWays = [];
+  for (const id in M.nodes){ const nd = M.nodes[id];
+    for (const a of nd.arms){ if (!a.road.veh) continue; const qt = quyTacNut(nd, a.road); if (!qt || qt === 'main') continue;
+      const g = (a.end === 'a' ? a.road.gapA : a.road.gapB).gap + STOPG;
+      M.giveWays.push({node: id, road: a.road, rule: qt, half: a.half, d: {x: -a.out.x, y: -a.out.y}, sx: nd.x + a.out.x*g, sy: nd.y + a.out.y*g}); } }
   // Vòng xuyến (để bắt lỗi không nhường, đi ngược vòng; ringBusy nhận một phần tử của danh sách này)
   M.rings = [];
   for (const id in M.nodes){ const nd = M.nodes[id]; if (nd.kind === 'ring') M.rings.push({node: id, x: nd.x, y: nd.y, rOut: nd.ring.rOut, rIn: nd.ring.rIn, rLane: nd.ring.rLane}); }
@@ -406,6 +422,29 @@ function sinhBienTocDo(M, tranhP, tranhChiDan){
   return list;
 }
 const SPEED_SIGNS = sinhBienTocDo(MAP, P_SIGNS, SIGNBOARDS);
+// Biển ở giao lộ không đèn (bản 1.2b): bên phải theo chiều đi, trước vạch nhường / vạch dừng. Nhánh đường ưu tiên: biển "Đường ưu tiên" (hình thoi vàng);
+// nhánh đường phụ: biển "Giao nhau với đường ưu tiên" (tam giác đỏ) hoặc STOP (bát giác đỏ, chữ STOP). Giao lộ không biển: không có biển.
+// Số hiệu và hình biển chưa đối chiếu QCVN 41:2024 (đợt 1.2b-2 sẽ tra; xem mục 8 của docs/THIET-KE.md).
+function sinhBienGiaoNhau(M, tranh){
+  const list = [];
+  for (const id in M.nodes){
+    const nd = M.nodes[id]; if (nd.kind !== 'priority' || !nd.junction) continue;
+    for (const arm of nd.arms){
+      if (!arm.road.veh) continue;
+      const qt = quyTacNut(nd, arm.road), kind = qt === 'main' ? 'uutien' : qt === 'stop' ? 'stop' : 'giaonhau';
+      const hx = -arm.out.x, hy = -arm.out.y, gap = Math.max((arm.end === 'a' ? arm.road.gapA : arm.road.gapB).gap, arm.road.half), side = arm.road.half + 8;
+      let pos = null, ok = false;
+      for (const back of (kind === 'stop' ? [40, 60, 85] : [70, 95, 120, 45, 150])){
+        const q = {x: nd.x - hx*(gap + back) - hy*side, y: nd.y - hy*(gap + back) + hx*side};
+        if (!pos) pos = q;
+        if (M.classify(q.x, q.y).t === 'off' && !tranh.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 36) && !list.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 40)){ pos = q; ok = true; break; }
+      }
+      if (ok || M.classify(pos.x, pos.y).t === 'off') list.push({kind, x: pos.x, y: pos.y, node: id, road: arm.road.id});
+    }
+  }
+  return list;
+}
+const GIAO_BIEN = sinhBienGiaoNhau(MAP, P_SIGNS.concat(SIGNBOARDS, SPEED_SIGNS));
 
 // Chốt CSGT (bản 0.11): hai chốt cố định. Xe đi qua "vạch kiểm tra" (cả hai chiều) mà đầu trần hoặc đang cầm điện thoại là bị thổi còi.
 // Từ bản 1.1 bước 5: khai báo theo đường và quãng s (tính từ nút a của đường); vị trí, hướng vạch kiểm tra và chỗ đặt chòi

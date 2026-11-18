@@ -668,7 +668,7 @@ function LAW_ORDER_HAS(a){ return a.every(k => typeof TP.LAW[k] === 'object' && 
   const khac = BM.soSanh(mau, BM.chupKhuPho(TP));
   ok(khac.length === 0, `bản đồ đang chơi khớp bản mẫu: ${mau.phanLoai.n} điểm phân loại, ${mau.vachGiua.n} mẫu vạch giữa, ${mau.chiDuong.length} trường hợp chỉ đường, ` +
      `${mau.oDo.length} ô đỗ, ${mau.bienChiDan.length} biển chỉ dẫn, ${mau.bienTocDo.length} biển tốc độ, ${mau.cotDen.length} cột đèn` + (khac.length ? ' · KHÁC: ' + khac.join(' | ') : ''));
-  ok(MAP.W === 3200 && MAP.H === 2400 && MAP.lights.length === 15 && MAP.rings.length === 2 && Object.keys(MAP.graph.N).length === 37 && MAP.graph.SEGS.length === 48,
+  ok(MAP.W === 3200 && MAP.H === 2400 && MAP.lights.length === 8 && MAP.rings.length === 2 && Object.keys(MAP.graph.N).length === 37 && MAP.graph.SEGS.length === 48,
      `bản đồ 1.2: ${MAP.W} × ${MAP.H}, ${MAP.lights.length} đèn, ${MAP.rings.length} vòng xuyến, ${MAP.corners.length} góc vỉa hè bo cong, đồ thị chỉ đường ${Object.keys(MAP.graph.N).length} nút / ${MAP.graph.SEGS.length} đoạn`);
   // khu phố cũ không đổi: ba đèn cũ, vòng xuyến cũ, 11 ô đỗ đầu tiên đúng chỗ cũ
   ok(['A','C','D'].every(id => MAP.lights.some(L => L.node === id && L.cycle === 22)) && MAP.rings[0].x === 1200 && MAP.rings[0].rOut === 100 &&
@@ -1123,6 +1123,65 @@ console.log('\n== 25. Bắt lỗi theo hướng đường (bản đồ thử) ==
     TP.updHUD(); ok(TP.actTapOk(), 'bố cục không đổi thì không chặn thêm lượt bấm nào');
     S.helmet = true; TP.resetHud(); }
   reset(); TP.makeNPCs();
+}
+
+// ===== 28. Bản 1.2b-1: giao lộ không đèn, xe NPC nhường =====
+{
+  const {MAP, npcNewRoute, gwConflict, routeGiveWayLimit} = TP;
+  TP.makeNPCs();
+  const qt = (id, rid) => { const nd = MAP.nodes[id]; return quyTacNutT(nd, rid); };
+  const quyTacNutT = (nd, rid) => { const a = nd.arms.find(x => x.road.id === rid); return a && TP.quyTacNut(nd, a.road); };
+  const bang = [['H', 'hs5', 'main'], ['H', 'bl1', 'minor'], ['M', 'bl1', 'main'], ['M', 'mc6', 'stop'], ['M', 'mc5', 'stop'], ['Q', 'bl3', 'main'], ['Q', 'sm4', 'minor'],
+                ['Y', 'cv3', 'main'], ['Y', 'sm2', 'stop'], ['O', 'bl2', 'right'], ['R', 'hg1', 'right'], ['V', 'bk', 'right']];
+  ok(bang.every(([n, r, e]) => qt(n, r) === e) && MAP.lights.length === 8 && !MAP.lights.some(L => ['H', 'M', 'R', 'V', 'Y', 'O', 'Q'].includes(L.node)),
+     `bảy giao lộ không đèn đúng quy tắc (ưu tiên, nhường, STOP, bên phải); còn ${MAP.lights.length} nút có đèn`);
+  const ids = {stop: 0, minor: 0, uutien: 0, giaonhau: 0};
+  for (const b of TP.GIAO_BIEN) ids[b.kind] = (ids[b.kind] || 0) + 1;
+  ok(ids.stop === 4 && ids.giaonhau === 3 && ids.uutien === 8, `biển giao lộ không đèn: ${ids.stop} STOP, ${ids.giaonhau} giao nhau với đường ưu tiên, ${ids.uutien} đường ưu tiên (so với 4, 3, 8)`);
+  // hàm kiểm xung đột: đặt một xe ở nhánh ưu tiên rồi hỏi xe đang chờ ở nhánh phụ
+  const hide = () => { for (const q of npcs){ q.hidden = true; q.respawnT = 999; } player.x = 20; player.y = 20; S.inBay = true; };
+  const dat = (o, x, y, a, v) => { o.hidden = false; o.x = x; o.y = y; o.a = a; o.v = v; };
+  hide(); const me = npcs[0], o = npcs[1], nd = MAP.nodes.Y;
+  const gwY = {node: 'Y', mode: 'stop', trai: false, arm: 'sm2'};
+  dat(me, 1260, 2100 + 20, Math.PI, 0);
+  dat(o, 1200, 2100 - 150, Math.PI / 2, 100);
+  ok(gwConflict(me, gwY) === o, 'STOP: có xe đang chạy tới trên đường ưu tiên: phải nhường');
+  dat(o, 1200, 2100 - 150, Math.PI / 2, 0);
+  ok(!gwConflict(me, gwY), 'STOP: xe ở nhánh ưu tiên đang đứng yên: không chắn');
+  dat(o, 1200, 2100 - 150, -Math.PI / 2, 100);
+  ok(!gwConflict(me, gwY), 'STOP: xe ở nhánh ưu tiên đang chạy ra xa nút: không chắn');
+  dat(o, 1200, 2100 - 400, Math.PI / 2, 100);
+  ok(!gwConflict(me, gwY), 'STOP: xe còn xa (tới nơi sau hơn 3 giây): đi được');
+  dat(o, 1200 + 10, 2100, 0, 3);
+  ok(gwConflict(me, gwY) === o, 'xe đang ở giữa nút: luôn phải chờ');
+  // không biển: nhường xe bên phải
+  const gwO = {node: 'O', mode: 'right', trai: false, arm: 'bl2'};   // xe từ phía bắc đi xuống nam, bên phải là phía tây
+  dat(me, 2800 - 20, 1500 - 70, Math.PI / 2, 0);
+  dat(o, 2800 - 150, 1500, 0, 100);
+  ok(gwConflict(me, gwO) === o, 'không biển: xe từ bên phải tới (phía tây): phải nhường');
+  dat(o, 2800 + 150, 1500, Math.PI, 100);
+  ok(!gwConflict(me, gwO), 'không biển: xe từ bên trái tới (phía đông), mình đi thẳng: không phải nhường');
+  dat(o, 2800, 1500 + 150, -Math.PI / 2, 100);   // xe từ phía nam đi lên (nhánh đối diện)
+  ok(!gwConflict(me, gwO) && gwConflict(me, Object.assign({}, gwO, {trai: true})) === o, 'không biển: đi thẳng không nhường xe đối diện, nhưng rẽ trái thì phải nhường');
+  // chạy thật: xe NPC tới biển STOP phải dừng hẳn ít nhất 0,8 giây ở vạch rồi mới đi
+  hide(); let r = null, jj = -1;
+  for (let i = 0; i < 400 && !r; i++){ const t = npcNewRoute(MAP, 'bike'); const j = t.pts.findIndex(p => p.gw && p.gw.mode === 'stop'); if (j > 3){ r = t; jj = j; } }
+  ok(!!r, 'có tuyến NPC đi qua biển STOP');
+  if (r){
+    let acc = 0, k = jj; while (k > 0 && acc < 90){ acc += Math.hypot(r.pts[k].x - r.pts[k-1].x, r.pts[k].y - r.pts[k-1].y); k--; }
+    const q = npcs[2]; q.route = r; q.idx = k + 1; q.hidden = false; q.x = r.pts[k].x; q.y = r.pts[k].y; q.v = 100; q.a = Math.atan2(r.pts[k+1].y - q.y, r.pts[k+1].x - q.x);
+    q.gwPass = q.stopOk = null; q.gwWait = 0; q.stopT = 0;
+    const mark = r.pts[jj]; let stopped = 0, maxStop = 0, passed = false, minD = 1e9;
+    for (let i = 0; i < 12/dt && !passed; i++){ step(dt); const d = Math.hypot(q.x - mark.x, q.y - mark.y) - q.len/2; minD = Math.min(minD, d);   // d: đầu xe cách vạch
+      if (q.v < 1.5 && d < 10){ stopped += dt; maxStop = Math.max(maxStop, stopped); } else stopped = 0;
+      if (q.idx > jj + 1) passed = true; }
+    ok(passed && maxStop >= 0.78 && minD < 10, `NPC tới biển STOP: dừng hẳn ${maxStop.toFixed(2)} giây trước vạch (cách ${minD.toFixed(1)} đơn vị) rồi mới đi qua`);
+  }
+  // 5 phút giao thông: xe vẫn chạy được, không kẹt chờ vòng tròn
+  TP.makeNPCs(); reset(); S.inBay = true; let tong = 0, dung = 0, xuyen = 0;
+  for (let i = 0; i < 180/dt; i++){ step(dt); }
+  for (const q of npcs) if (!q.hidden){ tong++; if (q.v < 1) dung++; }
+  ok(dung <= tong * 0.5, `sau 3 phút giao thông: ${dung} trong ${tong} xe đang đứng (không quá một nửa)`);
 }
 
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đều đạt');

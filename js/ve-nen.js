@@ -169,6 +169,20 @@ function veNen(g, M, o){
     g.stroke();
   }
 
+  // 7b. giao lộ không đèn (bản 1.2b): đường phụ có vạch nhường (trắng, đứt) hoặc vạch dừng liền ở chỗ có biển STOP; nhánh không biển không kẻ gì
+  for (const kieu of ['minor', 'stop']){
+    g.strokeStyle = '#ffffff'; g.lineWidth = kieu === 'stop' ? 5 : 3; g.setLineDash(kieu === 'stop' ? [] : [6, 5]); g.beginPath();
+    for (const nd of nodes){
+      if (nd.kind !== 'priority' || !nd.junction) continue;
+      for (const arm of nd.arms){ if (!arm.road.veh || quyTacNut(nd, arm.road) !== kieu) continue;
+        const sd = gapOf(arm) + (CW_FAR - HALF) + 6, o_ = arm.out, rx = o_.y, ry = -o_.x;
+        const px = nd.x + o_.x*sd, py = nd.y + o_.y*sd;
+        g.moveTo(px + rx, py + ry); g.lineTo(px + rx*arm.half, py + ry*arm.half); }
+    }
+    g.stroke();
+  }
+  g.setLineDash([]);
+
   // 8. vạch người đi bộ qua đường ở đầu phố đi bộ (sọc song song chiều xe, dài 28)
   g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath();
   for (const nd of nodes){
