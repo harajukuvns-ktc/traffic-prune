@@ -1,4 +1,4 @@
-# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.2, đợt a)
+# Traffic Prune: hướng dẫn cài đặt và chạy thử (bản 1.2a.1)
 
 Từ bản 0.4.1, game gồm **nhiều file trong một thư mục** (`index.html`, thư mục `css`, thư mục `js`…). Bạn không cần cài thêm thư viện hay phần mềm game nào, nhưng **phải giữ nguyên cả thư mục**: chỉ chép riêng `index.html` ra chỗ khác thì game sẽ không chạy.
 
@@ -81,6 +81,17 @@ Mở trình duyệt và vào địa chỉ: **http://localhost:8000**
 - **Giọng đọc chỉ đường:** game đọc chỉ dẫn bằng giọng tiếng Việt có sẵn trong trình duyệt, ví dụ "100 mét nữa, rẽ phải vào Đường Cầu Vồng". Nếu bảng 🔊 báo máy chưa có giọng tiếng Việt thì game chỉ hiện chữ. Trên Windows có thể thêm giọng tiếng Việt: Settings → Time & language → Speech → Add voices → Tiếng Việt, rồi mở lại trình duyệt.
 - **Giọng NPC:** khi người trong phố nói, chữ hiện dần trong khung lời thoại kèm tiếng "líu lo" kiểu game. Mỗi tiếng nói là một tiếng bíp, uốn lên xuống theo dấu thanh (sắc đi lên, huyền đi xuống…). Mỗi kiểu nhân vật một giọng: bác xe ôm trầm, cô bán xôi cao, bác tài xe buýt ồm ồm. Khi giọng chỉ đường đang đọc thì NPC chỉ hiện chữ.
 - **📘 Sổ tay:** xem lại luật, mức phạt, căn cứ pháp lý, và bạn đã mắc mỗi lỗi bao nhiêu lần.
+
+## Bản 1.2a.1 đổi gì so với bản 1.2 (đợt a)
+
+1. **Chữ trên màn hình gọn hơn, ở mọi góc nhìn:** dòng nhắc chỉ còn một câu ngắn (ví dụ "🔴 Đèn đỏ: dừng trước vạch"); lời người trong phố tối đa 2 dòng, chạm vào là ẩn; bảng phạt 2 dòng và tự ẩn sau 4 giây trên điện thoại. Căn cứ pháp lý đầy đủ xem ở 📘 Sổ tay. Khi đang có bảng phạt thì không hiện thêm khung lời thoại.
+2. **Sửa lỗi bấm 🪖 Đội mũ (hoặc 💺) làm xe quay đầu:** nút ↩️ không còn nhận nhầm lượt chạm. Ba nút 🪖, ↩️, 📞 cũng nằm cách xa nhau hơn.
+3. **Ô tô, góc sau vô lăng, điện thoại cầm ngang:** bảng đồng hồ nhỏ nằm giữa mép dưới, dải đường phía trước rộng hơn (cả game chính và bản thử 3D).
+
+**Nhờ bạn chơi thử trên iPhone:**
+1. Đội mũ rồi bấm tiếp ngay chỗ đó: xe còn quay đầu không?
+2. Dòng nhắc một câu có đủ hiểu không, hay bị cụt ý? Chữ có còn che đường không?
+3. Ô tô cầm ngang, góc sau vô lăng: dải đường đã đủ rộng chưa? Nắp capo và táp-lô còn chiếm nhiều không (bản 3D)?
 
 ## Bản 1.2 (đợt a) đổi gì so với bản 1.1
 

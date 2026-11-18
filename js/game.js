@@ -450,7 +450,7 @@ function turnAssistSteer(dt, rate){
 }
 function floatText(x, y, text, color){ S.floats.push({x, y, text, color, t: 1.8}); }
 function showLaw(html, good){
-  lawEl.innerHTML = '<div class="lawin">' + html + '</div><div class="lawx">chạm để ẩn</div>'; lawEl.className = good ? 'good' : ''; lawEl.style.display = 'block'; S.lawT = isTouch ? 5 : 9;
+  lawEl.innerHTML = '<div class="lawin">' + html + '</div><div class="lawx">chạm để ẩn</div>'; lawEl.className = good ? 'good' : ''; lawEl.style.display = 'block'; S.lawT = isTouch ? 4 : 7;
 }
 function warn(text){ S.warnText = text; S.warnT = 0.6; }
 // Lỗi chỉ nhắc nhở (LAW[type].remind): không phạt tiền, không trừ điểm, chuyến không còn sạch
@@ -1476,6 +1476,10 @@ const canvas = $('game'), stage = $('stage'), mini = $('mini');
 const ctx = canvas.getContext('2d'), mctx = mini.getContext('2d');
 let VW = 800, VH = 600, DPR = 1, RES = 1, CW = 800, CH = 600, zoom = 1, camX = START.x, camY = START.y, camA = START.a, ancX = 400, ancY = 300;
 let isTouch = false;
+// Lúc bố cục ba nút hành động (🪖, ↩️, 📞) thay đổi lần cuối: nút ở dưới trồi lên đúng chỗ ngón tay nên bỏ qua lượt bấm ngay sau đó (sửa lỗi bấm 🪖 làm xe quay đầu)
+let actLayoutT = -1e9;
+const ACT_GUARD = 450;   // mili giây
+function actTapOk(){ return performance.now() - actLayoutT > ACT_GUARD; }
 // Ba kiểu nhìn: 'nav' dẫn đường (nghiêng 57°), 'bike' sau tay lái (thấp, sát xe, có ghi đông), 'map' từ trên xuống
 const TILT = 57, TILT_BIKE = 75;
 const tilted = () => S.view !== 'map';
@@ -1493,7 +1497,7 @@ function resize(){
     if (bike){
       // đặt xe của người chơi đúng dưới đồng hồ trên ghi đông: tìm khoảng cách d trên canvas sao cho điểm đó chiếu lên màn hình ở độ cao mong muốn
       // ô tô trên điện thoại: bảng đồng hồ nhỏ nằm phía TRÊN hàng nút nên xe đặt cao hơn nó, để thấy làn phía trước (bản 0.12.4)
-      const want = isTouch && S.veh === 'car' ? VH - 300 : VH - (isTouch ? 92 : 0) - Math.min(560, VW) * 0.14;
+      const want = isTouch && S.veh === 'car' ? (VH < 500 ? VH - 130 : VH - 300) : VH - (isTouch ? 92 : 0) - Math.min(560, VW) * 0.14;
       const th = tilt * Math.PI / 180, oy = VH * originY;
       const scr = d => oy + (VH - d * Math.cos(th) - oy) * persp / (persp + d * Math.sin(th));
       let lo = 0, hi = CH;
@@ -1862,9 +1866,9 @@ function drawUprights(){
     up(b.speaker.x, b.speaker.y, () => { ctx.font = (fs*1.25) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('💬', 0, -11); });
   // số tiền bay lên
   for (const f of S.floats) up(f.x, f.y, () => {
-    ctx.globalAlpha = clamp(f.t, 0, 1); ctx.font = '700 ' + (14 / zoom) + 'px "Segoe UI", Roboto, sans-serif'; ctx.textAlign = 'center';
-    const y = -14 - (f.rise || 0);
-    ctx.lineWidth = 3 / zoom; ctx.strokeStyle = '#fff'; ctx.strokeText(f.text, 0, y); ctx.fillStyle = f.color; ctx.fillText(f.text, 0, y);
+    ctx.globalAlpha = clamp(f.t, 0, 1); ctx.font = '700 ' + (13 / zoom) + 'px "Segoe UI", Roboto, sans-serif'; ctx.textAlign = 'center';
+    const y = -14 - (f.rise || 0), ft = f.text.indexOf(':') > 0 ? f.text.slice(0, f.text.indexOf(':')) : f.text;   // chỉ vẽ phần trước dấu hai chấm cho gọn
+    ctx.lineWidth = 3 / zoom; ctx.strokeStyle = '#fff'; ctx.strokeText(ft, 0, y); ctx.fillStyle = f.color; ctx.fillText(ft, 0, y);
     ctx.globalAlpha = 1;
   });
 }
@@ -1986,13 +1990,14 @@ function updHUD(){
       $('sigCkLCar').setAttribute('opacity', L ? '1' : '0'); $('sigCkRCar').setAttribute('opacity', R ? '1' : '0'); } }
   // mũ bảo hiểm và cuộc gọi: chip trên cùng và hai nút lớn (nút nằm cạnh bản đồ nhỏ)
   { const car = S.veh === 'car', hk = safetyOn() ? '' : car ? '💺 Chưa thắt dây an toàn' : '🪖 Chưa đội mũ';
-    if (hudCache.helm !== hk){ hudCache.helm = hk; $('helmchip').style.display = hk ? 'inline-block' : 'none'; $('helmchip').textContent = hk; $('helmBtn').style.display = hk ? 'block' : 'none';
+    if (hudCache.helm !== hk){ hudCache.helm = hk; actLayoutT = performance.now(); $('helmchip').style.display = hk ? 'inline-block' : 'none'; $('helmchip').textContent = hk; $('helmBtn').style.display = hk ? 'block' : 'none';
       $('helmBtn').innerHTML = car ? '💺 Thắt dây an toàn <span class="key">(H)</span>' : '🪖 Đội mũ <span class="key">(H)</span>'; } }
   { const uk = (S.ut ? 'u' : '') + (S.inBay ? 'b' : '');
-    if (hudCache.ut !== uk){ hudCache.ut = uk; $('utBtn').style.display = S.inBay ? 'none' : 'block'; setHTML('utTxt', S.ut ? '✖ Hủy quay đầu' : '↩️ Quay đầu'); } }
+    if (hudCache.ut !== uk){ hudCache.ut = uk; actLayoutT = performance.now(); $('utBtn').style.display = S.inBay ? 'none' : 'block'; setHTML('utTxt', S.ut ? '✖ Hủy quay đầu' : '↩️ Quay đầu'); } }
   { const c = S.call, drv = phoneDriving();
     const ck = !c ? '' : c.state === 'ring' ? 'ring' : 'talk' + Math.ceil(c.t) + (drv ? 'd' : 'p');
     if (hudCache.call !== ck){ hudCache.call = ck;
+      if ((ck === 'ring') !== (hudCache.callRing === true)){ hudCache.callRing = ck === 'ring'; actLayoutT = performance.now(); }
       const el = $('callchip');
       el.style.display = c ? 'inline-block' : 'none';
       el.textContent = !c ? '' : c.state === 'ring' ? '📞 Khách đang gọi…' : '📞 Đang nghe máy · ' + Math.ceil(c.t) + ' giây' + (drv ? ' · ⚠️ vừa lái vừa nghe' : ' · đang đỗ, khách vui');
@@ -2003,19 +2008,18 @@ function updHUD(){
   if (S.warnT > 0) w = S.warnText;
   else if (!S.inBay){
     const la = playerLightAhead(230);
-    if (la && la.state === 'red') w = '🔴 Đèn đỏ phía trước: dừng trước vạch dừng';
-    else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc và dừng trước vạch dừng';
-    else if (over >= 5) w = '🚨 Quá tốc độ: ' + Math.round(kmhF) + ' km/h, biển cho phép tối đa ' + S.spdLimit + '. Nhả ga, giảm tốc trước ngã tư kẻo camera chụp' + (S.spdLimit <= 30 ? ' (khu trường có trẻ em!)' : '');
-    else if (over > 0) w = '⚠️ Hơi quá giới hạn ' + S.spdLimit + ' km/h một chút, nhả ga nhé';
-    else if (phoneDriving()) w = '📵 Đang cầm điện thoại khi lái: qua chốt CSGT hoặc camera ngã tư là bị phạt. Tấp vào ô P đi!';
-    else if (S.call && S.call.state === 'ring') w = '📞 Khách gọi! Muốn nghe thì tấp vào ô P rồi bấm "Nghe máy" (vừa lái vừa nghe là vi phạm)';
-    else if (!safetyOn()) w = S.veh === 'car' ? '💡 Bạn chưa thắt dây an toàn: bấm nút 💺' + (isTouch ? '' : ' (phím H)') + ' kẻo qua chốt CSGT bị phạt'
-                                              : '💡 Bạn chưa đội mũ bảo hiểm: bấm nút 🪖 Đội mũ' + (isTouch ? '' : ' (phím H)') + ' kẻo qua chốt CSGT bị phạt';
+    if (la && la.state === 'red') w = '🔴 Đèn đỏ: dừng trước vạch';
+    else if (la && la.state === 'yellow') w = '🟡 Đèn vàng: giảm tốc, dừng lại';
+    else if (over >= 5) w = '🚨 Quá tốc độ: ' + Math.round(kmhF) + ' / ' + S.spdLimit + ' km/h' + (S.spdLimit <= 30 ? ' (khu trường!)' : '');
+    else if (over > 0) w = '⚠️ Hơi quá ' + S.spdLimit + ' km/h, nhả ga nhé';
+    else if (phoneDriving()) w = '📵 Đang cầm điện thoại: tấp vào ô P';
+    else if (S.call && S.call.state === 'ring') w = '📞 Khách gọi: tấp vào ô P rồi nghe';
+    else if (!safetyOn()) w = S.veh === 'car' ? '💡 Chưa thắt dây: bấm 💺' + (isTouch ? '' : ' (H)') : '💡 Chưa đội mũ: bấm 🪖' + (isTouch ? '' : ' (H)');
     else {   // sắp rẽ hoặc quay đầu mà chưa bật xi-nhan đúng bên: nhắc
       const i = S.route && S.route.instr;
       if (i && /^(left|right|bearleft|bearright|uturn)$/.test(i.type) && (i.type === 'uturn' || i.dist <= 240)){
         const want = /right$/.test(i.type) ? 1 : -1;
-        if (S.turn !== want) w = '💡 Bật xi-nhan ' + (want > 0 ? 'phải' : 'trái') + ' trước khi ' + (i.type === 'uturn' ? 'quay đầu' : 'rẽ') + ' (' + (isTouch ? 'nút xi-nhan nhỏ phía trên nút mũi tên' : 'phím ' + (want > 0 ? 'E' : 'Q')) + ')';
+        if (S.turn !== want) w = '💡 Bật xi-nhan ' + (want > 0 ? 'phải' : 'trái') + ' trước khi ' + (i.type === 'uturn' ? 'quay đầu' : 'rẽ') + (isTouch ? '' : ' (' + (want > 0 ? 'E' : 'Q') + ')');
       }
     }
   }
@@ -2039,6 +2043,7 @@ function updHUD(){
       $('wheelCar').setAttribute('transform', 'rotate(' + wa + ' 200 192)');
     }
   }
+  { const cl = lawEl.style.display === 'block'; if (hudCache.coLaw !== cl){ hudCache.coLaw = cl; document.body.classList.toggle('co-law', cl); } }   // đang có bảng phạt thì ẩn khung lời thoại NPC
   if (hudCache.warn !== w){ hudCache.warn = w; warnEl.textContent = w; warnEl.style.display = w ? 'block' : 'none'; }
   const fo = S.flash > 0 ? String(Math.min(1, S.flash * 2).toFixed(2)) : '0';
   if (hudCache.flash !== fo){ hudCache.flash = fo; flashEl.style.opacity = fo; }
@@ -2100,7 +2105,7 @@ function setupInput(){
   });
   // nút Đội mũ và Nghe máy
   $('helmBtn').addEventListener('pointerdown', e => { putOnHelmet(); e.preventDefault(); });
-  $('callBtn').addEventListener('pointerdown', e => { answerCall(); e.preventDefault(); });
+  $('callBtn').addEventListener('pointerdown', e => { if (actTapOk()) answerCall(); e.preventDefault(); });
   isTouch = ('ontouchstart' in window) || !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   if (isTouch) document.body.classList.add('touch');
   $('go').addEventListener('click', () => { S.xungho = $('xungho').value; S.assist = !!$('assist').checked; setVehicle($('veh').value); save(); closeOverlay('start');
@@ -2126,8 +2131,11 @@ function setupInput(){
   $('sndBike').addEventListener('change', () => { S.sound.bike = $('sndBike').value; save(); });
   $('sndTest').addEventListener('click', () => { SND.init(); SND.reward(2); say({name:'Bác xe ôm', follow:true}, fill('Chào {x}! Đi đường nhớ nhường nhịn nha, nhanh một phút chậm cả đời đó.'));
     setTimeout(() => SND.speak('Còn 100 mét nữa, rẽ phải vào Đường Cầu Vồng', true), 4200); });
-  $('utBtn').addEventListener('click', uTurn);
+  // nút Quay đầu chạy khi vừa chạm (giống nút 🪖) và KHÔNG chạy theo lượt 'click' sau khi nhấc ngón: lượt click đó là của nút 🪖 vừa biến mất
+  $('utBtn').addEventListener('pointerdown', e => { if (actTapOk()) uTurn(); e.preventDefault(); });
+  $('utBtn').addEventListener('click', e => e.preventDefault());
   lawEl.addEventListener('click', () => { lawEl.style.display = 'none'; S.lawT = 0; });
+  bubEl.addEventListener('click', () => { bubEl.style.display = 'none'; S.bubble = null; });   // chạm vào lời NPC để ẩn
   $('bookBtn').addEventListener('click', () => { renderBook(); openOverlay('book'); });
   $('bookClose').addEventListener('click', () => closeOverlay('book'));
   $('resetBtn').addEventListener('click', () => { resetAll(); renderBook(); });
@@ -2156,4 +2164,4 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 // Dùng cho việc kiểm tra tự động
-window.__TP = {useMap, getMap: () => MAP, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, veNen, MAP, NODES, ROADS, dungBanDo, cultAdd, cultRating, CULT, uTurn, turnPath, turnArmChoice, laneFrame, assistOff, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, navText, HALF, setSignal, SIGNBOARDS, SPEED_SIGNS, LAW, VMAX, trangTri, datODo, sinhBienChiDan, sinhBienTocDo, P_SIGNS, lightLimit, KHOI_DI_BO, sinhNha, lightRemain, HOUSES, hitsHouse, SIG_THR, LINES};
+window.__TP = {useMap, getMap: () => MAP, CROSSWALKS, playerLightAhead, roadPos, NPC_GEN, BUS_LOOPS, npcNewRoute, npcLoopRoute, npcBuildPts, npcNodePath, npcStraightPath, routeLightLimit, makeNPCs, computeRouteMap, NAV_ANG, drawGround, NEN, nenTile, veNen, MAP, NODES, ROADS, dungBanDo, cultAdd, cultRating, CULT, uTurn, turnPath, turnArmChoice, laneFrame, assistOff, farePay, $, LAW_ORDER_CAR, VEH, setVehicle, safetyOn, speedType, lawOf, CSGT, putOnHelmet, answerCall, phoneDriving, csgtCheck, say, voiceOf, SND, QUIZ, suspendLicense, S, player, npcs, peds, keys, step, classify, lightOf, violate, newTrip, render, resize, computeRoute, DESTS, BAYS, navText, HALF, setSignal, SIGNBOARDS, SPEED_SIGNS, LAW, VMAX, trangTri, datODo, sinhBienChiDan, sinhBienTocDo, P_SIGNS, lightLimit, KHOI_DI_BO, sinhNha, lightRemain, HOUSES, hitsHouse, SIG_THR, LINES, updHUD, actTapOk, setActT: v => { actLayoutT = v; }, resetHud: () => { hudCache = {}; }};

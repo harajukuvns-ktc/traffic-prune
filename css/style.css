@@ -120,3 +120,53 @@
   #soundPanel.open{display:flex}
   .srow{display:flex;align-items:center;justify-content:space-between;gap:8px}
   .srow input[type=range]{width:120px}
+
+  /* =========================================================
+     Bản 1.2c (18/11/2026): GIAO DIỆN GỌN KHI LÁI, áp dụng cho mọi góc nhìn (chép từ thu-3d/giao-dien-gon.css, bỏ tiền tố body.v3d).
+     Mục tiêu: chữ cảnh báo, nhắc nhở không che tầm nhìn; vùng phía trước xe (nửa giữa màn hình) luôn thoáng.
+     Nội dung dòng nhắc đã được rút ngắn thẳng trong updHUD() (js/game.js); căn cứ pháp lý xem ở 📘 Sổ tay.
+     ========================================================= */
+  #warn{align-self:flex-start;max-width:100%;padding:3px 8px;font-size:12px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    background:rgba(255,243,205,.9);border-left-width:4px;border-radius:9px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+  #bubble{align-self:flex-start;max-width:100%;padding:4px 9px;font-size:12.5px;line-height:1.32;max-height:calc(2.64em + 10px);overflow:hidden;
+    border-width:1.5px;border-radius:11px;background:rgba(255,250,242,.88);box-shadow:0 2px 6px rgba(0,0,0,.14);pointer-events:auto}
+  #bubName{display:inline;font-size:11.5px;margin:0 5px 0 0}
+  body.co-law #bubble{display:none !important}   /* đang có bảng phạt thì không chồng thêm khung lời thoại */
+  #law{padding:5px 9px;font-size:12px;line-height:1.3;border-left-width:4px;border-radius:11px;background:rgba(255,250,242,.9);box-shadow:0 2px 8px rgba(0,0,0,.14)}
+  #law .lawin{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  #law .lawx,#law small{display:none}
+  #law .lawin br{display:none}
+  @media (min-width:1000px){
+    #bubble{position:static;margin:0;max-width:410px;left:auto;right:auto;top:auto}
+    #law{width:360px}
+    #law .lawin{-webkit-line-clamp:3}
+  }
+  @media (max-width:999px){
+    #top{left:6px;top:6px;width:min(410px,calc(100vw - 12px));gap:4px}
+    #nav{gap:8px;padding:5px 9px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+    #navIcon{flex-basis:30px;height:30px}
+    #navIcon svg{width:30px;height:30px}
+    #navMain{font-size:13.5px;line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+    #navSub{font-size:11px;margin-top:1px}
+    #chips{gap:3px;max-width:calc(100% - 172px)}
+    .chip{padding:2px 6px;font-size:11.5px;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+    .chip .lim{display:none}
+    #helmchip{display:none !important}   /* đã có nút 🪖 / 💺 và dòng nhắc */
+    #right{right:6px;top:58px;gap:4px}
+    #topbtns{gap:4px}
+    #topbtns .btn{padding:4px 7px;font-size:12px;border-radius:9px}
+    .btn.act{font-size:13px;padding:7px 10px;border-radius:10px}
+    #warn{font-size:11.5px}
+  }
+  /* điện thoại cầm ngang: cụm chữ bên trái hẹp lại để chừa giữa màn hình */
+  @media (max-height:500px){
+    #top{width:min(300px,40vw)}
+    #chips{max-width:100%}
+    #navMain{-webkit-line-clamp:1}
+    #right{top:6px}
+    #law .lawin{-webkit-line-clamp:2}
+    /* ô tô góc sau vô lăng: bảng đồng hồ nhỏ nằm giữa mép dưới (hai bên là cụm nút điều khiển), không còn đứng cao 200 điểm làm hẹp dải đường */
+    body.bike.car.touch #cockpitCar{bottom:4px;width:150px}
+  }
+  /* ba nút hành động (🪖, ↩️, 📞) cách xa nhau hơn để ngón tay không rơi nhầm sang nút kế bên khi một nút biến mất */
+  #actions{gap:14px}

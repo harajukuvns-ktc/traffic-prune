@@ -1114,6 +1114,14 @@ console.log('\n== 25. Bắt lỗi theo hướng đường (bản đồ thử) ==
         dat({x: A.bay.cx, y: A.bay.cy, a: Math.atan2(A.bay.dir.y, A.bay.dir.x)}); S.trip = {dest: B, fx: player.x, fy: player.y, clean: true, t0: S.now};
         const r = computeRoute(); if (!r || !isFinite(r.remain) || !navText().main) hong++; } }
     ok(hong === 0 && DESTS.length === 21, `${DESTS.length} điểm giao, cả xe máy và ô tô đều có đường tới (${hong} lỗi trong ${n} cặp)`); }
+  // j) bản 1.2c: bấm 🪖 xong thì nút ↩️ trồi lên đúng chỗ ngón tay; lượt bấm ngay sau khi bố cục ba nút đổi phải bị bỏ qua (không làm xe quay đầu)
+  { rs(); S.helmet = false; TP.resetHud(); TP.updHUD(); TP.setActT(-1e9);
+    S.helmet = true; TP.updHUD();   // nút 🪖 biến mất: bố cục đổi
+    ok(!TP.actTapOk(), 'vừa đội mũ xong: nút Quay đầu / Nghe máy bỏ qua lượt bấm ngay sau đó (không bấm nhầm)');
+    TP.setActT(performance.now() - 600);
+    ok(TP.actTapOk(), 'sau 0,45 giây nút Quay đầu bấm bình thường');
+    TP.updHUD(); ok(TP.actTapOk(), 'bố cục không đổi thì không chặn thêm lượt bấm nào');
+    S.helmet = true; TP.resetHud(); }
   reset(); TP.makeNPCs();
 }
 
