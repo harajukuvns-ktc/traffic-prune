@@ -285,3 +285,5 @@ Trạng thái: xong phỏng vấn (17 câu). Đã làm bản chơi thử 0.1 đ�
 - Âm thanh bản 0.4 chưa được nghe thử trên máy thật; giọng đọc tiếng Việt tùy máy -> người dùng chơi thử
 - Bản 0.10: xe 55 km/h có dễ lái không, biển 40/30 và biển "Trẻ em" có dễ thấy trên điện thoại không, ngưỡng phạt tốc độ (vượt từ 5 km/h liên tục 1 giây, mỗi đoạn một lần) có phạt oan hay bỏ sót không, số tiền phạt có hợp lý không -> người dùng chơi thử
 - Bản 0.9: hai nút xi-nhan nhỏ, độ to của biển chỉ dẫn, ngưỡng bắt lỗi xi-nhan chưa được chơi thử trên máy thật -> người dùng chơi thử
+
+- Góp ý lúc 07:59 ngày 18/11/2026 (sau bản 1.2a.1): "1. Bấm đội mũ rồi mới thấy nút quay đầu xuất hiện. 2. Dòng nhắc bị cụt ý nhưng không sao, chúng ta nên rút gọn lại vì khi chơi không ai có thể đọc hết lời nhắc dài. 3. Không thấy khối 3D và nắp capo chỉ thấy vô lăng." -> (1) coi là đã hết lỗi bấm nhầm; (2) nguyên tắc: lời nhắc khi chơi phải ngắn, đã rút thêm các câu cấm vào đường cấm và ngược chiều; (3) bản 3D ô tô cầm ngang nhìn xuống 7° để thấy nắp capo và táp-lô.

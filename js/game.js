@@ -1269,8 +1269,8 @@ function checkRules(prev, prevC, dt){
   //    Phố Chợ là phố đi bộ (biển P.104 cấm xe máy, P.103a cấm ô tô); bản 1.2 có thêm hẻm cấm ô tô.
   const ban = c.road && (S.veh === 'car' ? c.road.noCar : c.road.noBike) ? c.road : null;
   if (ban){
-    if (c.t === 'ped') warn(S.veh === 'car' ? '⛔ ' + ban.name + ' là phố đi bộ, có biển cấm ô tô: lùi ra và đi đường khác' : '⛔ ' + ban.name + ' là phố đi bộ, có biển cấm xe máy: lùi ra và đi đường khác');
-    else warn('⛔ ' + ban.name + ' có biển cấm ' + (S.veh === 'car' ? 'ô tô' : 'xe máy') + ': lùi ra và đi đường khác');
+    if (c.t === 'ped') warn('⛔ ' + ban.name + ': cấm ' + (S.veh === 'car' ? 'ô tô' : 'xe máy') + ', lùi ra');
+    else warn('⛔ ' + ban.name + ': cấm ' + (S.veh === 'car' ? 'ô tô' : 'xe máy') + ', lùi ra');
     if (sp > 10 && player.stun <= 0 && !S.pedEp && S.now > S.pedCool){ S.pedEp = true; violate('noentry', c.t === 'ped' ? undefined : 'noentryhem'); }
     if (S.pedEp) S.faultUntil = Math.max(S.faultUntil, S.now + 1);
   } else if (S.pedEp){ S.pedEp = false; S.pedCool = S.now + 4; }
@@ -1313,7 +1313,7 @@ function checkRules(prev, prevC, dt){
     } else {
       S.solidT = 0;
       if (S.wrongT > 3.5 && !S.sideEp){ S.sideEp = true; violate('lane'); }
-      else if (S.wrongT > 1.2 && !S.sideEp) warn('⚠️ Bạn đang ở phần đường ngược chiều. Vạch đứt chỉ để vượt hoặc rẽ, xong phải về làn ngay.');
+      else if (S.wrongT > 1.2 && !S.sideEp) warn('⚠️ Ngược chiều: về làn ngay');
     }
     if (S.sideEp) S.faultUntil = Math.max(S.faultUntil, S.now + 1);
   } else {

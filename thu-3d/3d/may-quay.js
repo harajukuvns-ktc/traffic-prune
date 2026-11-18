@@ -33,7 +33,7 @@ MQ.capNhat = function(camera, dt){
   MQ.toc += (om - MQ.toc) * Math.min(1, dt * 8);
   if (bike){
     MQ.goc = player.a;
-    const m = car ? MQ.MAT.car : MQ.MAT.bike, c = Math.cos(MQ.goc), s = Math.sin(MQ.goc), nhin = car && MQ.ngangThap ? 3 : m.nhin;   // cầm ngang: nhìn ngang hơn để táp-lô nằm thấp trong khung
+    const m = car ? MQ.MAT.car : MQ.MAT.bike, c = Math.cos(MQ.goc), s = Math.sin(MQ.goc), nhin = car && MQ.ngangThap ? 7 : m.nhin;   // cầm ngang: nhìn ngang hơn một chút (8 → 7) để nắp capo, táp-lô chỉ chiếm khoảng một phần tư phía dưới
     // xe máy ôm cua thì người và xe nghiêng vào trong: máy quay nghiêng theo
     const muon = car ? 0 : clamp(-om * 0.085, -0.16, 0.16) * Math.min(1, Math.abs(player.v) / 50);
     MQ.nghieng += (muon - MQ.nghieng) * Math.min(1, dt * 6);
